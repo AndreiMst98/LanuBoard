@@ -16,19 +16,21 @@ window.LANU_I18N = {
       ['#F5A623', 'Mentor: short trip flagged · {name}'],
       ['#5CC8FF', 'Route {route} completed · {n} stops'],
       ['#E5484D', 'Missing package reported · {name}'],
-      ['#1E9E5A', '{name} finished the break']
+      ['#1E9E5A', '{name} finished the break'],
+      ['#5CC8FF', '{name} is this week’s top performer'],
+      ['#E5484D', 'DNR alert · {name} reached 3 DNRs this week']
     ],
     heroSub: 'The software we built to run our own delivery operations — now for yours. Routes, drivers, breaks and packages live, so your dispatchers never miss a thing.',
     hvRiskNote: 'Flagged before it’s too late',
     productsTitle: 'Products',
     prodWeb: 'Web app', prodMobile: 'Mobile app', prodDevices: 'Device management',
     prodBoard: 'The dispatch control room: operations, drivers, fleet, timesheets and reports in one place.',
-    prodSee: 'See the Operations page',
+    prodSee: 'Explore the Board pages',
     prodApp: '[Short description of LANU App — coming next]',
     prodMdm: '[Short description of LANU MDM — coming next]',
     soon: 'Details coming soon',
     tourTitle: 'Everything your dispatchers need during the day. Nothing they can miss.',
-    tourSub: 'One live page instead of jumping between tools. Click through the parts of the Operations page — the data is fictional, the screen is real.',
+    tourSub: 'Live pages instead of jumping between tools. Pick a page and click through its parts — the data is fictional, the screens are real.',
     steps: [
       ['overview', 'Live overview', 'Delivered packages, tours on the road and drivers close to their working-hours limit — at the top of the screen, refreshed every minute.'],
       ['routes', 'Every route, every driver', 'See when each driver opened and closed the app, which route they drive and how many stops are done. Late sign-outs stand out at a glance.'],
@@ -39,6 +41,20 @@ window.LANU_I18N = {
       ['problems', 'Problem packages', 'Drivers ranked by failed, retried, undeliverable and missing packages, plus high-value parcels. Act early and bring fewer packages back to the station.'],
       ['history', '60 days of history', 'The board is saved every day and kept for 60 days. Pick any day to see exactly how it looked.']
     ],
+    pagesLabel: 'Board pages', pageOps: 'Operations', pageDa: 'Delivery Associates', pageLoading: 'Loading page',
+    stepsDa: [
+      ['kpis', 'Weekly results', 'Packages delivered this week, the RTS rate, parcels returned to the station and the company’s total DNR — compared with last week.'],
+      ['top', 'Top performers', 'Your best drivers of the week, ranked by deliveries.'],
+      ['dnr', 'Drivers with DNR ≥ 3', 'Every driver with three or more DNRs in one list. Nobody has to look them up one by one anymore.'],
+      ['table', 'Every driver at a glance', 'Delivered, dispatched, DNR, DPMO and RTS for every driver. Click a column head to sort — try it.'],
+      ['week', 'Live, every day', 'The page updates day by day and in real time, so there is nothing to wait for. Browse back through previous weeks.']
+    ],
+    daWeek: 'Week {n}', daLiveNote: 'Live · updates in real time', daPastWeek: 'Closed week',
+    daTotal: 'Total deliveries', daVsLast: '{n} vs. last week', daQuality: 'Quality', daRtsAvg: 'RTS average',
+    daRtsParcels: 'parcels returned to station (RTS)', daDnrTotal: 'DNR total', daAttention: 'Needs attention',
+    daDnrDrivers: 'drivers with DNR ≥ 3', daSortDnr: 'Sort by DNR', daTop: 'Top performers', daDeliveries: 'deliveries',
+    daDnrList: 'Drivers with DNR ≥ 3', daAssoc: 'Delivery Associate', daDelivered: 'Delivered', daDispatched: 'Dispatched',
+    daHint: 'Click a driver for every value of the selected week. Click the DNR for the list of their DNRs and the details of each. Click a column head to sort.',
     benTitle: 'Built at a real dispatch desk',
     benSub: 'We use the Board every day in our own delivery operation. Every part of it exists because a dispatcher needed it.',
     benefits: [
@@ -90,19 +106,21 @@ window.LANU_I18N = {
       ['#F5A623', 'Mentor: Kurzfahrt markiert · {name}'],
       ['#5CC8FF', 'Tour {route} abgeschlossen · {n} Stopps'],
       ['#E5484D', 'Fehlendes Paket gemeldet · {name}'],
-      ['#1E9E5A', '{name} hat die Pause beendet']
+      ['#1E9E5A', '{name} hat die Pause beendet'],
+      ['#5CC8FF', '{name} ist Top-Performer der Woche'],
+      ['#E5484D', 'DNR-Warnung · {name} hat diese Woche 3 DNRs']
     ],
     heroSub: 'Die Software, mit der wir unseren eigenen Lieferbetrieb steuern – jetzt auch für Ihren. Routen, Fahrer, Pausen und Pakete live, damit Ihre Disponenten nichts übersehen.',
     hvRiskNote: 'Markiert, bevor es zu spät ist',
     productsTitle: 'Produkte',
     prodWeb: 'Web-App', prodMobile: 'Mobile App', prodDevices: 'Geräteverwaltung',
     prodBoard: 'Die Leitstelle für die Disposition: Betrieb, Fahrer, Flotte, Arbeitszeiten und Berichte an einem Ort.',
-    prodSee: 'Die Seite „Operations“ ansehen',
+    prodSee: 'Board-Seiten entdecken',
     prodApp: '[Kurzbeschreibung der LANU App – folgt]',
     prodMdm: '[Kurzbeschreibung von LANU MDM – folgt]',
     soon: 'Details folgen in Kürze',
     tourTitle: 'Alles, was Ihre Disponenten tagsüber brauchen. Nichts, was sie übersehen können.',
-    tourSub: 'Eine Live-Seite statt ständig zwischen Tools zu wechseln. Klicken Sie sich durch die Seite „Operations“ – die Daten sind erfunden, der Bildschirm ist echt.',
+    tourSub: 'Live-Seiten statt ständig zwischen Tools zu wechseln. Wählen Sie eine Seite und klicken Sie sich durch – die Daten sind erfunden, die Bildschirme sind echt.',
     steps: [
       ['overview', 'Live-Überblick', 'Zugestellte Pakete, Touren auf der Straße und Fahrer nahe an ihrer Arbeitszeitgrenze – ganz oben auf dem Bildschirm, jede Minute aktualisiert.'],
       ['routes', 'Jede Route, jeder Fahrer', 'Sehen Sie, wann jeder Fahrer die App geöffnet und geschlossen hat, welche Route er fährt und wie viele Stopps erledigt sind. Späte Abmeldungen fallen sofort auf.'],
@@ -113,6 +131,20 @@ window.LANU_I18N = {
       ['problems', 'Problempakete', 'Fahrer sortiert nach fehlgeschlagenen, erneut versuchten, unzustellbaren und fehlenden Paketen, dazu Wertpakete. Früh handeln und weniger Pakete zurück ins Depot bringen.'],
       ['history', '60 Tage Verlauf', 'Das Board wird jeden Tag gespeichert und 60 Tage aufbewahrt. Wählen Sie einen Tag und sehen Sie genau, wie er aussah.']
     ],
+    pagesLabel: 'Board-Seiten', pageOps: 'Operations', pageDa: 'Delivery Associates', pageLoading: 'Seite wird geladen',
+    stepsDa: [
+      ['kpis', 'Ergebnisse der Woche', 'Zugestellte Pakete dieser Woche, die RTS-Quote, an die Station zurückgebrachte Pakete und der DNR-Gesamtwert der Firma – im Vergleich zur Vorwoche.'],
+      ['top', 'Top-Performer', 'Ihre besten Fahrer der Woche, sortiert nach Zustellungen.'],
+      ['dnr', 'Fahrer mit DNR ≥ 3', 'Alle Fahrer mit drei oder mehr DNRs in einer Liste. Niemand muss sie mehr einzeln heraussuchen.'],
+      ['table', 'Alle Fahrer auf einen Blick', 'Zugestellt, ausgegeben, DNR, DPMO und RTS für jeden Fahrer. Klicken Sie auf eine Spaltenüberschrift zum Sortieren – probieren Sie es aus.'],
+      ['week', 'Live, jeden Tag', 'Die Seite aktualisiert sich täglich und in Echtzeit – kein Warten. Blättern Sie zurück durch frühere Wochen.']
+    ],
+    daWeek: 'KW {n}', daLiveNote: 'Live · Aktualisierung in Echtzeit', daPastWeek: 'Abgeschlossene Woche',
+    daTotal: 'Zustellungen gesamt', daVsLast: '{n} ggü. Vorwoche', daQuality: 'Qualität', daRtsAvg: 'RTS-Durchschnitt',
+    daRtsParcels: 'Pakete zurück an die Station (RTS)', daDnrTotal: 'DNR gesamt', daAttention: 'Braucht Aufmerksamkeit',
+    daDnrDrivers: 'Fahrer mit DNR ≥ 3', daSortDnr: 'Nach DNR sortieren', daTop: 'Top-Performer', daDeliveries: 'Zustellungen',
+    daDnrList: 'Fahrer mit DNR ≥ 3', daAssoc: 'Zusteller', daDelivered: 'Zugestellt', daDispatched: 'Ausgegeben',
+    daHint: 'Klicken Sie auf einen Fahrer für alle Werte der gewählten Woche, auf DNR für seine DNRs mit Details und auf eine Spaltenüberschrift zum Sortieren.',
     benTitle: 'Entstanden am echten Dispositionstisch',
     benSub: 'Wir nutzen das Board jeden Tag in unserem eigenen Lieferbetrieb. Jeder Teil existiert, weil ein Disponent ihn gebraucht hat.',
     benefits: [

@@ -100,16 +100,21 @@
 <section class="tour" id="board" aria-labelledby="tour-title">
   <div class="wrap">
     <div class="sec-head" data-reveal>
-      <p class="kicker">LANU Board · Operations</p>
+      <p class="kicker" id="tour-kicker">LANU Board · Operations</p>
       <h2 id="tour-title" data-i18n="tourTitle">Everything your dispatchers need during the day. Nothing they can miss.</h2>
       <p data-i18n="tourSub">One live page instead of jumping between tools. Click through the parts of the Operations page — the data is fictional, the screen is real.</p>
+    </div>
+    <div class="pages" role="tablist" data-i18n-aria="pagesLabel" aria-label="Board pages" data-reveal>
+      <span class="pages-ind" aria-hidden="true"></span>
+      <button type="button" role="tab" data-page="ops" aria-selected="true"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/></svg><span data-i18n="pageOps">Operations</span><em>8</em></button>
+      <button type="button" role="tab" data-page="da" aria-selected="false"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg><span data-i18n="pageDa">Delivery Associates</span><em>5</em></button>
     </div>
     <div class="tour-grid" data-reveal style="--d:.1s">
       <ol class="steps" id="steps"></ol>
       <div class="screen-col">
         <div class="browser">
-          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>board.lanu.app/operations</span></div>
-          <div class="screen" id="screen"><div class="m" id="mock"></div></div>
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span id="url">board.lanu.app/operations</span></div>
+          <div class="screen" id="screen"><div class="m" id="mock"></div><div class="fx" aria-hidden="true"><div class="fx-c"><small data-i18n="pageLoading">Loading page</small><b id="fx-t"></b><span class="fx-bar"><i></i></span></div></div></div>
         </div>
         <div class="step-now" id="step-now" aria-live="polite"></div>
       </div>

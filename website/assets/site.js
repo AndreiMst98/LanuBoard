@@ -32,13 +32,14 @@
     }).join(' ');
     document.querySelectorAll('[data-i18n-tpl]').forEach(function (el) { el.textContent = t(el.dataset.i18nTpl, { n: el.dataset.n }); });
     document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
+    document.getElementById('tour-kicker').textContent = 'LANU Board · ' + t(PAGES[page].name);
     document.title = lang === 'de' ? 'LANU Board – Ihr ganzer Liefertag auf einem Bildschirm' : 'LANU Board — your whole delivery day on one screen';
   }
   document.querySelectorAll('.lang button').forEach(function (b) {
     b.addEventListener('click', function () {
       lang = b.dataset.lang;
       try { localStorage.setItem('lanu-lang', lang); } catch (e) {}
-      applyCopy(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true);
+      applyCopy(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd();
     });
   });
 
@@ -103,7 +104,13 @@
   }
   var ICAL = '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>';
 
-  function renderMock() {
+  function topBar(title) {
+    return '<div class="m-top"><span class="m-ham"></span><div class="m-title"><b>' + title + '</b><span>' + esc(longDate()) + '</span></div>' +
+      '<span class="m-livepill"><i></i>' + t('mLive') + ' <span data-clock>' + nowStr() + '</span></span>' +
+      '<div class="m-topr"><span class="m-seg"><span>RO</span><span' + (lang === 'de' ? ' class="on"' : '') + '>DE</span><span' + (lang === 'en' ? ' class="on"' : '') + '>EN</span></span><span class="m-ic"><em>4</em></span><span class="m-ic"></span><span class="m-user"><i>D</i>' + t('mDispatcher') + '</span></div></div>';
+  }
+  function renderMock() { if (page === 'da') renderDa(); else renderOps(); }
+  function renderOps() {
     data = makeDay(dayOffset);
     if (dayOffset !== 0 || liveDelivered === undefined) liveDelivered = data.delivered;
     var d = data, pct = Math.round(d.delivered / d.totalPk * 1000) / 10;
@@ -134,9 +141,7 @@
     var mentorFlags = d.mentor.filter(function (x) { return x.noMentor; }).length;
 
     mock.innerHTML =
-      '<div class="m-top"><span class="m-ham"></span><div class="m-title"><b>' + t('mOperations') + '</b><span>' + esc(longDate()) + '</span></div>' +
-      '<span class="m-livepill"><i></i>' + t('mLive') + ' <span data-clock>' + nowStr() + '</span></span>' +
-      '<div class="m-topr"><span class="m-seg"><span>RO</span><span' + (lang === 'de' ? ' class="on"' : '') + '>DE</span><span' + (lang === 'en' ? ' class="on"' : '') + '>EN</span></span><span class="m-ic"><em>4</em></span><span class="m-ic"></span><span class="m-user"><i>D</i>' + t('mDispatcher') + '</span></div></div>' +
+      topBar(t('mOperations')) +
       '<div class="m-body">' +
       '<div class="m-panel m-date" data-p="history"><span class="ci">' + ICAL + '</span><div><b>' + (d.live ? t('mTodayLive') : t('mPastDay')) + '</b><span>' + t('mHistoryNote') + '</span></div>' +
       '<div class="m-dnav"><button type="button" data-day="-1" aria-label="Previous day"' + (dayOffset <= -59 ? ' disabled' : '') + '>‹</button><span class="dv">' + dateFor(dayOffset) + ' <span>▾</span></span><button type="button" data-day="1" aria-label="Next day"' + (dayOffset >= 0 ? ' disabled' : '') + '>›</button></div></div>' +
@@ -169,29 +174,222 @@
   }
 
   mock.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-day]');
+    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr]');
     if (!b || b.disabled) return;
-    dayOffset = Math.max(-59, Math.min(0, dayOffset + Number(b.dataset.day)));
     stopAuto();
-    renderMock(); focusStep('history', true);
+    if (b.dataset.day) {
+      dayOffset = Math.max(-59, Math.min(0, dayOffset + Number(b.dataset.day)));
+      renderMock(); focusStep('history', true);
+    } else if (b.dataset.week) {
+      weekOffset = Math.max(-11, Math.min(0, weekOffset + Number(b.dataset.week)));
+      renderMock(); focusStep('week', true);
+    } else {
+      var k = b.dataset.sort || 'dnr';
+      daSort = { k: k, d: b.dataset.sortdnr !== undefined ? -1 : (daSort.k === k ? -daSort.d : (k === 'name' ? 1 : -1)) };
+      rowAnim = true; renderMock(); focusStep('table', true);
+    }
   });
+
+
+  // ------------------------------------------------------------------ fictional avatars (drawn, not photos of real people)
+  function hashStr(str) { var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  var AV = {
+    bg: ['#DCE7FF', '#FDE3D3', '#DDF3E6', '#EDE2FF', '#FFF0C2', '#D8EEF6', '#F6DDE6'],
+    skin: [['#F6D3B8', '#E3B795'], ['#EDBF99', '#D6A27A'], ['#DCA57C', '#C38960'], ['#BF825B', '#A46A45'], ['#93603F', '#7A4C30'], ['#F1C9A5', '#DDAE86']],
+    hair: ['#2B1E16', '#4A2F1E', '#6B4428', '#A3703F', '#D2AA63', '#161616', '#8C8C8C', '#7A2E1C'],
+    shirt: ['#2F6BFF', '#136EB4', '#1E9E5A', '#0C1B35', '#E5484D', '#F5A623', '#5B5FC7', '#3A4459', '#0E9384'],
+    top: {
+      short: 'M12.3 17.5C11.6 9.5 15.5 7.2 20 7.2s8.4 2.3 7.7 10.3c-.9-4.3-3.5-5.7-7.7-5.7s-6.8 1.4-7.7 5.7Z',
+      quiff: 'M12.2 18C11 10 14.5 6 20.5 6s8.7 4 7.3 12c-.8-3.5-2.3-5.4-4.8-5.8-3 1.4-7.5 1-10.8 5.8Z',
+      buzz: 'M12.6 16c.2-5.8 3.6-7.4 7.4-7.4s7.2 1.6 7.4 7.4c-2.2-3-12.6-3-14.8 0Z',
+      side: 'M12.3 17.5C11.5 9.5 15 7 20 7s8.5 2.5 7.7 10.5c-.5-4-1.7-5.3-3.7-5.9-3 1.2-8 .4-10.5 2.2-.6 1-1 2.2-1.2 3.7Z',
+      long: 'M12.4 17c0-7 3.2-9.4 7.6-9.4s7.6 2.4 7.6 9.4c-1.6-4.6-5-5.8-7.6-5.8s-6 1.2-7.6 5.8Z'
+    }
+  };
+  function avatar(name, size) {
+    var r = rng(hashStr(name)), pick = function (a) { return a[Math.floor(r() * a.length)]; };
+    var bg = pick(AV.bg), sk = pick(AV.skin), hair = pick(AV.hair), shirt = pick(AV.shirt);
+    var style = pick(['short', 'short', 'quiff', 'buzz', 'side', 'long', 'bun', 'curly']), beard = r() < .3, glasses = r() < .18;
+    var back = style === 'long' || style === 'bun' ? '<path d="M10.5 33C8.5 17 11.5 7 20 7s11.5 10 9.5 26Z" fill="' + hair + '"/>' : '';
+    var top = style === 'curly'
+      ? '<g fill="' + hair + '"><circle cx="13.2" cy="14.5" r="3"/><circle cx="15.6" cy="10.6" r="3.3"/><circle cx="20" cy="9" r="3.5"/><circle cx="24.4" cy="10.6" r="3.3"/><circle cx="26.8" cy="14.5" r="3"/></g>'
+      : '<path d="' + AV.top[style === 'bun' ? 'long' : style] + '" fill="' + hair + '"/>' + (style === 'bun' ? '<circle cx="20" cy="6" r="3.6" fill="' + hair + '"/>' : '');
+    return '<svg class="av" width="' + size + '" height="' + size + '" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="' + bg + '"/>' + back +
+      '<path d="M6.5 42c0-9 5.8-12.6 13.5-12.6S33.5 33 33.5 42Z" fill="' + shirt + '"/><path d="M17 29.6l3 3.4 3-3.4" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1"/>' +
+      '<path d="M16.8 23.5h6.4v6.2c-1 1.7-5.4 1.7-6.4 0Z" fill="' + sk[1] + '"/>' +
+      '<circle cx="12.6" cy="19" r="1.7" fill="' + sk[1] + '"/><circle cx="27.4" cy="19" r="1.7" fill="' + sk[1] + '"/>' +
+      '<ellipse cx="20" cy="18" rx="7.6" ry="8.6" fill="' + sk[0] + '"/>' + top +
+      (beard ? '<path d="M12.6 19.5c.2 6.7 3.8 8.3 7.4 8.3s7.2-1.6 7.4-8.3c-1 3.9-4 4.4-7.4 4.4s-6.4-.5-7.4-4.4Z" fill="' + hair + '"/>' : '') +
+      '<circle cx="17.2" cy="18.6" r=".95" fill="#2A1D17"/><circle cx="22.8" cy="18.6" r=".95" fill="#2A1D17"/>' +
+      '<path d="M18 22.4q2 1.5 4 0" stroke="' + (beard ? '#F3E1D5' : '#8A4A36') + '" stroke-width=".9" fill="none" stroke-linecap="round"/>' +
+      (glasses ? '<g fill="none" stroke="#24324A" stroke-width=".8"><circle cx="17.2" cy="18.6" r="2.3"/><circle cx="22.8" cy="18.6" r="2.3"/><path d="M19.5 18.6h1"/></g>' : '') +
+      '</svg>';
+  }
+
+  // ------------------------------------------------------------------ Delivery Associates page (fictional drivers)
+  var weekOffset = 0, daSort = { k: 'delivered', d: -1 }, rowAnim = false, daLiveAdd = 0, wk;
+  var ROSTER = (function () {
+    var r = rng(555), F = NAMES.map(function (n) { return n.split(' ')[0]; }), L = NAMES.map(function (n) { return n.split(' ')[1]; });
+    var out = [], seen = {}, AL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    while (out.length < 66) {
+      var n = F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)];
+      if (seen[n]) continue; seen[n] = 1;
+      var id = 'A'; for (var i = 0; i < 13; i++) id += AL[Math.floor(r() * AL.length)];
+      out.push({ name: n, id: id });
+    }
+    return out;
+  })();
+  function pctf(v, d) { return v.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) + '%'; }
+  function makeWeek(off, shallow) {
+    var r = rng(9100 + off * 131), idx = shuffle(ROSTER.map(function (x, i) { return i; }), r);
+    var rows = ROSTER.map(function (d) {
+      return { name: d.name, id: d.id, delivered: between(r, 430, 1010), dnr: r() < .5 ? (r() < .6 ? 1 : 2) : 0, rts: r() < .25 ? 0 : between(r, 1, 7) };
+    });
+    idx.slice(0, 4).forEach(function (i) { rows[i].delivered = between(r, 1060, 1240); });
+    var att = off === 0 ? 11 : between(r, 7, 13);
+    idx.slice(5, 5 + att).forEach(function (i, k) { rows[i].dnr = k === 0 ? between(r, 11, 15) : between(r, 3, 7); });
+    idx.slice(20, 23).forEach(function (i) { rows[i].rts = between(r, 10, 20); });
+    var T = { total: 0, disp: 0, rts: 0, dnr: 0 };
+    rows.forEach(function (x) {
+      x.dispatched = x.delivered + x.rts + (r() < .3 ? between(r, 1, 8) : 0);
+      x.dnrDpmo = x.dnr ? Math.round(x.dnr / x.delivered * 1e6) : 0;
+      x.rtsPct = x.rts / x.dispatched * 100; x.rtsDpmo = Math.round(x.rts / x.dispatched * 1e6);
+      T.total += x.delivered; T.disp += x.dispatched; T.rts += x.rts; T.dnr += x.dnr;
+    });
+    var w = { rows: rows, total: T.total, rts: T.rts, dnr: T.dnr, rtsAvg: T.rts / T.disp * 100, att: att };
+    if (!shallow) { var p = makeWeek(off - 1, true); w.dTotal = (w.total - p.total) / p.total * 100; w.dRts = w.rtsAvg - p.rtsAvg; }
+    return w;
+  }
+  function weekInfo(off) {
+    var d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - d.getDay() + off * 7); // weeks run Sunday to Saturday
+    var end = new Date(d); end.setDate(end.getDate() + 6);
+    var j1 = new Date(end.getFullYear(), 0, 1, 12); j1.setDate(j1.getDate() - j1.getDay());
+    var o = { day: 'numeric', month: 'short' }, loc = lang === 'de' ? 'de-DE' : 'en-GB';
+    return { n: Math.round((d - j1) / 864e5 / 7) + 1, range: d.toLocaleDateString(loc, o) + ' – ' + end.toLocaleDateString(loc, o) };
+  }
+  function dnrPill(n) { return n >= 3 ? '<span class="dn r">' + n + '</span>' : n ? '<span class="dn a">' + n + '</span>' : '<span class="dn0">0</span>'; }
+  function who(x) { return '<span class="da">' + avatar(x.name, 30) + '<span><b>' + esc(x.name) + '</b><small>' + x.id + '</small></span></span>'; }
+  function delta(v, unit, goodWhenDown) {
+    var down = v < 0, good = goodWhenDown ? down : !down;
+    return '<span class="dk-d ' + (good ? 'pos' : 'neg') + '">' + (down ? '↘' : '↗') + ' ' + unit + '</span>';
+  }
+  function renderDa() {
+    var w = wk = makeWeek(weekOffset), wi = weekInfo(weekOffset), live = weekOffset === 0;
+    if (!live) daLiveAdd = 0;
+    var total = w.total + daLiveAdd;
+    var byDel = w.rows.slice().sort(function (a, b) { return b.delivered - a.delivered; }), max = byDel[0].delivered;
+    var top = byDel.slice(0, 4).map(function (x, i) {
+      return '<div class="tp"><span class="tp-r">0' + (i + 1) + '</span>' + avatar(x.name, 32) + '<span class="tp-n"><b>' + esc(x.name) + '</b><span class="tp-bar"><i style="width:' + (x.delivered / max * 100) + '%"></i></span></span><b class="tp-v">' + fmt(x.delivered) + '</b></div>';
+    }).join('');
+    var dnrRows = w.rows.filter(function (x) { return x.dnr >= 3; }).sort(function (a, b) { return b.dnr - a.dnr; }).map(function (x) {
+      return '<tr class="flag"><td>' + who(x) + '</td><td class="c">' + dnrPill(x.dnr) + '</td><td class="r">' + fmt(x.dnrDpmo) + '</td><td class="r">' + x.rts + '</td><td class="r">' + pctf(x.rtsPct, x.rts ? 2 : 0) + '</td></tr>';
+    }).join('');
+    var k = daSort.k, dir = daSort.d;
+    var sorted = w.rows.slice().sort(function (a, b) { return k === 'name' ? dir * a.name.localeCompare(b.name) : dir * (a[k] - b[k]) || b.delivered - a.delivered; });
+    var COLS = [['name', 'daAssoc', ''], ['delivered', 'daDelivered', 'r'], ['dispatched', 'daDispatched', 'r'], ['dnr', 'DNR', 'c'], ['dnrDpmo', 'DNR DPMO', 'r'], ['rts', 'RTS', 'r'], ['rtsPct', 'RTS %', 'r'], ['rtsDpmo', 'RTS DPMO', 'r']];
+    var head = COLS.map(function (c) {
+      var on = c[0] === k, lbl = c[1].indexOf('da') === 0 ? t(c[1]) : c[1];
+      return '<th class="' + c[2] + '"><button type="button" data-sort="' + c[0] + '"' + (on ? ' class="on"' : '') + '>' + (on ? '<span class="ar ' + (dir < 0 ? 'down' : 'up') + '">›</span>' : '') + lbl + '</button></th>';
+    }).join('');
+    var body = sorted.slice(0, 14).map(function (x, i) {
+      return '<tr' + (x.dnr >= 3 ? ' class="flag' : ' class="') + (rowAnim ? ' row-in' : '') + '" style="--i:' + i + '"><td>' + who(x) + '</td><td class="r"><b>' + fmt(x.delivered) + '</b></td><td class="r"><b>' + fmt(x.dispatched) + '</b></td><td class="c">' + dnrPill(x.dnr) + '</td>' +
+        '<td class="r">' + fmt(x.dnrDpmo) + '</td><td class="r' + (x.rts ? '' : ' mut') + '">' + x.rts + '</td><td class="r' + (x.rts ? '' : ' mut') + '">' + pctf(x.rtsPct, x.rts ? 2 : 0) + '</td><td class="r' + (x.rts ? '' : ' mut') + '">' + fmt(x.rtsDpmo) + '</td></tr>';
+    }).join('');
+    rowAnim = false;
+
+    mock.innerHTML = topBar(t('pageDa')) + '<div class="m-body">' +
+      '<div class="m-panel m-date m-week" data-p="week"><span class="ci">' + ICAL + '</span><div><b>' + t('daWeek', { n: wi.n }) + '</b><span>' + esc(wi.range) + '</span></div>' +
+      (live ? '<span class="m-livepill sm"><i></i>' + t('daLiveNote') + '</span>' : '<span class="m-cnt">' + t('daPastWeek') + '</span>') +
+      '<div class="m-dnav"><button type="button" data-week="-1" aria-label="Previous week"' + (weekOffset <= -11 ? ' disabled' : '') + '>‹</button><button type="button" data-week="1" aria-label="Next week"' + (live ? ' disabled' : '') + '>›</button></div></div>' +
+
+      '<div class="m-panel m-dk" data-p="kpis">' +
+      '<div class="dk"><span class="dk-h">' + t('daTotal') + '</span><b class="dk-big"' + (live ? ' data-dalive' : '') + ' data-count="' + total + '">' + fmt(total) + '</b>' + delta(w.dTotal, t('daVsLast', { n: pctf(Math.abs(w.dTotal), 1) }), false) + '</div>' +
+      '<div class="dk"><span class="dk-h">' + t('daQuality') + '</span><div class="dk-3">' +
+      '<div><b class="dk-mid" data-count="' + Math.round(w.rtsAvg * 100) + '" data-f="pct">' + pctf(w.rtsAvg, 2) + '</b><span>' + t('daRtsAvg') + '</span>' + delta(w.dRts, Math.max(.01, Math.abs(w.dRts)).toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' pp', true) + '</div>' +
+      '<div><b class="dk-mid" data-count="' + w.rts + '">' + fmt(w.rts) + '</b><span>' + t('daRtsParcels') + '</span></div>' +
+      '<div><b class="dk-mid amber" data-count="' + w.dnr + '">' + fmt(w.dnr) + '</b><span>' + t('daDnrTotal') + '</span></div></div></div>' +
+      '<div class="dk dk-att"><span class="dk-h">' + t('daAttention') + '</span><b class="dk-big red" data-count="' + w.att + '">' + w.att + '</b><span>' + t('daDnrDrivers') + '</span><button type="button" class="dk-link" data-sortdnr>' + t('daSortDnr') + ' ›</button></div></div>' +
+
+      '<div class="m-grid2" style="grid-template-columns:1fr 1.25fr;align-items:stretch">' +
+      '<div class="m-panel" data-p="top"><div class="m-ph"><h4>' + t('daTop') + '</h4><span class="m-cnt">' + t('daDeliveries') + '</span></div>' + top + '</div>' +
+      '<div class="m-panel" data-p="dnr"><div class="m-ph"><span class="rdot"></span><h4>' + t('daDnrList') + '</h4><span class="m-cnt r">' + w.att + '</span></div><table class="m-t dense"><thead><tr><th>' + t('daAssoc') + '</th><th class="c">DNR</th><th class="r">DNR DPMO</th><th class="r">RTS</th><th class="r">RTS %</th></tr></thead><tbody>' + dnrRows + '</tbody></table></div>' +
+      '</div>' +
+
+      '<div class="m-panel" data-p="table"><div class="m-ph"><h4>' + t('pageDa') + '</h4><span class="m-cnt">' + w.rows.length + '</span></div><div class="m-search">' + t('mSearch') + '</div>' +
+      '<table class="m-t dense"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table><div class="m-foot">' + esc(t('daHint')) + '</div></div>' +
+      '</div>';
+    layoutMock();
+  }
+
+  // ------------------------------------------------------------------ page menu with a futuristic switch transition
+  var tabs = document.querySelectorAll('[data-page]'), ind = document.querySelector('.pages-ind'), switching = false, urlTimer;
+  function moveInd() {
+    var b = document.querySelector('[data-page][aria-selected="true"]');
+    if (b && ind) { ind.style.left = b.offsetLeft + 'px'; ind.style.width = b.offsetWidth + 'px'; }
+  }
+  function typeUrl(u) {
+    var el = document.getElementById('url'), i = 0; clearInterval(urlTimer);
+    if (reduce) { el.textContent = u; return; }
+    urlTimer = setInterval(function () { el.textContent = u.slice(0, ++i); if (i >= u.length) clearInterval(urlTimer); }, 16);
+  }
+  function switchPage(p, fromAuto) {
+    if (p === page || switching) return;
+    if (!fromAuto) stopAuto();
+    tabs.forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.page === p)); });
+    moveInd();
+    document.getElementById('fx-t').textContent = t(PAGES[p].name);
+    typeUrl(PAGES[p].url);
+    function swap() {
+      page = p; active = PAGES[p].first;
+      document.getElementById('tour-kicker').textContent = 'LANU Board · ' + t(PAGES[p].name);
+      mock.classList.add('nocam');
+      renderMock();
+      stepsEl.classList.remove('leave'); stepsEl.classList.add('enter');
+      focusStep(active, true);
+    }
+    if (reduce) { swap(); mock.classList.remove('nocam'); return; }
+    switching = true;
+    screenEl.classList.remove('warp'); void screenEl.offsetWidth; screenEl.classList.add('warp');
+    mock.classList.add('leaving'); stepsEl.classList.add('leave');
+    setTimeout(function () {
+      swap();
+      requestAnimationFrame(function () { requestAnimationFrame(function () { mock.classList.remove('leaving'); }); });
+    }, 450);
+    setTimeout(function () { mock.classList.remove('nocam'); focusStep(active, true); }, 900);
+    setTimeout(function () { screenEl.classList.remove('warp'); stepsEl.classList.remove('enter'); switching = false; }, 1400);
+  }
+  tabs.forEach(function (b) {
+    b.addEventListener('click', function () { switchPage(b.dataset.page); });
+    b.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      var list = Array.prototype.slice.call(tabs), n = list[(list.indexOf(b) + (e.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length];
+      n.focus(); switchPage(n.dataset.page);
+    });
+  });
+  window.addEventListener('resize', moveInd);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveInd);
 
   // ------------------------------------------------------------------ guided tour
   var stepsEl = document.getElementById('steps'), nowEl = document.getElementById('step-now');
+  var PAGES = {
+    ops: { name: 'pageOps', steps: 'steps', first: 'overview', url: 'board.lanu.app/operations' },
+    da: { name: 'pageDa', steps: 'stepsDa', first: 'kpis', url: 'board.lanu.app/associates' }
+  };
+  var page = 'ops';
   var active = 'overview', auto = !reduce, timer = null, inView = false, DUR = 7000;
   function renderSteps() {
-    stepsEl.innerHTML = t('steps').map(function (s, i) {
-      return '<li class="step' + (s[0] === active ? ' on' + (auto ? ' auto' : '') : '') + '"><button type="button" data-step="' + s[0] + '" aria-current="' + (s[0] === active) + '">' +
+    stepsEl.innerHTML = t(PAGES[page].steps).map(function (s, i) {
+      return '<li style="--i:' + i + '" class="step' + (s[0] === active ? ' on' + (auto ? ' auto' : '') : '') + '"><button type="button" data-step="' + s[0] + '" aria-current="' + (s[0] === active) + '">' +
         '<span class="n">' + (i + 1) + '</span><span><span class="t">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + '</span></span><span class="prog" style="--dur:' + DUR + 'ms"></span></button></li>';
     }).join('');
-    var cur = t('steps').filter(function (s) { return s[0] === active; })[0];
+    var cur = t(PAGES[page].steps).filter(function (s) { return s[0] === active; })[0];
     nowEl.innerHTML = '<b>' + esc(cur[1]) + '</b><p>' + esc(cur[2]) + '</p>';
   }
   stepsEl.addEventListener('click', function (e) {
     var b = e.target.closest('[data-step]');
     if (!b) return;
     stopAuto();
-    if (b.dataset.step !== 'history' && dayOffset !== 0) { dayOffset = 0; renderMock(); }
+    if (page === 'ops' && b.dataset.step !== 'history' && dayOffset !== 0) { dayOffset = 0; renderMock(); }
     focusStep(b.dataset.step);
   });
 
@@ -225,7 +423,10 @@
     layoutMock();
     if (!reduce) {
       targets.forEach(function (el) { el.classList.remove('sweep'); void el.offsetWidth; el.classList.add('sweep'); });
-      if (id === 'overview') countOverview();
+      if (page === 'ops' && id === 'overview') countOverview();
+      targets.forEach(function (el) {
+        el.querySelectorAll('[data-count]').forEach(function (c) { countUp(c, Number(c.dataset.count), c.dataset.f === 'pct' ? function (v) { return pctf(v / 100, 2); } : fmt, 1100); });
+      });
     }
     if (!keep && window.innerWidth <= 980) {
       var btn = stepsEl.querySelector('.on button'); if (btn) btn.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' });
@@ -236,8 +437,9 @@
     clearTimeout(timer);
     if (!auto || !inView) return;
     timer = setTimeout(function () {
-      var ids = t('steps').map(function (s) { return s[0]; });
-      focusStep(ids[(ids.indexOf(active) + 1) % ids.length], true);
+      var ids = t(PAGES[page].steps).map(function (s) { return s[0]; }), i = ids.indexOf(active);
+      if (i === ids.length - 1) switchPage(page === 'ops' ? 'da' : 'ops', true);
+      else focusStep(ids[i + 1], true);
     }, DUR);
   }
   function stopAuto() { auto = false; clearTimeout(timer); var on = stepsEl.querySelector('.auto'); if (on) on.classList.remove('auto'); }
@@ -254,10 +456,14 @@
     var hc = document.getElementById('hv-clock'); if (hc) hc.textContent = s;
   }, 1000);
   setInterval(function () {
+    if (page === 'da' && weekOffset === 0) {
+      daLiveAdd += 1 + Math.floor(Math.random() * 3);
+      var dl = mock.querySelector('[data-dalive]'); if (dl && wk) dl.textContent = fmt(wk.total + daLiveAdd);
+    }
     if (!data || !data.live || liveDelivered >= data.totalPk - 20) return;
     liveDelivered += 1 + Math.floor(Math.random() * 3);
     var pct = liveDelivered / data.totalPk * 100;
-    var el = mock.querySelector('[data-delivered]'); if (el) el.textContent = fmt(liveDelivered);
+    var el = page === 'ops' && mock.querySelector('[data-delivered]'); if (el) el.textContent = fmt(liveDelivered);
     var bar = mock.querySelector('[data-pbar]'); if (bar) bar.style.width = pct + '%';
     var p = mock.querySelector('[data-pct]'); if (p) p.textContent = Math.floor(pct) + '%';
     var so = mock.querySelector('[data-stillout]'); if (so) so.textContent = t('mStillOut', { n: fmt(data.totalPk - liveDelivered) });
@@ -329,7 +535,7 @@
     for (var i = 0; i < 16; i++) {
       var k = tpl[i % tpl.length]; m -= between(r, 1, 4); var min = m;
       var txt = esc(k[1]).replace('{name}', '<b>' + esc(names[i]) + '</b>').replace('{route}', 'D-' + between(r, 101, 340)).replace('{n}', between(r, 6, 42));
-      items.push('<span class="tk" style="--c:' + k[0] + '"><i></i><time>' + hm((min + 1440) % 1440) + '</time><span>' + txt + '</span></span>');
+      items.push('<span class="tk" style="--c:' + k[0] + '"><i></i>' + avatar(names[i], 22) + '<time>' + hm((min + 1440) % 1440) + '</time><span>' + txt + '</span></span>');
     }
     var html = items.join('');
     document.getElementById('ticker').innerHTML = html + html.replace(/<span class="tk"/g, '<span class="tk" aria-hidden="true"');
@@ -465,6 +671,7 @@
   renderBenefits();
   renderTicker();
   observeReveal();
+  moveInd();
   if (!reduce) {
     countUp(document.getElementById('hv-count'), liveDelivered === undefined ? 8412 : liveDelivered, fmt, 1600);
     countUp(document.querySelector('.hv-num'), 64, String, 1400);
