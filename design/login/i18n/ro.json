@@ -1,0 +1,21 @@
+{
+  "langName": "Română",
+  "langLabel": "Limba",
+  "headline": "Tabla ta te așteaptă.",
+  "team": "Echipa",
+  "title": "Intră în cont",
+  "subtitle": "Bine ai revenit! Introdu datele contului tău.",
+  "error": "Emailul sau parola nu se potrivesc. Verifică-le și încearcă din nou.",
+  "required": "Introdu adresa de email și parola.",
+  "networkError": "Nu ne-am putut conecta. Verifică conexiunea la internet și încearcă din nou.",
+  "emailLabel": "Adresă de email",
+  "emailPh": "nume@companie.ro",
+  "pwLabel": "Parolă",
+  "pwPh": "Parola ta",
+  "showPw": "Arată parola",
+  "hidePw": "Ascunde parola",
+  "remember": "Ține-mă minte pe acest dispozitiv",
+  "submit": "Intră în cont",
+  "loading": "Se conectează…",
+  "success": "Conectat"
+}

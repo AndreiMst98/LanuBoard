@@ -1,0 +1,21 @@
+{
+  "langName": "English",
+  "langLabel": "Language",
+  "headline": "Your board is waiting.",
+  "team": "Team",
+  "title": "Sign in",
+  "subtitle": "Welcome back! Enter your account details.",
+  "error": "That email and password don’t match. Check them and try again.",
+  "required": "Enter your email address and password.",
+  "networkError": "We couldn’t connect. Check your internet connection and try again.",
+  "emailLabel": "Email address",
+  "emailPh": "name@company.com",
+  "pwLabel": "Password",
+  "pwPh": "Your password",
+  "showPw": "Show password",
+  "hidePw": "Hide password",
+  "remember": "Keep me signed in on this device",
+  "submit": "Sign in",
+  "loading": "Signing in…",
+  "success": "Signed in"
+}

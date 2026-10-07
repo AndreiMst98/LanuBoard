@@ -1,0 +1,21 @@
+{
+  "langName": "Deutsch",
+  "langLabel": "Sprache",
+  "headline": "Ihr Board wartet auf Sie.",
+  "team": "Team",
+  "title": "Anmelden",
+  "subtitle": "Willkommen zurück! Geben Sie Ihre Zugangsdaten ein.",
+  "error": "E-Mail-Adresse und Passwort passen nicht zusammen. Prüfen Sie Ihre Eingaben und versuchen Sie es erneut.",
+  "required": "Bitte geben Sie E-Mail-Adresse und Passwort ein.",
+  "networkError": "Die Verbindung ist fehlgeschlagen. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+  "emailLabel": "E-Mail-Adresse",
+  "emailPh": "name@firma.de",
+  "pwLabel": "Passwort",
+  "pwPh": "Ihr Passwort",
+  "showPw": "Passwort anzeigen",
+  "hidePw": "Passwort verbergen",
+  "remember": "Auf diesem Gerät angemeldet bleiben",
+  "submit": "Anmelden",
+  "loading": "Anmeldung läuft…",
+  "success": "Angemeldet"
+}

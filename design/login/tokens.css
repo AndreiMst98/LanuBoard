@@ -1,0 +1,68 @@
+/*
+ * LanuBoard login — design tokens.
+ * Every value in reference/desktop.html and reference/mobile.html maps to one of these.
+ * Import this file (or copy the variables into the app's theme) and use the variables in the implementation.
+ */
+:root {
+  /* Brand */
+  --lb-navy: #0C1B35;          /* brand panel, primary button, active language (desktop), mobile background */
+  --lb-blue: #136EB4;          /* LANU blue (exact, from the logo): highlight card, links, focus, checkbox, success button */
+  --lb-blue-dark: #0D4A7A;     /* link hover */
+  --lb-charcoal: #363636;      /* LANU grey (exact, from the logo): headings, labels, input text */
+
+  /* Neutrals */
+  --lb-white: #FFFFFF;
+  --lb-page: #F4F6F9;          /* form side / mobile sheet background */
+  --lb-text-muted: #5B6470;    /* subtitle, footer, password-toggle icon */
+  --lb-placeholder: #7D8691;   /* placeholders, idle field icons */
+  --lb-border-input: #8F98A3;  /* inputs, checkbox (≥ 3:1 on white) */
+  --lb-border-subtle: #DCE1E7; /* language switcher outline (desktop) */
+
+  /* Error */
+  --lb-error-text: #9A3412;
+  --lb-error-bg: #FFF4ED;
+  --lb-error-border: #F3C3A8;
+  --lb-error-field: #C2410C;   /* input border when aria-invalid="true" */
+
+  /* On the navy panel */
+  --lb-on-navy-card: rgba(255, 255, 255, 0.10);
+  --lb-on-navy-card-border: rgba(255, 255, 255, 0.16);
+  --lb-on-navy-line-strong: rgba(255, 255, 255, 0.60);
+  --lb-on-navy-line-soft: rgba(255, 255, 255, 0.28);
+  --lb-on-navy-outline: rgba(255, 255, 255, 0.50);       /* "LANUBOARD" tag */
+  --lb-on-navy-switcher-border: rgba(255, 255, 255, 0.30); /* mobile language switcher */
+  --lb-on-navy-switcher-bg: rgba(255, 255, 255, 0.08);
+
+  /* Typography */
+  --lb-font-display: 'Bricolage Grotesque', system-ui, sans-serif; /* 700 (600 also loaded) */
+  --lb-font-body: 'Instrument Sans', system-ui, sans-serif;        /* 400 / 500 / 600 / 700 */
+
+  /* Radii */
+  --lb-radius-check: 6px;
+  --lb-radius-lang: 9px;       /* language buttons + sliding pill */
+  --lb-radius-control: 10px;   /* inputs, primary button, error alert */
+  --lb-radius-card: 12px;      /* language switcher container, panel cards */
+  --lb-radius-sheet: 24px;     /* mobile sheet top corners */
+  --lb-radius-pill: 999px;
+
+  /* Elevation */
+  --lb-focus-ring: 0 0 0 3px rgba(19, 110, 180, 0.20);
+  --lb-shadow-card: 0 20px 40px rgba(0, 0, 0, 0.40);
+  --lb-shadow-button-hover: 0 10px 24px rgba(12, 27, 53, 0.28);
+
+  /* Sizes */
+  --lb-control-h: 48px;        /* inputs */
+  --lb-button-h: 52px;         /* primary button */
+  --lb-touch: 44px;            /* minimum touch target: language buttons, password toggle, checkbox row */
+
+  /* Motion */
+  --lb-ease-out: cubic-bezier(.2, .8, .2, 1);      /* entrances, slides */
+  --lb-ease-overshoot: cubic-bezier(.34, 1.56, .64, 1); /* pops: avatars, icons, checkbox */
+  --lb-ease-curtain: cubic-bezier(.7, 0, .2, 1);   /* desktop panel reveal */
+  --lb-ease-drag: cubic-bezier(.45, 0, .25, 1);    /* card drag loop */
+  --lb-ease-hero: cubic-bezier(.65, 0, .25, 1);    /* mobile logo travel */
+  --lb-ease-shake: cubic-bezier(.36, .07, .19, .97);
+
+  /* Pattern (isometric cubes, from the LANU cube) */
+  --lb-pattern-tile: 51.9615px 90px;
+}

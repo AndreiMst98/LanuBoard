@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LanuBoard — Login · desktop reference (≥ 1000px)</title>
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<!--
+  PIXEL REFERENCE for the LanuBoard login, desktop layout (design frame 1440×900).
+  Exported 1:1 from the design canvas. Values here are the source of truth.
+  Demo URL params: ?lang=ro|de|en  ?state=error|network|loading|success
+  The submit handler is a DEMO (loading 1.4s -> success 2s -> idle). Replace with the real auth call.
+-->
+<style>
+body{margin:0;background:#F4F6F9}
+[hidden]{display:none !important}
+a{color:#136EB4}a:hover{color:#0D4A7A}
+.lb input::placeholder{color:#7D8691}
+.lb input:focus{outline:none;border-color:#136EB4;box-shadow:0 0 0 3px rgba(19,110,180,0.2)}
+.lb a:focus-visible,.lb button:focus-visible{outline:2px solid #136EB4;outline-offset:2px}
+.lb-brand a:focus-visible{outline-color:#FFFFFF}
+.ic{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.lb-pat-panel{background-image:url(../assets/pattern-cubes-on-dark.svg);background-size:51.9615px 90px}
+.lb-word{display:inline-block;overflow:hidden;vertical-align:top;padding:.1em 0 .14em;margin:-.1em .22em -.14em 0}
+.lb-word > span{display:inline-block}
+.lb-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.lb-field{position:relative}
+.lb-ficon{position:absolute;left:14px;top:14px;color:#7D8691;pointer-events:none}
+.lb-field:focus-within .lb-ficon{color:#136EB4}
+.lb-input{width:100%;height:48px;box-sizing:border-box;border-radius:10px;border:1px solid #8F98A3;background:#FFFFFF;font-family:inherit;font-size:16px;color:#363636}
+.lb-input[aria-invalid="true"],.lb-input[aria-invalid="true"]:focus{border-color:#C2410C}
+.lb-check{position:relative;display:inline-flex;align-items:center;gap:10px;min-height:44px;cursor:pointer}
+.lb-check input{position:absolute;left:0;top:50%;width:20px;height:20px;margin:-10px 0 0;opacity:0;cursor:pointer}
+.lb-box{flex:none;width:20px;height:20px;box-sizing:border-box;border-radius:6px;border:1.5px solid #8F98A3;background:#FFFFFF;display:flex;align-items:center;justify-content:center;color:#FFFFFF}
+.lb-tick{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:12;stroke-dashoffset:12}
+.lb-check input:checked + .lb-box{background:#136EB4;border-color:#136EB4}
+.lb-check input:checked + .lb-box .lb-tick{stroke-dashoffset:0}
+.lb-check input:focus-visible + .lb-box{outline:2px solid #136EB4;outline-offset:2px}
+.lb-pill{position:absolute;top:3px;left:3px;width:52px;height:44px;border-radius:9px}
+.lb-lang{color:#363636}
+.lb-lang[aria-pressed="true"]{color:#FFFFFF}
+.lb-cur{fill:#FFFFFF;stroke:#0C1B35;stroke-width:1.5;stroke-linejoin:round}
+.lb-ok path{stroke-dasharray:22;stroke-dashoffset:0}
+.lb-btn{position:relative;overflow:hidden}
+.lb-btn.is-success{background:#136EB4 !important}
+.lb-btn-st{display:inline-flex;align-items:center;gap:10px}
+@keyframes lbspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.lb-spin{animation:none !important}}
+@media (max-width: 880px){.lb-tiles{display:none !important}.lb-brand h2{font-size:36px !important}.lb-brand img{height:72px !important}}
+
+.lb-anim .lb-curtain{animation:lbCurtain .9s cubic-bezier(.7,0,.2,1) both}
+.lb-anim .lb-curtain.lb-pat-panel{animation:lbCurtain .9s cubic-bezier(.7,0,.2,1) both,lbDrift 80s linear infinite}
+@keyframes lbCurtain{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes lbDrift{to{background-position:51.9615px 90px}}
+.lb-anim .lb-logo{animation:lbLogo .9s cubic-bezier(.2,.8,.2,1) .25s both}
+@keyframes lbLogo{from{opacity:0;transform:scale(.88) translateY(8px)}to{opacity:1;transform:none}}
+.lb-anim .lb-in{animation:lbIn .6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes lbIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.lb-anim .lb-line{transform-origin:left center;animation:lbLine .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes lbLine{from{transform:scaleX(0)}to{transform:none}}
+.lb-anim .lb-pop{animation:lbPop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes lbPop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:none}}
+.lb-anim .lb-float{animation:lbFloat 6s ease-in-out 1s infinite}
+.lb-anim .lb-float2{animation:lbFloat 7s ease-in-out 2s infinite}
+.lb-anim .lb-float3{animation:lbFloat 8s ease-in-out 1.4s infinite}
+@keyframes lbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.lb-anim .lb-ping::after{content:"";position:absolute;inset:0;border-radius:50%;background:#136EB4;animation:lbPing 2.4s cubic-bezier(0,0,.2,1) 1s infinite}
+@keyframes lbPing{0%{transform:scale(1);opacity:.7}80%,100%{transform:scale(3);opacity:0}}
+.lb-anim .lb-drag{animation:lbDrag 9s cubic-bezier(.45,0,.25,1) 1.6s infinite}
+@keyframes lbDrag{0%,14%{transform:translate(0,0) rotate(-3deg) scale(1);opacity:1}22%{transform:translate(0,-8px) rotate(-5deg) scale(1.04);opacity:1}40%{transform:translate(calc(100% + 16px),119px) rotate(2deg) scale(1.04);opacity:1}46%,64%{transform:translate(calc(100% + 16px),127px) rotate(0deg) scale(1);opacity:1}72%{transform:translate(calc(100% + 16px),127px) rotate(0deg) scale(1);opacity:0}73%{transform:translate(0,0) rotate(-3deg) scale(.96);opacity:0}82%,100%{transform:translate(0,0) rotate(-3deg) scale(1);opacity:1}}
+.lb-anim .lb-cursor{animation:lbCursor 9s ease-in-out 1.6s infinite}
+@keyframes lbCursor{0%,8%{opacity:0;transform:translate(16px,16px)}15%{opacity:1;transform:translate(0,0)}18%{opacity:1;transform:scale(.82)}22%{opacity:1;transform:scale(1)}48%{opacity:1;transform:scale(1)}52%{opacity:1;transform:scale(.82)}56%{opacity:1;transform:scale(1)}64%,100%{opacity:0;transform:translate(14px,14px)}}
+.lb-anim .lb-slot{animation:lbSlot 9s ease-in-out 1.6s infinite}
+@keyframes lbSlot{0%,28%{border-color:rgba(255,255,255,0.4);background-color:rgba(19,110,180,0)}40%,64%{border-color:rgba(255,255,255,0.85);background-color:rgba(19,110,180,0.18)}74%,100%{border-color:rgba(255,255,255,0.4);background-color:rgba(19,110,180,0)}}
+.lb-anim .lb-wa > span{animation:lbWordA .8s cubic-bezier(.2,.8,.2,1) both}
+.lb-anim .lb-wb > span{animation:lbWordB .8s cubic-bezier(.2,.8,.2,1) both}
+@keyframes lbWordA{from{transform:translateY(110%)}to{transform:none}}
+@keyframes lbWordB{from{transform:translateY(110%)}to{transform:none}}
+.lb-anim .lb-sa{animation:lbSwapA .45s cubic-bezier(.2,.8,.2,1)}
+.lb-anim .lb-sb{animation:lbSwapB .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes lbSwapA{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes lbSwapB{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.lb-anim .lb-alert{animation:lbShake .45s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes lbShake{0%{opacity:0;transform:translateX(0)}20%{opacity:1;transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}100%{opacity:1;transform:none}}
+.lb-anim .lb-eye{animation:lbEye .3s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes lbEye{from{opacity:0;transform:scale(.6) rotate(-20deg)}to{opacity:1;transform:none}}
+.lb-anim .lb-okfx{animation:lbPop .4s cubic-bezier(.34,1.56,.64,1) both}
+.lb-anim .lb-ok path{animation:lbDraw .45s ease .12s both}
+@keyframes lbDraw{from{stroke-dashoffset:22}to{stroke-dashoffset:0}}
+.lb-anim .lb-btn::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.22),rgba(255,255,255,0));transform:skewX(-20deg);opacity:0;pointer-events:none}
+.lb-anim .lb-btn:hover::after{animation:lbSheen .8s ease}
+@keyframes lbSheen{from{opacity:1;transform:skewX(-20deg) translateX(0)}to{opacity:1;transform:skewX(-20deg) translateX(600%)}}
+.lb-anim .lb-btn{transition:transform .15s ease,box-shadow .2s ease,background-color .3s ease}
+.lb-anim .lb-btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(12,27,53,0.28)}
+.lb-anim .lb-btn:active{transform:scale(.99);box-shadow:none}
+.lb-anim .lb-arrow{transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.lb-anim .lb-btn:hover .lb-arrow{transform:translateX(4px)}
+.lb-anim input{transition:border-color .15s ease,box-shadow .15s ease}
+.lb-anim .lb-ficon{transition:color .2s ease,transform .25s cubic-bezier(.34,1.56,.64,1)}
+.lb-anim .lb-field:focus-within .lb-ficon{transform:scale(1.12)}
+.lb-anim .lb-box{transition:background-color .2s ease,border-color .2s ease,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.lb-anim .lb-tick{transition:stroke-dashoffset .3s ease .05s}
+.lb-anim .lb-check:active .lb-box{transform:scale(.86)}
+.lb-anim .lb-pill{transition:transform .35s cubic-bezier(.2,.8,.2,1),background-color .3s ease}
+.lb-anim .lb-lang{transition:color .25s ease}
+.lb-anim .lb-d1{animation-delay:.06s}.lb-anim .lb-d2{animation-delay:.12s}.lb-anim .lb-d3{animation-delay:.18s}.lb-anim .lb-d4{animation-delay:.24s}.lb-anim .lb-d5{animation-delay:.3s}.lb-anim .lb-d6{animation-delay:.36s}.lb-anim .lb-d7{animation-delay:.42s}
+.lb-anim .lb-t1{animation-delay:.45s}.lb-anim .lb-t2{animation-delay:.55s}.lb-anim .lb-t3{animation-delay:.65s}.lb-anim .lb-t4{animation-delay:.75s}.lb-anim .lb-t5{animation-delay:.85s}.lb-anim .lb-t6{animation-delay:.95s}
+.lb-anim .lb-wa > .lb-k1,.lb-anim .lb-wb > .lb-k1{animation-delay:.5s}.lb-anim .lb-wa > .lb-k2,.lb-anim .lb-wb > .lb-k2{animation-delay:.58s}.lb-anim .lb-wa > .lb-k3,.lb-anim .lb-wb > .lb-k3{animation-delay:.66s}.lb-anim .lb-wa > .lb-k4,.lb-anim .lb-wb > .lb-k4{animation-delay:.74s}.lb-anim .lb-wa > .lb-k5,.lb-anim .lb-wb > .lb-k5{animation-delay:.82s}.lb-anim .lb-wa > .lb-k6,.lb-anim .lb-wb > .lb-k6{animation-delay:.9s}
+@media (prefers-reduced-motion: reduce){.lb-anim,.lb-anim *,.lb-anim *::after{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<main class="lb lb-anim" id="lb" style="min-height: 100vh; display: flex; flex-wrap: wrap; font-family: 'Instrument Sans', system-ui, sans-serif; color: #363636; background-color: #F4F6F9">
+
+<section class="lb-brand lb-curtain lb-pat-panel" id="lb-panel" style="flex: 1 1 520px; min-width: 0; box-sizing: border-box; padding: 40px 56px; background-color: #0C1B35; color: #FFFFFF; display: flex; flex-direction: column; justify-content: space-between; gap: 48px; overflow: hidden">
+<div class="lb-logo" style="display: inline-flex; align-self: flex-start">
+<img src="../assets/lanu-logo-on-dark.png" width="640" height="459" alt="LANU Services GmbH" style="display: block; height: 104px; width: auto">
+</div>
+
+<div class="lb-tiles" aria-hidden="true" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: 100%; max-width: 540px; align-items: start">
+
+<div data-depth="-8" style="transition: transform .5s cubic-bezier(.2,.8,.2,1)">
+<div class="lb-in lb-d1" style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 8px; height: 16px"><div class="lb-ping" style="position: relative; width: 8px; height: 8px; border-radius: 50%; background: #136EB4"></div><div class="lb-line lb-t1" style="height: 8px; width: 52%; border-radius: 4px; background: rgba(255,255,255,0.45)"></div></div>
+<div class="lb-float" style="padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: 10px"><div class="lb-line lb-t2" style="height: 8px; width: 82%; border-radius: 4px; background: rgba(255,255,255,0.6)"></div><div class="lb-line lb-t3" style="height: 8px; width: 56%; border-radius: 4px; background: rgba(255,255,255,0.28)"></div><div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px"><div class="lb-pop lb-t4" style="width: 40px; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.18)"></div><div class="lb-pop lb-t5" style="width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.35)"></div></div></div>
+<div class="lb-float2" style="padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: 10px"><div class="lb-line lb-t3" style="height: 8px; width: 64%; border-radius: 4px; background: rgba(255,255,255,0.6)"></div><div class="lb-line lb-t4" style="height: 8px; width: 38%; border-radius: 4px; background: rgba(255,255,255,0.28)"></div></div>
+<div class="lb-float3" style="padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: 10px"><div style="height: 56px; border-radius: 8px; background: rgba(255,255,255,0.12)"></div><div class="lb-line lb-t4" style="height: 8px; width: 90%; border-radius: 4px; background: rgba(255,255,255,0.6)"></div><div class="lb-line lb-t5" style="height: 8px; width: 68%; border-radius: 4px; background: rgba(255,255,255,0.28)"></div></div>
+</div>
+</div>
+
+<div data-depth="-16" style="position: relative; z-index: 2; transition: transform .5s cubic-bezier(.2,.8,.2,1)">
+<div class="lb-in lb-d2" style="display: flex; flex-direction: column; gap: 12px; margin-top: 32px">
+<div style="display: flex; align-items: center; gap: 8px; height: 16px"><div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.6)"></div><div class="lb-line lb-t2" style="height: 8px; width: 40%; border-radius: 4px; background: rgba(255,255,255,0.45)"></div></div>
+<div class="lb-drag" style="position: relative; padding: 14px; border-radius: 12px; background: #136EB4; display: flex; flex-direction: column; gap: 10px; transform: rotate(-3deg); box-shadow: 0 20px 40px rgba(0,0,0,0.4)">
+<div class="lb-line lb-t3" style="height: 8px; width: 78%; border-radius: 4px; background: rgba(255,255,255,0.9)"></div>
+<div class="lb-line lb-t4" style="height: 8px; width: 50%; border-radius: 4px; background: rgba(255,255,255,0.45)"></div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px"><div class="lb-pop lb-t4" style="width: 48px; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.22)"></div><div style="display: flex"><div class="lb-pop lb-t5" style="width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; border: 2px solid #136EB4"></div><div class="lb-pop lb-t6" style="width: 20px; height: 20px; border-radius: 50%; background: #0C1B35; border: 2px solid #136EB4; margin-left: -8px"></div></div></div>
+<div class="lb-cursor" style="position: absolute; right: 6px; bottom: -24px; display: flex; align-items: flex-start; gap: 2px; opacity: 0; pointer-events: none">
+<svg width="20" height="20" viewBox="0 0 24 24"><path class="lb-cur" d="M5 3l14 7.5-6.2 1.6L10 18.5z"></path></svg>
+<span data-i18n="team" style="margin-top: 14px; padding: 2px 8px; border-radius: 999px; background: #FFFFFF; color: #0C1B35; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap">Echipa</span>
+</div>
+</div>
+<div class="lb-float3" style="padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: 10px"><div class="lb-line lb-t4" style="height: 8px; width: 70%; border-radius: 4px; background: rgba(255,255,255,0.6)"></div><div class="lb-line lb-t5" style="height: 8px; width: 46%; border-radius: 4px; background: rgba(255,255,255,0.28)"></div></div>
+</div>
+</div>
+
+<div data-depth="-12" style="transition: transform .5s cubic-bezier(.2,.8,.2,1)">
+<div class="lb-in lb-d3" style="display: flex; flex-direction: column; gap: 12px; margin-top: 64px">
+<div style="display: flex; align-items: center; gap: 8px; height: 16px"><div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.6)"></div><div class="lb-line lb-t3" style="height: 8px; width: 60%; border-radius: 4px; background: rgba(255,255,255,0.45)"></div></div>
+<div class="lb-float2" style="padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: 10px"><div class="lb-line lb-t4" style="height: 8px; width: 86%; border-radius: 4px; background: rgba(255,255,255,0.6)"></div><div class="lb-line lb-t5" style="height: 8px; width: 60%; border-radius: 4px; background: rgba(255,255,255,0.28)"></div><div style="display: flex; justify-content: flex-end; margin-top: 6px"><div class="lb-pop lb-t6" style="width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.35)"></div></div></div>
+<div class="lb-slot" style="height: 72px; border-radius: 12px; border: 1.5px dashed rgba(255,255,255,0.4)"></div>
+</div>
+</div>
+</div>
+
+<div class="lb-in lb-d4" style="max-width: 520px">
+<div data-depth="-6" style="display: flex; flex-direction: column; align-items: flex-start; gap: 16px; transition: transform .5s cubic-bezier(.2,.8,.2,1)">
+<span style="padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.5); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase">LanuBoard</span>
+<h2 id="lb-headline" style="margin: 0; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 56px; line-height: 1.02; font-weight: 700; letter-spacing: -0.025em"></h2>
+</div>
+</div>
+</section>
+
+<section style="flex: 1 1 480px; min-width: 0; box-sizing: border-box; padding: 32px 24px; display: flex; flex-direction: column; gap: 32px">
+<div class="lb-in" style="display: flex; justify-content: flex-end">
+<div role="group" data-i18n-aria="langLabel" aria-label="Limba" style="position: relative; display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; border: 1px solid #DCE1E7; background: #FFFFFF">
+<div class="lb-pill" id="lb-pill" aria-hidden="true" style="background: #0C1B35; transform: translateX(0px)"></div>
+<button type="button" class="lb-lang" data-lang="ro" aria-pressed="true" aria-label="Română" lang="ro" style="position: relative; z-index: 1; min-width: 52px; height: 44px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer">RO</button>
+<button type="button" class="lb-lang" data-lang="de" aria-pressed="false" aria-label="Deutsch" lang="de" style="position: relative; z-index: 1; min-width: 52px; height: 44px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer">DE</button>
+<button type="button" class="lb-lang" data-lang="en" aria-pressed="false" aria-label="English" lang="en" style="position: relative; z-index: 1; min-width: 52px; height: 44px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer">EN</button>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; align-items: center; justify-content: center">
+<form class="lb-form" id="lb-form" novalidate style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 24px">
+<div class="lb-in lb-d1" style="display: flex; flex-direction: column; gap: 8px">
+<h1 data-i18n="title" style="margin: 0; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 36px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; color: #363636">Intră în cont</h1>
+<p data-i18n="subtitle" style="margin: 0; font-size: 16px; line-height: 1.5; color: #5B6470">Bine ai revenit! Introdu datele contului tău.</p>
+</div>
+
+<div role="alert" class="lb-alert" id="lb-alert" hidden style="display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; background: #FFF4ED; border: 1px solid #F3C3A8; color: #9A3412; font-size: 14px; line-height: 1.45">
+<svg class="ic" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5"></path><path d="M12 16.5h.01"></path></svg>
+<span id="lb-alert-text" data-i18n="error">Emailul sau parola nu se potrivesc. Verifică-le și încearcă din nou.</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div class="lb-in lb-d2" style="display: flex; flex-direction: column; gap: 8px">
+<label for="lb-email" data-i18n="emailLabel" style="font-size: 14px; font-weight: 600; color: #363636">Adresă de email</label>
+<div class="lb-field">
+<svg class="ic lb-ficon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>
+<input class="lb-input" id="lb-email" type="email" name="email" autocomplete="username" required data-i18n-placeholder="emailPh" placeholder="nume@companie.ro" style="padding: 0 14px 0 44px">
+</div>
+</div>
+
+<div class="lb-in lb-d3" style="display: flex; flex-direction: column; gap: 8px">
+<label for="lb-password" data-i18n="pwLabel" style="font-size: 14px; font-weight: 600; color: #363636">Parolă</label>
+<div class="lb-field">
+<svg class="ic lb-ficon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>
+<input class="lb-input" id="lb-password" type="password" name="password" autocomplete="current-password" required data-i18n-placeholder="pwPh" placeholder="Parola ta" style="padding: 0 52px 0 44px">
+<button type="button" id="lb-pw-toggle" aria-label="Arată parola" aria-controls="lb-password" style="position: absolute; right: 2px; top: 2px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: transparent; color: #5B6470; cursor: pointer">
+<svg class="ic lb-eye" data-eye="show" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+<svg class="ic lb-eye" data-eye="hide" hidden width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.4"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>
+</button>
+</div>
+</div>
+</div>
+
+<label class="lb-check lb-in lb-d4" style="align-self: flex-start; font-size: 14px; color: #363636">
+<input type="checkbox" name="remember" id="lb-remember">
+<span class="lb-box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12"><path class="lb-tick" d="M2.5 6.2 5 8.6 9.6 3.6"></path></svg></span>
+<span data-i18n="remember">Ține-mă minte pe acest dispozitiv</span>
+</label>
+
+<div class="lb-in lb-d5">
+<button type="submit" class="lb-btn" id="lb-submit" style="width: 100%; height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 10px; background: #0C1B35; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer">
+<span class="lb-btn-st" data-st="loading" hidden><span class="lb-spin" aria-hidden="true" style="width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); border-top-color: #FFFFFF; animation: lbspin 0.8s linear infinite"></span><span data-i18n="loading">Se conectează…</span></span>
+<span class="lb-btn-st" data-st="success" hidden><svg class="ic lb-ok lb-okfx" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg><span data-i18n="success">Conectat</span></span>
+<span class="lb-btn-st" data-st="idle"><span data-i18n="submit">Intră în cont</span><svg class="ic lb-arrow" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg></span>
+</button>
+</div>
+</form>
+</div>
+
+<footer class="lb-in lb-d6" style="display: flex; justify-content: center; font-size: 13px; color: #5B6470">
+<span>© 2026 LANU Services GmbH</span>
+</footer>
+</section>
+</main>
+
+<script>
+(function () {
+  var TEXT = /*I18N:START*/{"ro":{"langName":"Română","langLabel":"Limba","headline":"Tabla ta te așteaptă.","team":"Echipa","title":"Intră în cont","subtitle":"Bine ai revenit! Introdu datele contului tău.","error":"Emailul sau parola nu se potrivesc. Verifică-le și încearcă din nou.","required":"Introdu adresa de email și parola.","networkError":"Nu ne-am putut conecta. Verifică conexiunea la internet și încearcă din nou.","emailLabel":"Adresă de email","emailPh":"nume@companie.ro","pwLabel":"Parolă","pwPh":"Parola ta","showPw":"Arată parola","hidePw":"Ascunde parola","remember":"Ține-mă minte pe acest dispozitiv","submit":"Intră în cont","loading":"Se conectează…","success":"Conectat"},"de":{"langName":"Deutsch","langLabel":"Sprache","headline":"Ihr Board wartet auf Sie.","team":"Team","title":"Anmelden","subtitle":"Willkommen zurück! Geben Sie Ihre Zugangsdaten ein.","error":"E-Mail-Adresse und Passwort passen nicht zusammen. Prüfen Sie Ihre Eingaben und versuchen Sie es erneut.","required":"Bitte geben Sie E-Mail-Adresse und Passwort ein.","networkError":"Die Verbindung ist fehlgeschlagen. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.","emailLabel":"E-Mail-Adresse","emailPh":"name@firma.de","pwLabel":"Passwort","pwPh":"Ihr Passwort","showPw":"Passwort anzeigen","hidePw":"Passwort verbergen","remember":"Auf diesem Gerät angemeldet bleiben","submit":"Anmelden","loading":"Anmeldung läuft…","success":"Angemeldet"},"en":{"langName":"English","langLabel":"Language","headline":"Your board is waiting.","team":"Team","title":"Sign in","subtitle":"Welcome back! Enter your account details.","error":"That email and password don’t match. Check them and try again.","required":"Enter your email address and password.","networkError":"We couldn’t connect. Check your internet connection and try again.","emailLabel":"Email address","emailPh":"name@company.com","pwLabel":"Password","pwPh":"Your password","showPw":"Show password","hidePw":"Hide password","remember":"Keep me signed in on this device","submit":"Sign in","loading":"Signing in…","success":"Signed in"}}/*I18N:END*/;
+  var LANGS = ['ro', 'de', 'en'];
+  var PILL_STEP = 54; // button min-width 52px + gap 2px
+
+  var params = new URLSearchParams(location.search);
+  var root = document.getElementById('lb');
+  var form = document.getElementById('lb-form');
+  var alertBox = document.getElementById('lb-alert');
+  var submitBtn = document.getElementById('lb-submit');
+  var pwInput = document.getElementById('lb-password');
+  var pwToggle = document.getElementById('lb-pw-toggle');
+  var headline = document.getElementById('lb-headline');
+  var pill = document.getElementById('lb-pill');
+  var lang = TEXT[params.get('lang')] ? params.get('lang') : 'ro';
+  var swap = 0;
+  var showPw = false;
+  var timers = [];
+
+  function t(key) { return TEXT[lang][key]; }
+
+  // The headline animates word by word; screen readers get the whole sentence from a visually hidden copy.
+  function renderHeadline() {
+    headline.textContent = '';
+    var sr = document.createElement('span');
+    sr.className = 'lb-sr';
+    sr.textContent = t('headline');
+    var words = document.createElement('span');
+    words.setAttribute('aria-hidden', 'true');
+    headline.appendChild(sr);
+    headline.appendChild(words);
+    t('headline').split(' ').forEach(function (word, i) {
+      var outer = document.createElement('span');
+      outer.className = 'lb-word ' + (swap % 2 ? 'lb-wb' : 'lb-wa');
+      var inner = document.createElement('span');
+      inner.className = 'lb-k' + Math.min(i + 1, 6);
+      inner.textContent = word;
+      outer.appendChild(inner);
+      words.appendChild(outer);
+    });
+  }
+
+  function applyLang(animate) {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) { el.placeholder = t(el.dataset.i18nPlaceholder); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+    pwToggle.setAttribute('aria-label', showPw ? t('hidePw') : t('showPw'));
+    document.querySelectorAll('.lb-lang').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
+    pill.style.transform = 'translateX(' + LANGS.indexOf(lang) * PILL_STEP + 'px)';
+    if (animate) {
+      swap += 1;
+      form.classList.remove('lb-sa', 'lb-sb');
+      form.classList.add(swap % 2 ? 'lb-sa' : 'lb-sb');
+    }
+    renderHeadline();
+  }
+
+  var emailInput = document.getElementById('lb-email');
+  var alertText = document.getElementById('lb-alert-text');
+
+  function showAlert(key) {
+    alertBox.hidden = true;
+    void alertBox.offsetWidth; // restart the shake when the alert is shown again
+    alertText.dataset.i18n = key;
+    alertText.textContent = t(key);
+    alertBox.hidden = false;
+  }
+
+  // st: 'idle' | 'loading' | 'success' | 'error' (wrong credentials) | 'network' (request failed / 5xx)
+  function setState(st) {
+    if (st === 'error') {
+      showAlert('error');
+      emailInput.setAttribute('aria-invalid', 'true');
+      pwInput.setAttribute('aria-invalid', 'true');
+    } else if (st === 'network') {
+      showAlert('networkError');
+    } else if (st !== 'idle') {
+      alertBox.hidden = true;
+    }
+    submitBtn.classList.toggle('is-success', st === 'success');
+    submitBtn.setAttribute('aria-busy', String(st === 'loading'));
+    submitBtn.querySelectorAll('[data-st]').forEach(function (el) {
+      el.hidden = el.dataset.st !== (st === 'loading' || st === 'success' ? st : 'idle');
+    });
+  }
+
+  document.querySelectorAll('.lb-lang').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (b.dataset.lang === lang) return;
+      lang = b.dataset.lang;
+      applyLang(true);
+    });
+  });
+
+  pwToggle.addEventListener('click', function () {
+    showPw = !showPw;
+    pwInput.type = showPw ? 'text' : 'password';
+    pwToggle.setAttribute('aria-label', showPw ? t('hidePw') : t('showPw'));
+    pwToggle.querySelector('[data-eye="show"]').hidden = showPw;
+    pwToggle.querySelector('[data-eye="hide"]').hidden = !showPw;
+  });
+
+  // Errors clear as soon as the user edits the field they belong to.
+  [emailInput, pwInput].forEach(function (input) {
+    input.addEventListener('input', function () {
+      input.removeAttribute('aria-invalid');
+      if (!form.querySelector('[aria-invalid="true"]')) alertBox.hidden = true;
+    });
+  });
+
+  // DEMO submit. Production: loading while the auth request is pending, then success (redirect) or error.
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    timers.forEach(clearTimeout);
+    var empty = [emailInput, pwInput].filter(function (i) { return !i.value.trim(); });
+    if (empty.length) {
+      empty.forEach(function (i) { i.setAttribute('aria-invalid', 'true'); });
+      showAlert('required');
+      empty[0].focus();
+      return;
+    }
+    setState('loading');
+    timers = [
+      setTimeout(function () { setState('success'); }, 1400),
+      setTimeout(function () { setState('idle'); }, 3400)
+    ];
+  });
+
+  // Mouse parallax on the brand panel (desktop only, never with reduced motion).
+  var panel = document.getElementById('lb-panel');
+  var layers = panel.querySelectorAll('[data-depth]');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var raf = null, nx = 0, ny = 0;
+  function paint() {
+    raf = null;
+    layers.forEach(function (el) {
+      var d = parseFloat(el.dataset.depth);
+      el.style.transform = 'translate(' + (nx * d).toFixed(1) + 'px, ' + (ny * d).toFixed(1) + 'px)';
+    });
+  }
+  panel.addEventListener('mousemove', function (e) {
+    if (reduce.matches) return;
+    var r = panel.getBoundingClientRect();
+    nx = (e.clientX - r.left) / r.width - 0.5;
+    ny = (e.clientY - r.top) / r.height - 0.5;
+    if (!raf) raf = requestAnimationFrame(paint);
+  });
+  panel.addEventListener('mouseleave', function () { nx = 0; ny = 0; if (!raf) raf = requestAnimationFrame(paint); });
+
+  applyLang(false);
+  var initial = params.get('state');
+  setState(['error', 'network', 'loading', 'success'].indexOf(initial) >= 0 ? initial : 'idle');
+})();
+</script>
+</body>
+</html>
