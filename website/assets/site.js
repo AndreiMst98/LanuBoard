@@ -109,7 +109,7 @@
       '<span class="m-livepill"><i></i>' + t('mLive') + ' <span data-clock>' + nowStr() + '</span></span>' +
       '<div class="m-topr"><span class="m-seg"><span>RO</span><span' + (lang === 'de' ? ' class="on"' : '') + '>DE</span><span' + (lang === 'en' ? ' class="on"' : '') + '>EN</span></span><span class="m-ic"><em>4</em></span><span class="m-ic"></span><span class="m-user"><i>D</i>' + t('mDispatcher') + '</span></div></div>';
   }
-  function renderMock() { if (page === 'da') renderDa(); else renderOps(); }
+  function renderMock() { if (page === 'da') renderDa(); else if (page === 'cp') renderCp(); else renderOps(); }
   function renderOps() {
     data = makeDay(dayOffset);
     if (dayOffset !== 0 || liveDelivered === undefined) liveDelivered = data.delivered;
@@ -174,9 +174,10 @@
   }
 
   mock.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr]');
+    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr],[data-cp-act]');
     if (!b || b.disabled) return;
     stopAuto();
+    if (b.dataset.cpAct) { cpAction(b.dataset.cpAct, b.dataset.v, b); return; }
     if (b.dataset.day) {
       dayOffset = Math.max(-59, Math.min(0, dayOffset + Number(b.dataset.day)));
       renderMock(); focusStep('history', true);
@@ -228,17 +229,18 @@
 
   // ------------------------------------------------------------------ Delivery Associates page (fictional drivers)
   var weekOffset = 0, daSort = { k: 'delivered', d: -1 }, rowAnim = false, daLiveAdd = 0, wk;
-  var ROSTER = (function () {
+  function rosterOf(count) {
     var r = rng(555), F = NAMES.map(function (n) { return n.split(' ')[0]; }), L = NAMES.map(function (n) { return n.split(' ')[1]; });
     var out = [], seen = {}, AL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    while (out.length < 66) {
+    while (out.length < count) {
       var n = F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)];
       if (seen[n]) continue; seen[n] = 1;
       var id = 'A'; for (var i = 0; i < 13; i++) id += AL[Math.floor(r() * AL.length)];
       out.push({ name: n, id: id });
     }
     return out;
-  })();
+  }
+  var ROSTER = rosterOf(66);
   function pctf(v, d) { return v.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) + '%'; }
   function makeWeek(off, shallow) {
     var r = rng(9100 + off * 131), idx = shuffle(ROSTER.map(function (x, i) { return i; }), r);
@@ -321,6 +323,167 @@
     layoutMock();
   }
 
+
+  // ------------------------------------------------------------------ Company phones page (fictional drivers, masked numbers)
+  var CPR = rosterOf(100), cp, cpSec = 3, cpFilter = 'all', cpOpen = null, cpOtherN = 0, cpStaffNext = 0, cpSpare = 0;
+  function fakePhone(r) { return '+49 1' + ['51', '57', '60', '76', '79'][Math.floor(r() * 5)] + ' •••• ' + ('000' + between(r, 0, 9999)).slice(-4); }
+  function makePhones() {
+    var r = rng(31337), idx = shuffle(CPR.slice(0, 78).map(function (x, i) { return i; }), r);
+    var kind = {};
+    idx.forEach(function (v, k) { kind[v] = k < 4 ? 'missing' : k < 13 ? 'changed' : k < 18 ? 'new' : k < 24 ? 'inactive' : 'stable'; });
+    var rows = CPR.slice(0, 78).map(function (d, i) {
+      var k = kind[i], x = { name: d.name, id: d.id, dev: 'S-' + between(r, 101, 399), state: k === 'inactive' ? 'stable' : k };
+      x.onRoute = k === 'inactive' ? between(r, 15, 30) : k === 'missing' ? between(r, 0, 6) : (r() < .85 ? 0 : between(r, 1, 8));
+      x.phone = k === 'missing' ? null : fakePhone(r);
+      x.numFor = k === 'missing' ? null : k === 'changed' || k === 'new' ? between(r, 0, 6) : between(r, 8, 26);
+      x.first = (x.numFor || 0) + between(r, 0, 30);
+      if (k === 'changed') { x.prev = fakePhone(r); x.prevFrom = x.numFor + between(r, 12, 60); }
+      if (k === 'missing') x.noPhoneRoutes = between(r, 1, 4);
+      return x;
+    }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var reg = [];
+    rows.forEach(function (x) {
+      if (x.phone) reg.push({ phone: x.phone, holder: x.name, first: x.first, last: x.onRoute });
+      if (x.prev) reg.push({ phone: x.prev, holder: '—', first: x.prevFrom, last: x.numFor + 1 });
+    });
+    reg.sort(function (a, b) { return a.phone.replace(/\D/g, '') < b.phone.replace(/\D/g, '') ? -1 : 1; });
+    var staff = CPR.slice(78, 84).map(function (d) { return { name: d.name, phone: fakePhone(r) }; });
+    var active = rows.filter(function (x) { return x.onRoute <= 14; });
+    return { rows: rows, reg: reg, staff: staff, other: [], active: active.length,
+      withNum: active.filter(function (x) { return x.phone; }).length, inactive: rows.length - active.length,
+      changes: rows.filter(function (x) { return x.state === 'changed' || x.state === 'new'; }).sort(function (a, b) { return a.numFor - b.numFor; }),
+      missing: rows.filter(function (x) { return x.state === 'missing'; }), r: r };
+  }
+  function dl(n) { return n === 0 ? t('cpToday') : t('cpDays', { n: n }); }
+  function cpPill(st) { return st === 'changed' ? '<span class="m-pill o">' + t('cpChanged') + '</span>' : st === 'new' ? '<span class="m-pill g">' + t('cpNew') + '</span>' : st === 'missing' ? '<span class="m-pill r">' + t('cpMissing') + '</span>' : '<span class="m-pill">' + t('cpStable') + '</span>'; }
+  function ago() { return '<span class="m-ago" data-ago>' + t('mAgoS', { n: cpSec }) + '</span>'; }
+  var IC = {
+    plus: '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+    edit: '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+    del: '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+    tag: '<svg class="ic" width="15" height="15" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M10.5 18.5h3"/></svg>'
+  };
+  function cpListInner() {
+    var rows = cp.rows.filter(function (x) {
+      return cpFilter === 'changed' ? x.state === 'changed' || x.state === 'new' : cpFilter === 'none' ? x.state === 'missing' : cpFilter === 'inactive' ? x.onRoute > 14 : true;
+    });
+    var F = [['all', 'cpAll'], ['changed', 'cpChangedF'], ['none', 'cpNoneF'], ['inactive', 'cpInactF']];
+    var seg = F.map(function (f) { return '<button type="button" data-cp-act="filter" data-v="' + f[0] + '"' + (cpFilter === f[0] ? ' class="on"' : '') + '>' + t(f[1]) + (f[0] === 'none' ? ' <em>' + cp.missing.length + '</em>' : '') + '</button>'; }).join('');
+    var body = rows.slice(0, 14).map(function (x, i) {
+      return '<tr data-cp-act="open" data-v="' + x.id + '" class="' + (x.state === 'missing' ? 'flag' : '') + (cpOpen === x.id ? ' sel' : '') + ' row-in" style="--i:' + i + '"><td>' + who(x) + '</td><td>' + (x.phone || '–') + '</td><td>' + cpPill(x.state) + '</td><td>' + dl(x.onRoute) + '</td><td>' + (x.numFor === null ? '–' : dl(x.numFor)) + '</td></tr>';
+    }).join('');
+    return '<div class="m-ph"><h4>' + t('cpList') + '</h4><span class="m-cnt">' + rows.length + '</span>' + ago() + '</div>' +
+      '<div class="cp-tools"><span class="cp-seg">' + seg + '</span><span class="m-search">' + t('cpSearch') + '</span></div>' +
+      '<table class="m-t dense cp-list"><thead><tr><th>' + t('mDriver') + '</th><th>' + t('cpPhone') + '</th><th>' + t('cpState') + '</th><th>' + t('cpOnRoute') + '</th><th>' + t('cpNumberFor') + '</th></tr></thead><tbody>' + body + '</tbody></table>' +
+      '<div class="m-foot">' + t('cpListHint') + '</div>' + (cpOpen ? cpDrawer() : '');
+  }
+  function cpDrawer() {
+    var x = cp.rows.filter(function (y) { return y.id === cpOpen; })[0]; if (!x) return '';
+    var tl = '';
+    if (x.phone) tl += '<li class="cur"><b>' + x.phone + '</b><span>' + (x.numFor ? t('cpCurrentFor', { n: x.numFor }) : t('cpCurrentToday')) + '</span></li>';
+    else tl += '<li class="miss"><b>' + t('cpNoNumber') + '</b><span>' + t('cpRoutesNo', { n: x.noPhoneRoutes }) + '</span></li>';
+    if (x.prev) tl += '<li><b>' + x.prev + '</b><span>' + t('cpPrevFor', { a: x.prevFrom, b: x.numFor }) + '</span></li>';
+    tl += '<li><b>' + t('cpFirstScan') + '</b><span>' + t('cpDaysAgo', { n: (x.prevFrom || x.first) + 3 }) + '</span></li>';
+    return '<div class="cp-drawer"><div class="cp-dh">' + avatar(x.name, 44) + '<span><b>' + esc(x.name) + '</b><small>' + x.id + '</small></span><button type="button" class="cp-x" data-cp-act="close" aria-label="' + t('cpClose') + '">×</button></div>' +
+      '<div class="cp-facts"><div><span>' + t('cpState') + '</span>' + cpPill(x.state) + '</div><div><span>' + t('cpLastRoute') + '</span><b>' + dl(x.onRoute) + '</b></div><div><span>' + t('cpScanner') + '</span><b>' + x.dev + '</b></div><div><span>' + t('cpPhone') + '</span><b>' + (x.phone || '–') + '</b></div></div>' +
+      '<h5 class="cp-h5">' + t('cpHistory') + '</h5><ul class="cp-tl">' + tl + '</ul></div>';
+  }
+  function cpStaffInner(added) {
+    var rows = cp.staff.map(function (x, i) {
+      return '<tr' + (added && i === cp.staff.length - 1 ? ' class="add-in"' : '') + '><td><span class="da">' + avatar(x.name, 30) + '<b>' + esc(x.name) + '</b></span></td><td>' + x.phone + '</td><td><span class="cp-acts"><button type="button" class="cp-ib" data-cp-act="edit" data-v="' + i + '" aria-label="' + t('cpEdit') + '">' + IC.edit + '</button><button type="button" class="cp-ib del" data-cp-act="delstaff" data-v="' + i + '" aria-label="' + t('cpDelete') + '">' + IC.del + '</button></span></td></tr>';
+    }).join('');
+    return '<div class="m-ph"><h4>' + t('cpStaff') + '</h4><span class="m-cnt">' + cp.staff.length + '</span><button type="button" class="cp-btn" data-cp-act="addstaff">' + IC.plus + t('cpAddStaff') + '</button></div>' +
+      '<table class="m-t"><thead><tr><th>' + t('cpStaffCol') + '</th><th>' + t('cpPhone') + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table><div class="m-foot">' + t('cpStaffHint') + '</div>';
+  }
+  function cpOtherInner(added) {
+    var rows = cp.other.map(function (x, i) {
+      return '<tr' + (added && i === cp.other.length - 1 ? ' class="add-in"' : '') + '><td><span class="da"><span class="cp-oi">' + IC.tag + '</span><b>' + esc(t('cpOtherLabels')[x.l % 4]) + '</b></span></td><td>' + x.phone + '</td><td><span class="cp-acts"><button type="button" class="cp-ib del" data-cp-act="delother" data-v="' + i + '" aria-label="' + t('cpDelete') + '">' + IC.del + '</button></span></td></tr>';
+    }).join('');
+    return '<div class="m-ph"><h4>' + t('cpOther') + '</h4><span class="m-cnt">' + cp.other.length + '</span><button type="button" class="cp-btn" data-cp-act="addother">' + IC.plus + t('cpAddNum') + '</button></div>' +
+      (rows ? '<table class="m-t"><tbody>' + rows + '</tbody></table>' : '<p class="cp-empty">' + t('cpNoOther') + '</p>') + '<div class="m-foot">' + t('cpOtherHint') + '</div>';
+  }
+  function cpRegRows() {
+    return cp.reg.slice(0, 10).map(function (x) {
+      return '<tr' + (x.ho ? ' class="ho"' : '') + '><td><b>' + x.phone + '</b></td><td>' + (x.ho ? '<span class="ho-old">' + esc(x.old) + '</span>' : '') + esc(x.holder) + (x.ho ? ' <span class="m-pill b">' + t('cpHandover') + '</span>' : '') + '</td><td>' + dl(x.first) + '</td><td>' + dl(x.last) + '</td></tr>';
+    }).join('');
+  }
+  function cpLastStr() { var d = new Date(Date.now() - cpSec * 1000); return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear() + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function renderCp() {
+    if (!cp) cp = makePhones();
+    var cov = cp.withNum / cp.active * 100;
+    var miss = cp.missing.map(function (x) { return '<div class="cp-r" data-cp-act="open" data-v="' + x.id + '">' + who(x) + '<span class="m-pill r">' + t('cpMissing') + '</span></div>'; }).join('');
+    var ch = cp.changes.slice(0, 6).map(function (x) { return '<div class="cp-r" data-cp-act="open" data-v="' + x.id + '">' + who(x) + '<span class="ph"><b>' + x.phone + '</b>' + cpPill(x.state) + '</span></div>'; }).join('');
+    mock.innerHTML = topBar(t('pageCp')) + '<div class="m-body">' +
+      '<div class="m-panel m-dk" data-p="kpis">' +
+      '<div class="dk"><span class="dk-h">' + t('cpWith') + '</span><span class="cp-big"><b class="dk-big" data-count="' + cp.withNum + '">' + cp.withNum + '</b><span>' + t('cpOfActive', { n: cp.active }) + '</span></span>' +
+      '<div class="m-prog"><span class="tr"><i style="width:' + cov + '%"></i></span><b>' + Math.round(cov) + '%</b></div></div>' +
+      '<div class="dk"><span class="dk-h">' + t('cpDrivers') + '</span><div class="dk-3">' +
+      '<div><b class="dk-mid" data-count="' + cp.active + '">' + cp.active + '</b><span>' + t('cpActive') + '</span></div>' +
+      '<div><b class="dk-mid amber" data-count="' + cp.changes.length + '">' + cp.changes.length + '</b><span>' + t('cpNewChanged') + '</span></div>' +
+      '<div><b class="dk-mid" data-count="' + cp.inactive + '">' + cp.inactive + '</b><span>' + t('cpInactive') + '</span></div></div></div>' +
+      '<div class="dk dk-att"><span class="dk-h">' + t('cpNoPhone') + '</span><b class="dk-big red" data-count="' + cp.missing.length + '">' + cp.missing.length + '</b><span>' + t('cpNoPhoneNote') + '</span><button type="button" class="dk-link" data-cp-act="filter" data-v="none">' + t('cpShow') + ' ›</button></div></div>' +
+
+      '<div class="m-grid2" style="grid-template-columns:1.7fr 1fr">' +
+      '<div class="m-panel" data-p="list" data-cp="list">' + cpListInner() + '</div>' +
+      '<div class="m-col">' +
+      '<div class="m-panel" data-p="alerts"><div class="m-ph"><span class="rdot"></span><h4>' + t('cpNoPhone') + '</h4><span class="m-cnt r">' + cp.missing.length + '</span>' + ago() + '</div>' + miss + '</div>' +
+      '<div class="m-panel" data-p="alerts"><div class="m-ph"><h4>' + t('cpChanges') + '</h4><span class="m-cnt">' + cp.changes.length + '</span>' + ago() + '</div>' + ch + '<div class="m-foot">' + t('cpShowing', { a: 6, b: cp.changes.length }) + '</div></div>' +
+      '<div class="m-panel" data-p="sync"><div class="m-ph"><h4>' + t('cpSync') + '</h4><span class="m-tag">' + t('cpSyncTag') + '</span></div>' +
+      '<div class="sy-row"><span>' + t('cpLast') + '</span><b data-last>' + cpLastStr() + '</b></div>' +
+      '<div class="sy-row"><span>' + t('cpCadence') + '</span><b>' + t('cpEvery') + '</b></div>' +
+      '<div class="sy-row"><span>' + t('cpCoverage') + '</span><b class="blue">' + pctf(cov, 1) + '</b></div>' +
+      '<div class="sy-row"><span>' + t('cpNext') + '</span><b data-next>' + t('cpIn', { n: 60 - cpSec }) + '</b></div>' +
+      '<span class="sy-bar"><i data-nextbar style="width:' + (cpSec / 60 * 100) + '%"></i></span></div>' +
+      '</div></div>' +
+
+      '<div class="m-grid2" style="grid-template-columns:1fr 1fr;align-items:stretch">' +
+      '<div class="m-panel cp-col" data-p="staff" data-cp="staff">' + cpStaffInner() + '</div>' +
+      '<div class="m-panel cp-col" data-p="staff" data-cp="other">' + cpOtherInner() + '</div></div>' +
+
+      '<div class="m-panel" data-p="register"><div class="m-ph"><h4>' + t('cpRegister') + '</h4><span class="m-cnt">' + cp.reg.length + '</span>' + ago() + '</div><div class="m-search">' + t('cpRegSearch') + '</div>' +
+      '<table class="m-t"><thead><tr><th>' + t('cpPhone') + '</th><th>' + t('cpHolder') + '</th><th>' + t('cpFirst') + '</th><th>' + t('cpLastSeen') + '</th></tr></thead><tbody data-regbody>' + cpRegRows() + '</tbody></table><div class="m-foot">' + t('cpRegHint') + '</div></div>' +
+      '</div>';
+    layoutMock();
+  }
+  function cpSet(name, html) { var el = mock.querySelector('[data-cp="' + name + '"]'); if (el) el.innerHTML = html; }
+  function cpAction(act, v, el) {
+    if (act === 'filter') { var inList = !!el.closest('[data-cp="list"]'); cpFilter = v; cpOpen = null; cpSet('list', cpListInner()); focusStep('list', true, inList); }
+    else if (act === 'open') { cpOpen = v; cpSet('list', cpListInner()); focusStep('list', true, active === 'list'); }
+    else if (act === 'close') { cpOpen = null; cpSet('list', cpListInner()); }
+    else if (act === 'addstaff') { var d = CPR[84 + (cpStaffNext++ % 16)]; cp.staff.push({ name: d.name, phone: fakePhone(cp.r) }); cpSet('staff', cpStaffInner(true)); focusStep('staff', true, true); }
+    else if (act === 'delstaff' || act === 'delother') {
+      var tr = el.closest('tr'); tr.classList.add('del-out');
+      setTimeout(function () {
+        if (act === 'delstaff') { cp.staff.splice(Number(v), 1); cpSet('staff', cpStaffInner()); } else { cp.other.splice(Number(v), 1); cpSet('other', cpOtherInner()); }
+        focusStep('staff', true, true);
+      }, 300);
+    }
+    else if (act === 'addother') { cp.other.push({ l: cpOtherN++, phone: fakePhone(cp.r) }); cpSet('other', cpOtherInner(true)); focusStep('staff', true, true); }
+    else if (act === 'edit') { var row = el.closest('tr'); row.classList.remove('add-in'); void row.offsetWidth; row.classList.add('add-in'); }
+  }
+  function handover() {
+    if (!cp) return;
+    var cands = cp.reg.slice(0, 10).filter(function (x) { return !x.ho && x.holder !== '—'; });
+    if (!cands.length) return;
+    var x = cands[Math.floor(Math.random() * cands.length)], d = CPR[86 + (cpSpare++ % 14)];
+    cp.reg.forEach(function (y) { y.ho = false; });
+    x.old = x.holder; x.holder = d.name; x.last = 0; x.ho = true;
+    var body = mock.querySelector('[data-regbody]'); if (body) body.innerHTML = cpRegRows();
+  }
+  function cpTick() {
+    cpSec = (cpSec + 1) % 60;
+    if (page !== 'cp') return;
+    mock.querySelectorAll('[data-ago]').forEach(function (el) { el.textContent = t('mAgoS', { n: cpSec }); });
+    var n = mock.querySelector('[data-next]'); if (n) n.textContent = t('cpIn', { n: 60 - cpSec });
+    var bar = mock.querySelector('[data-nextbar]');
+    if (bar) { bar.style.transition = cpSec === 0 ? 'none' : ''; bar.style.width = (cpSec / 60 * 100) + '%'; }
+    if (cpSec === 0) {
+      var l = mock.querySelector('[data-last]'); if (l) l.textContent = cpLastStr();
+      var sp = mock.querySelector('[data-p="sync"]'); if (sp && !reduce) { sp.classList.remove('sweep'); void sp.offsetWidth; sp.classList.add('sweep'); }
+      handover();
+    }
+  }
+
   // ------------------------------------------------------------------ page menu with a futuristic switch transition
   var tabs = document.querySelectorAll('[data-page]'), ind = document.querySelector('.pages-ind'), switching = false, urlTimer;
   function moveInd() {
@@ -373,8 +536,10 @@
   var stepsEl = document.getElementById('steps'), nowEl = document.getElementById('step-now');
   var PAGES = {
     ops: { name: 'pageOps', steps: 'steps', first: 'overview', url: 'board.lanu.app/operations' },
-    da: { name: 'pageDa', steps: 'stepsDa', first: 'kpis', url: 'board.lanu.app/associates' }
+    da: { name: 'pageDa', steps: 'stepsDa', first: 'kpis', url: 'board.lanu.app/associates' },
+    cp: { name: 'pageCp', steps: 'stepsCp', first: 'kpis', url: 'board.lanu.app/phones' }
   };
+  var ORDER = ['ops', 'da', 'cp'];
   var page = 'ops';
   var active = 'overview', auto = !reduce, timer = null, inView = false, DUR = 7000;
   function renderSteps() {
@@ -398,7 +563,7 @@
   function layoutMock() {
     mock.style.transform = 'translate(' + (-cam.x) + 'px,' + (-cam.y) + 'px) scale(' + cam.z + ')';
   }
-  function focusStep(id, keep) {
+  function focusStep(id, keep, quiet) {
     active = id;
     renderSteps();
     var panels = mock.querySelectorAll('[data-p]');
@@ -418,10 +583,11 @@
     var x = l * z - (W - pw * z) / 2;
     x = Math.max(0, Math.min(1280 * z - W, x));
     var y = tp * z - 16;
-    y = Math.max(0, Math.min(mock.offsetHeight * z - H, y));
+    y = Math.max(0, y);
     cam = { z: z, x: x, y: y };
     layoutMock();
-    if (!reduce) {
+    if (page === 'cp' && id === 'register' && !quiet) setTimeout(function () { if (page === 'cp') handover(); }, 1500);
+    if (!reduce && !quiet) {
       targets.forEach(function (el) { el.classList.remove('sweep'); void el.offsetWidth; el.classList.add('sweep'); });
       if (page === 'ops' && id === 'overview') countOverview();
       targets.forEach(function (el) {
@@ -438,7 +604,7 @@
     if (!auto || !inView) return;
     timer = setTimeout(function () {
       var ids = t(PAGES[page].steps).map(function (s) { return s[0]; }), i = ids.indexOf(active);
-      if (i === ids.length - 1) switchPage(page === 'ops' ? 'da' : 'ops', true);
+      if (i === ids.length - 1) switchPage(ORDER[(ORDER.indexOf(page) + 1) % ORDER.length], true);
       else focusStep(ids[i + 1], true);
     }, DUR);
   }
@@ -454,6 +620,7 @@
     var s = nowStr();
     document.querySelectorAll('[data-clock]').forEach(function (el) { el.textContent = s; });
     var hc = document.getElementById('hv-clock'); if (hc) hc.textContent = s;
+    cpTick();
   }, 1000);
   setInterval(function () {
     if (page === 'da' && weekOffset === 0) {
