@@ -32,17 +32,18 @@
 
 <main id="main">
 <section class="hero">
+  <canvas class="city" id="city" aria-hidden="true"></canvas>
   <div class="wrap hero-in">
     <div class="hero-copy">
       <p class="eyebrow"><span>LANU Board</span><span>LANU App</span><span>LANU MDM</span></p>
-      <h1 data-i18n="heroTitle">Your whole delivery day on one screen.</h1>
+      <h1 id="hero-title">Your whole delivery day on one screen.</h1>
       <p class="hero-sub" data-i18n="heroSub">The software we built to run our own delivery operations — now for yours. Routes, drivers, breaks and packages live, so your dispatchers never miss a thing.</p>
       <div class="hero-ctas">
         <a href="#contact" class="btn btn-primary" data-i18n="ctaDemo">Book a demo</a>
         <a href="#board" class="btn btn-ghost-light"><span data-i18n="ctaSee">See it in action</span> <svg class="ic" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
       </div>
     </div>
-    <div class="hero-visual" aria-hidden="true">
+    <div class="hero-visual" id="hero-visual" aria-hidden="true">
       <div class="hv-card hv-delivered">
         <div class="hv-row"><span class="hv-label" data-i18n="mDelivered">Delivered packages</span><span class="hv-live"><i></i><b id="hv-clock">--:--:--</b></span></div>
         <div class="hv-big"><span id="hv-count">8,412</span><small data-i18n-tpl="mOf" data-n="8,530">of 8,530</small></div>
@@ -60,25 +61,33 @@
       </div>
     </div>
   </div>
+  <a href="#products" class="hero-hint" aria-hidden="true" tabindex="-1"><i></i><span data-i18n="scroll">Scroll</span></a>
+</section>
+
+<section class="ticker" aria-label="Live activity (fictional)" data-i18n-aria="tickerLabel">
+  <div class="ticker-track" id="ticker"></div>
 </section>
 
 <section class="products" id="products" aria-labelledby="products-title">
   <div class="wrap">
     <h2 class="sr" id="products-title" data-i18n="productsTitle">Products</h2>
     <div class="prod-grid">
-      <a class="prod" href="#board">
+      <a class="prod glow" href="#board" data-reveal>
+        <span class="prod-ico"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 13l3-3 2 2 5-5"/></svg></span>
         <span class="prod-tag" data-i18n="prodWeb">Web app</span>
         <h3>LANU Board</h3>
         <p data-i18n="prodBoard">The dispatch control room: operations, drivers, fleet, timesheets and reports in one place.</p>
         <span class="prod-more"><span data-i18n="prodSee">See the Operations page</span> →</span>
       </a>
-      <div class="prod">
+      <div class="prod glow" data-reveal style="--d:.1s">
+        <span class="prod-ico"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span>
         <span class="prod-tag" data-i18n="prodMobile">Mobile app</span>
         <h3>LANU App</h3>
         <p data-i18n="prodApp">[Short description of LANU App — coming next]</p>
         <span class="prod-soon" data-i18n="soon">Details coming soon</span>
       </div>
-      <div class="prod">
+      <div class="prod glow" data-reveal style="--d:.2s">
+        <span class="prod-ico"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span>
         <span class="prod-tag" data-i18n="prodDevices">Device management</span>
         <h3>LANU MDM</h3>
         <p data-i18n="prodMdm">[Short description of LANU MDM — coming next]</p>
@@ -90,12 +99,12 @@
 
 <section class="tour" id="board" aria-labelledby="tour-title">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head" data-reveal>
       <p class="kicker">LANU Board · Operations</p>
       <h2 id="tour-title" data-i18n="tourTitle">Everything your dispatchers need during the day. Nothing they can miss.</h2>
       <p data-i18n="tourSub">One live page instead of jumping between tools. Click through the parts of the Operations page — the data is fictional, the screen is real.</p>
     </div>
-    <div class="tour-grid">
+    <div class="tour-grid" data-reveal style="--d:.1s">
       <ol class="steps" id="steps"></ol>
       <div class="screen-col">
         <div class="browser">
@@ -110,7 +119,7 @@
 
 <section class="benefits" aria-labelledby="ben-title">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head" data-reveal>
       <h2 id="ben-title" data-i18n="benTitle">Built at a real dispatch desk</h2>
       <p data-i18n="benSub">We use the Board every day in our own delivery operation. Every part of it exists because a dispatcher needed it.</p>
     </div>
@@ -119,7 +128,7 @@
 </section>
 
 <section class="cta-band">
-  <div class="wrap cta-in">
+  <div class="wrap cta-in" data-reveal>
     <div>
       <h2 data-i18n="ctaTitle">See the Board with your own team in mind.</h2>
       <p data-i18n="ctaSub">We’ll walk you through it live and answer your questions.</p>
@@ -130,7 +139,7 @@
 
 <section class="contact" id="contact" aria-labelledby="contact-title">
   <div class="wrap contact-in">
-    <div class="contact-copy">
+    <div class="contact-copy" data-reveal>
       <h2 id="contact-title" data-i18n="contactTitle">Let’s talk</h2>
       <p data-i18n="contactSub">Tell us a little about your operation and we’ll show you the Board live.</p>
       <ul class="contact-list">
@@ -138,7 +147,7 @@
         <li><svg class="ic" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg><span>[+49 …]</span></li>
       </ul>
     </div>
-    <form class="form" id="form" novalidate>
+    <form class="form glow" id="form" novalidate data-reveal style="--d:.1s">
       <div class="f2">
         <div class="field"><label for="f-name" data-i18n="fName">Full name</label><input id="f-name" name="name" autocomplete="name" required><span class="err" data-i18n="eName">Please enter your name.</span></div>
         <div class="field"><label for="f-company" data-i18n="fCompany">Company</label><input id="f-company" name="company" autocomplete="organization" required><span class="err" data-i18n="eCompany">Please enter your company.</span></div>

@@ -25,6 +25,11 @@
   function applyCopy() {
     document.documentElement.lang = lang;
     document.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+    var words = t('heroTitle').split(' '), hl = t('heroHl');
+    document.getElementById('hero-title').innerHTML = words.map(function (w, i) {
+      return '<span class="w' + (i >= words.length - hl ? ' hl' : '') + '" style="--i:' + i + '">' + esc(w) + '</span>';
+    }).join(' ');
     document.querySelectorAll('[data-i18n-tpl]').forEach(function (el) { el.textContent = t(el.dataset.i18nTpl, { n: el.dataset.n }); });
     document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
     document.title = lang === 'de' ? 'LANU Board – Ihr ganzer Liefertag auf einem Bildschirm' : 'LANU Board — your whole delivery day on one screen';
@@ -33,7 +38,7 @@
     b.addEventListener('click', function () {
       lang = b.dataset.lang;
       try { localStorage.setItem('lanu-lang', lang); } catch (e) {}
-      applyCopy(); renderBenefits(); renderSteps(); renderMock(); focusStep(active, true);
+      applyCopy(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true);
     });
   });
 
@@ -218,6 +223,10 @@
     y = Math.max(0, Math.min(mock.offsetHeight * z - H, y));
     cam = { z: z, x: x, y: y };
     layoutMock();
+    if (!reduce) {
+      targets.forEach(function (el) { el.classList.remove('sweep'); void el.offsetWidth; el.classList.add('sweep'); });
+      if (id === 'overview') countOverview();
+    }
     if (!keep && window.innerWidth <= 980) {
       var btn = stepsEl.querySelector('.on button'); if (btn) btn.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' });
     }
@@ -269,9 +278,10 @@
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'
   };
   function renderBenefits() {
-    document.getElementById('benefits').innerHTML = t('benefits').map(function (b) {
-      return '<div class="ben"><span class="bi"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[b[0]] + '</svg></span><h3>' + esc(b[1]) + '</h3><p>' + esc(b[2]) + '</p></div>';
+    document.getElementById('benefits').innerHTML = t('benefits').map(function (b, i) {
+      return '<div class="ben glow" data-reveal style="--d:' + (i % 3) * .08 + 's"><span class="bi"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[b[0]] + '</svg></span><h3>' + esc(b[1]) + '</h3><p>' + esc(b[2]) + '</p></div>';
     }).join('');
+    observeReveal();
   }
 
   // ------------------------------------------------------------------ contact form (not connected yet: see website/README.md)
@@ -293,9 +303,173 @@
   });
   form.addEventListener('input', function (e) { if (e.target.closest('.field.bad')) check(e.target); });
 
+
+  // ------------------------------------------------------------------ number count-up
+  function countUp(el, to, f, ms) {
+    if (!el) return;
+    var t0 = performance.now(), from = Math.round(to * .82);
+    if (to < 100) from = 0;
+    (function step(now) {
+      var k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = f(Math.round(from + (to - from) * e));
+      if (k < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+  function countOverview() {
+    if (!data) return;
+    countUp(mock.querySelector('[data-delivered]'), data.live ? liveDelivered : data.delivered, fmt, 1200);
+    countUp(mock.querySelector('.m-tours b'), data.tours, String, 900);
+    countUp(mock.querySelector('.m-risk b'), data.risk, String, 900);
+  }
+
+  // ------------------------------------------------------------------ live ticker (fictional events)
+  function renderTicker() {
+    var r = rng(77), names = shuffle(NAMES, r), tpl = t('ticker'), now = new Date(), m = now.getHours() * 60 + now.getMinutes();
+    var items = [];
+    for (var i = 0; i < 16; i++) {
+      var k = tpl[i % tpl.length]; m -= between(r, 1, 4); var min = m;
+      var txt = esc(k[1]).replace('{name}', '<b>' + esc(names[i]) + '</b>').replace('{route}', 'D-' + between(r, 101, 340)).replace('{n}', between(r, 6, 42));
+      items.push('<span class="tk" style="--c:' + k[0] + '"><i></i><time>' + hm((min + 1440) % 1440) + '</time><span>' + txt + '</span></span>');
+    }
+    var html = items.join('');
+    document.getElementById('ticker').innerHTML = html + html.replace(/<span class="tk"/g, '<span class="tk" aria-hidden="true"');
+  }
+
+  // ------------------------------------------------------------------ scroll reveal
+  var revealIO = 'IntersectionObserver' in window ? new IntersectionObserver(function (en) {
+    en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); revealIO.unobserve(x.target); } });
+  }, { threshold: .12, rootMargin: '0px 0px -40px 0px' }) : null;
+  function observeReveal() {
+    document.querySelectorAll('[data-reveal]:not(.in)').forEach(function (el) { if (revealIO) revealIO.observe(el); else el.classList.add('in'); });
+  }
+
+  // ------------------------------------------------------------------ pointer effects: card glow, 3D browser tilt, hero parallax
+  document.addEventListener('pointermove', function (e) {
+    var g = e.target.closest && e.target.closest('.glow');
+    if (g) { var q = g.getBoundingClientRect(); g.style.setProperty('--mx', (e.clientX - q.left) + 'px'); g.style.setProperty('--my', (e.clientY - q.top) + 'px'); }
+  }, { passive: true });
+  var screenCol = document.querySelector('.screen-col'), browser = document.querySelector('.browser');
+  if (!reduce && screenCol) {
+    screenCol.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var q = screenCol.getBoundingClientRect(), px = (e.clientX - q.left) / q.width - .5, py = (e.clientY - q.top) / q.height - .5;
+      browser.style.setProperty('--rx', (-py * 5).toFixed(2) + 'deg');
+      browser.style.setProperty('--ry', (px * 7).toFixed(2) + 'deg');
+    });
+    screenCol.addEventListener('pointerleave', function () { browser.style.setProperty('--rx', '0deg'); browser.style.setProperty('--ry', '0deg'); });
+  }
+
+  // ------------------------------------------------------------------ hero: isometric cube city with delivery lights (reacts to the cursor)
+  (function city() {
+    var cv = document.getElementById('city'), hero = document.querySelector('.hero'), hv = document.getElementById('hero-visual');
+    if (!cv || !cv.getContext) return;
+    var ctx = cv.getContext('2d'), W = 0, H = 0, dpr = 1, a = 22, w = 0, N = 22, cx = 0, cy = 0;
+    var mouse = { x: -9999, y: -9999, tx: -9999, ty: -9999, last: -1e9 }, running = false, visible = true, raf = 0;
+    var lit = new Float32Array(N * N), cubes = [], parts = [];
+    for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) cubes.push([i, j]);
+    cubes.sort(function (p, q) { return (p[0] + p[1]) - (q[0] + q[1]); });
+
+    function size() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = hero.clientWidth; H = hero.clientHeight;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var small = W < 960;
+      a = small ? 15 : 22; w = a * Math.sqrt(3);
+      cx = small ? W * .5 : W * .7; cy = small ? H * .74 : H * .56;
+      if (reduce) draw(0);
+    }
+    function pos(i, j) { return [cx + (i - j) * w / 2, cy + (i + j - (N - 1)) * a / 2]; }
+    function mix(c1, c2, k) { return 'rgb(' + Math.round(c1[0] + (c2[0] - c1[0]) * k) + ',' + Math.round(c1[1] + (c2[1] - c1[1]) * k) + ',' + Math.round(c1[2] + (c2[2] - c1[2]) * k) + ')'; }
+    var TOP0 = [19, 40, 74], TOP1 = [30, 60, 104], LEFT = [14, 31, 58], RIGHT = [10, 24, 46], HOT = [59, 155, 255];
+    function height(i, j, tm) {
+      var p = pos(i, j), dx = p[0] - mouse.x, dy = p[1] - mouse.y;
+      var boost = Math.exp(-(dx * dx + dy * dy) / (2 * 110 * 110));
+      return [12 + 9 * Math.sin(i * .45 + tm * .0007) * Math.cos(j * .38 + tm * .0005) + 64 * boost, boost];
+    }
+    function spawn() {
+      var horiz = Math.random() < .5, k = Math.floor(Math.random() * N), dir = Math.random() < .5 ? 1 : -1;
+      var s = dir > 0 ? 0 : N - 1, len = 6 + Math.floor(Math.random() * 10), e = Math.max(0, Math.min(N - 1, s + dir * len));
+      parts.push({ horiz: horiz, k: k, s: s, e: e, p: 0, sp: .012 + Math.random() * .014 });
+    }
+    function draw(tm) {
+      ctx.clearRect(0, 0, W, H);
+      mouse.x += (mouse.tx - mouse.x) * .08; mouse.y += (mouse.ty - mouse.y) * .08;
+      if (tm - mouse.last > 3500) { // idle: a slow "virtual cursor" keeps the city alive (also on touch screens)
+        mouse.tx = cx + Math.sin(tm * .00035) * w * 5; mouse.ty = cy + Math.cos(tm * .00027) * a * 4 - a * 2;
+      }
+      var hs = new Float32Array(N * N);
+      for (var n = 0; n < cubes.length; n++) {
+        var i = cubes[n][0], j = cubes[n][1], idx = i * N + j, hb = height(i, j, tm), h = hb[0], b = hb[1];
+        hs[idx] = h;
+        var p = pos(i, j), x = p[0], y = p[1] - h, L = lit[idx];
+        if (x < -w || x > W + w || y > H + a || p[1] + a < 0) continue;
+        var heat = Math.min(1, b * .9 + L);
+        ctx.beginPath(); ctx.moveTo(x - w / 2, y); ctx.lineTo(x, y + a / 2); ctx.lineTo(x, y + a / 2 + h); ctx.lineTo(x - w / 2, y + h); ctx.closePath();
+        ctx.fillStyle = mix(LEFT, [24, 70, 130], heat * .7); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x + w / 2, y); ctx.lineTo(x, y + a / 2); ctx.lineTo(x, y + a / 2 + h); ctx.lineTo(x + w / 2, y + h); ctx.closePath();
+        ctx.fillStyle = mix(RIGHT, [16, 52, 104], heat * .7); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x, y - a / 2); ctx.lineTo(x + w / 2, y); ctx.lineTo(x, y + a / 2); ctx.lineTo(x - w / 2, y); ctx.closePath();
+        ctx.fillStyle = heat > 0 ? mix(mix2(TOP0, TOP1, (h - 3) / 30), HOT, heat * .85) : mix(TOP0, TOP1, Math.max(0, Math.min(1, (h - 3) / 30)));
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(140,190,255,' + (.1 + heat * .5) + ')'; ctx.lineWidth = 1; ctx.stroke();
+        if (L > 0) lit[idx] = Math.max(0, L - .012);
+      }
+      // delivery lights travelling along the streets
+      ctx.globalCompositeOperation = 'lighter';
+      for (var q = parts.length - 1; q >= 0; q--) {
+        var P = parts[q]; P.p = Math.min(1, P.p + P.sp);
+        var f = P.s + (P.e - P.s) * P.p, c0 = Math.floor(f), c1 = Math.min(N - 1, Math.ceil(f)), fr = f - c0;
+        var ii = P.horiz ? f : P.k, jj = P.horiz ? P.k : f;
+        var i0 = P.horiz ? c0 : P.k, j0 = P.horiz ? P.k : c0, i1 = P.horiz ? c1 : P.k, j1 = P.horiz ? P.k : c1;
+        var hh = hs[i0 * N + j0] * (1 - fr) + hs[i1 * N + j1] * fr;
+        var pp = pos(ii, jj), gx = pp[0], gy = pp[1] - hh;
+        var gr = ctx.createRadialGradient(gx, gy, 0, gx, gy, a * .9);
+        gr.addColorStop(0, 'rgba(160,225,255,.95)'); gr.addColorStop(.25, 'rgba(92,200,255,.5)'); gr.addColorStop(1, 'rgba(59,155,255,0)');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(gx, gy, a * .9, 0, 6.2832); ctx.fill();
+        if (P.p >= 1) { var ei = P.horiz ? P.e : P.k, ej = P.horiz ? P.k : P.e; lit[ei * N + ej] = 1; parts.splice(q, 1); }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      if (parts.length < (W < 960 ? 4 : 7) && Math.random() < .04) spawn();
+    }
+    function mix2(c1, c2, k) { k = Math.max(0, Math.min(1, k)); return [c1[0] + (c2[0] - c1[0]) * k, c1[1] + (c2[1] - c1[1]) * k, c1[2] + (c2[2] - c1[2]) * k]; }
+    function loop(tm) { draw(tm); raf = requestAnimationFrame(loop); }
+    function setRun() {
+      var go = visible && !document.hidden && !reduce;
+      if (go && !running) { running = true; raf = requestAnimationFrame(loop); }
+      else if (!go && running) { running = false; cancelAnimationFrame(raf); }
+    }
+    hero.addEventListener('pointermove', function (e) {
+      var q = hero.getBoundingClientRect();
+      mouse.tx = e.clientX - q.left; mouse.ty = e.clientY - q.top; mouse.last = performance.now();
+      if (hv && !reduce && e.pointerType === 'mouse') {
+        var px = (e.clientX - q.left) / q.width - .5, py = (e.clientY - q.top) / q.height - .5;
+        hv.style.transform = 'translate3d(' + (-px * 18).toFixed(1) + 'px,' + (-py * 14).toFixed(1) + 'px,0)';
+      }
+    }, { passive: true });
+    hero.addEventListener('pointerdown', function (e) { // a click/tap sends a burst of deliveries
+      var q = hero.getBoundingClientRect(); mouse.tx = e.clientX - q.left; mouse.ty = e.clientY - q.top; mouse.last = performance.now();
+      for (var k = 0; k < 4; k++) spawn();
+    }, { passive: true });
+    hero.addEventListener('pointerleave', function () { mouse.last = -1e9; if (hv) hv.style.transform = ''; });
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (en) { visible = en[0].isIntersecting; setRun(); }).observe(hero);
+    document.addEventListener('visibilitychange', setRun);
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(hero); else window.addEventListener('resize', size);
+    size();
+    for (var s0 = 0; s0 < 4; s0++) spawn();
+    if (reduce) { mouse.x = mouse.tx = cx; mouse.y = mouse.ty = cy - a * 2; draw(0); } else setRun();
+  })();
+
   // ------------------------------------------------------------------ boot
   applyCopy();
   renderBenefits();
+  renderTicker();
+  observeReveal();
+  if (!reduce) {
+    countUp(document.getElementById('hv-count'), liveDelivered === undefined ? 8412 : liveDelivered, fmt, 1600);
+    countUp(document.querySelector('.hv-num'), 64, String, 1400);
+    countUp(document.querySelector('.hv-risknum'), 2, String, 1400);
+  }
   renderMock();
   focusStep('overview', true);
 })();
