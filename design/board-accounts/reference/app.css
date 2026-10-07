@@ -1,0 +1,31 @@
+/* Board accounts — reference styles. Everything not here is inline in app.js, copied 1:1 from the design canvas. */
+body{margin:0;background:#F3F4F7}
+[hidden]{display:none !important}
+a{color:#1F54D6}a:hover{color:#163FA8}
+.ba button,.ba input{font-family:inherit}
+.ba button:disabled{cursor:not-allowed}
+.ba a:focus-visible,.ba button:focus-visible{outline:2px solid #2F6BFF;outline-offset:2px}
+.ba input[type=text]:focus,.ba input[type=email]:focus,.ba input[type=password]:focus,.ba input[type=search]:focus{outline:none;border-color:#2F6BFF;box-shadow:0 0 0 3px rgba(47,107,255,0.18)}
+.ba input::placeholder{color:#6B7489}
+.ic{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.ba-tick{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ba-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ba-cb input:focus-visible + span,.ba-radio input:focus-visible + span{outline:2px solid #2F6BFF;outline-offset:2px}
+
+/* hover */
+.ba-row:hover,.ba-mrow:hover,.ba-trow:hover{background:#F8F9FB}
+.ba-ghost:hover{background:#F3F4F7}
+.ba-primary:hover{background:#1F54D6;color:#FFFFFF}
+.ba-chip:hover{border-color:#C3CBDA}
+.ba-tab:hover{color:#0B1B34}
+.ba-menu button:hover{background:#F3F4F7}
+.ba-menu .ba-danger:hover{background:#FDEEEE}
+.ba-danger-btn:hover{background:#FDEEEE}
+
+/* motion */
+.ba-chev{transition:transform .2s ease}
+.ba-panel{animation:baIn .32s cubic-bezier(.2,.8,.2,1) both}
+.ba-scrim{animation:baFade .32s ease both}
+@keyframes baIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes baFade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){.ba-chev,.ba-panel,.ba-scrim{transition:none;animation:none}}

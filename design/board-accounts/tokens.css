@@ -1,0 +1,74 @@
+/*
+ * Board accounts — design tokens (the app's existing palette, sampled from the current page).
+ * Every value in reference/app.js and reference/app.css maps to one of these.
+ */
+:root {
+  /* Brand / actions */
+  --ba-primary: #2F6BFF;        /* primary buttons, active tab underline, checked boxes, selected role card, focus */
+  --ba-primary-hover: #1F54D6;  /* primary hover; blue text (links, Custom tag, counts) */
+  --ba-link-hover: #163FA8;
+
+  /* Text */
+  --ba-ink: #0B1B34;            /* headings, body, active filter chip background */
+  --ba-text-muted: #56607A;     /* secondary text, emails, descriptions (≥ 5.5:1) */
+  --ba-text-subtle: #6B7489;    /* table headers, counts, "Never signed in" (≥ 4.6:1) */
+  --ba-chip-count-on: #C7CEDB;  /* count inside the active (dark) chip */
+
+  /* Surfaces & lines */
+  --ba-page: #F3F4F7;
+  --ba-header: #F4F5F7;
+  --ba-surface: #FFFFFF;
+  --ba-surface-alt: #FAFBFC;    /* table header row, sub-page rows, footnotes */
+  --ba-hover: #F8F9FB;          /* row hover */
+  --ba-ghost-hover: #F3F4F7;    /* secondary button hover */
+  --ba-border: #E3E6EE;         /* cards, buttons, inputs at rest (secondary) */
+  --ba-divider: #EDF0F5;        /* row dividers */
+  --ba-input-border: #C3CBDA;   /* panel inputs */
+  --ba-search-border: #D5DAE3;
+  --ba-checkbox-border: #8A93A6;
+  --ba-chip-hover-border: #C3CBDA;
+  --ba-segmented: #EEF0F5;      /* language switch track, grey tags, Dispatcher badge */
+  --ba-scrim: rgba(11, 27, 52, 0.38);
+
+  /* Roles */
+  --ba-admin-bg: #DDF3E6;  --ba-admin-fg: #146C3E;  --ba-admin-dot: #1E9E5A;
+  --ba-manager-bg: #E2EAFF; --ba-manager-fg: #1F54D6; --ba-manager-dot: #2F6BFF;
+  --ba-dispatcher-bg: #EEF0F5; --ba-dispatcher-fg: #56607A; --ba-dispatcher-dot: #8A93A6;
+  --ba-admin-locked-box: #C9D7FF; /* Admin column in the role table */
+
+  /* Custom / info */
+  --ba-info-bg: #EEF3FF;
+  --ba-info-border: #C9D7FF;
+  --ba-selected-card: #F5F8FF;
+
+  /* Danger */
+  --ba-danger: #A32D2D;
+  --ba-danger-bg: #FDEEEE;
+  --ba-danger-border: #E8BDBD;
+
+  /* Avatars (background, initials) */
+  --ba-avatar-teal: #DDEDEB;     --ba-avatar-teal-fg: #11655C;
+  --ba-avatar-blue: #E2EAFF;     --ba-avatar-blue-fg: #1F54D6;
+  --ba-avatar-peach: #F6E4DD;    --ba-avatar-peach-fg: #A3401C;
+  --ba-avatar-lavender: #E9E5F9; --ba-avatar-lavender-fg: #5536C9;
+
+  /* Type */
+  --ba-font: 'Instrument Sans', system-ui, sans-serif;
+
+  /* Radii */
+  --ba-radius-check: 6px;
+  --ba-radius-small: 8px;     /* menu items, chevron buttons, small info buttons */
+  --ba-radius-control: 10px;  /* buttons, inputs, info boxes */
+  --ba-radius-card: 12px;     /* role cards, access tree, security box, menu */
+  --ba-radius-page-card: 14px;/* table card, role table card */
+  --ba-radius-pill: 999px;
+
+  /* Elevation */
+  --ba-focus-ring: 0 0 0 3px rgba(47, 107, 255, 0.18);
+  --ba-shadow-menu: 0 12px 32px rgba(11, 27, 52, 0.14);
+  --ba-shadow-panel: -24px 0 48px rgba(11, 27, 52, 0.16);
+
+  /* Layout */
+  --ba-content-max: 1280px;
+  --ba-panel-width: 600px;
+}
