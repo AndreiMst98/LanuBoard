@@ -2174,16 +2174,16 @@
     h += missing ? '<div class="ow-ban" data-ows="costs"><b>' + t('owBanner', { n: missing }) + '</b><button type="button" class="wr-upbtn" data-ow-act="addcosts">+ ' + t('owAddCosts') + '</button></div>' : '<div class="ow-ban ok" data-ows="costs"><b>✓ ' + t('owCostsOk', { n: OW_FLEET }) + '</b></div>';
     var pct = T.rev ? T.left1 / T.rev * 100 : 0;
     h += '<div class="m-panel ow-k" data-ows="kpi">' + (money ? [
-      '<div><small>' + K[0] + '</small>' + owNum('rev', T.rev, 'e') + '</div>',
+      '<div><small>' + K[0] + '</small>' + owNum('rev', T.rev, 'e') + (OW.vat ? '<span class="ow-vat">' + t('owInclVat') + '</span>' : '') + '</div>',
       '<div><small>' + K[1] + '</small>' + owNum('pay', T.pay, 'e') + '<span>' + t('owDrv') + ': <b>' + eurc(T.drv) + '</b></span><span>' + t('owDisp') + ': <b>' + eurc(T.disp) + '</b></span><span>' + t('owContr') + ': <b>' + eurc(T.contr) + '</b></span></div>',
-      '<div class="g"><small>' + K[2] + '</small>' + owNum('l1', T.left1, 'e') + '<span>' + t('owOfRev', { p: '<b>' + pctf(pct, 1) + '</b>' }) + '</span></div>'
+      '<div class="g"><small>' + K[2] + '</small>' + owNum('l1', T.left1, 'e') + '<span>' + t('owOfRev', { p: '<b>' + pctf(pct, 1) + '</b>' }) + '</span>' + (OW.vat ? '<span class="ow-vat">' + t('owInclVat') + '</span>' : '') + '</div>'
     ] : [
       '<div><small>' + t('owKh')[0] + '</small>' + owNum('hp', T.hp, 'h') + '</div>', '<div><small>' + t('owKh')[1] + '</small>' + owNum('hw', T.hw, 'h') + '</div>', '<div><small>' + t('owKh')[2] + '</small>' + owNum('hd', T.hw - T.hp, 'h') + '</div>'
     ]).join('') + '</div>';
     h += '<div class="m-panel ow-k" data-ows="kpi">' +
       '<div><small>' + K[3] + '</small>' + owNum('veh', T.veh, 'e') + '<span>' + t('owMonthly') + ': <b>' + eurc(T.veh * .9) + '</b></span><span>' + t('owRepairs') + ': <b>' + eurc(T.veh * .1) + '</b></span></div>' +
       '<div><small>' + K[4] + '</small>' + owNum('exp', T.exp, 'e') + '</div>' +
-      '<div class="' + (T.left2 >= 0 ? 'g' : 'r') + '"><small>' + K[5] + '</small>' + owNum('l2', T.left2, 'e') + '<span>' + (T.veh + T.exp ? t('owAfterAll') : t('owNoCost')) + '</span></div></div>' +
+      '<div class="' + (T.left2 >= 0 ? 'g' : 'r') + '"><small>' + K[5] + '</small>' + owNum('l2', T.left2, 'e') + '<span>' + (T.veh + T.exp ? t('owAfterAll') : t('owNoCost')) + '</span>' + (OW.vat ? '<span class="ow-vat">' + t('owInclVat') + '</span>' : '') + '</div></div>' +
       '<p class="ow-note">' + t('owLeftNote') + '</p>';
     var C = t('owCats'), cv = [[T.N, R[0]], [T.Sd, R[1]], [T.RA, R[2]], [T.T, R[3]]], vf = OW.vat ? 1 + R[7] / 100 : 1, canc = (T.cN * R[0] + T.cS * R[1]) * R[4] / 100 * vf, mul = 1;
     h += '<div class="m-panel ow-tb" data-ows="rev"><h4>' + t('owRevT') + '</h4><table><thead><tr><th></th>' + t('owCols').map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' +
