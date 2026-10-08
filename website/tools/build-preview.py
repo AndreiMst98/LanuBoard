@@ -13,7 +13,7 @@ html = html.replace('<link rel="stylesheet" href="assets/fonts/fonts.css">', '<s
 html = html.replace('<link rel="stylesheet" href="assets/site.css">', '<style>' + css + '</style>')
 html = html.replace('<script src="assets/i18n.js"></script>', '<script>' + rd('assets/i18n.js') + '</script>')
 html = html.replace('<script src="assets/site.js"></script>', '<script>' + rd('assets/site.js') + '</script>')
-html = re.sub(r'assets/img/(fleet|app)/([\w-]+)\.(jpg|png)', lambda m: data_uri('assets/img/%s/%s.%s' % (m.group(1), m.group(2), m.group(3)), 'image/jpeg' if m.group(3) == 'jpg' else 'image/png'), html)
+html = re.sub(r'assets/img/(fleet|app)/([\w-]+)\.(jpg|png|webp)', lambda m: data_uri('assets/img/%s/%s.%s' % (m.group(1), m.group(2), m.group(3)), {'jpg': 'image/jpeg', 'png': 'image/png', 'webp': 'image/webp'}[m.group(3)]), html)
 html = re.sub(r'assets/img/([\w-]+)\.png', lambda m: data_uri('assets/img/%s.png' % m.group(1), 'image/png'), html)
 os.makedirs(os.path.join(root, 'dist'), exist_ok=True)
 out = os.path.join(root, 'dist', 'lanu-website-preview.html')

@@ -43,7 +43,7 @@
     b.addEventListener('click', function () {
       lang = b.dataset.lang;
       try { localStorage.setItem('lanu-lang', lang); } catch (e) {}
-      applyCopy(); haBuild(); if (afStage) { afBuild(); afGo(af.s, true); } renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true); if (owZ) { owRender(); owSteps(); } p2Render(); p2Focus(p2.active, true, true);
+      applyCopy(); haBuild(); if (afStage) { afBuild(); afGo(af.s, true); } if (qrStage) { qrBuild(); qrGo(qr.s, true); } renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true); if (owZ) { owRender(); owSteps(); } p2Render(); p2Focus(p2.active, true, true);
     });
   });
 
@@ -3112,6 +3112,105 @@
       var was = af.inView; af.inView = en[0].isIntersecting;
       if (af.inView && !was) afGo(af.s, true); else if (!af.inView) { clearTimeout(af.timer); af.tm.forEach(clearTimeout); }
     }, { threshold: .3 }).observe(document.getElementById('app'));
+  }
+
+  // ------------------------------------------------------------------ Andera App: Fleet QR labels printed on the spot (app → label printer → van → pre-trip scan)
+  var qr = { s: 0, auto: !reduce, inView: false, timer: null, tm: [], DUR: [5200, 6500, 6500, 6000, 7000], scr: '' };
+  var qrStage = document.getElementById('qr-stage'), qrWrap = document.getElementById('qr-wrap'), qrSteps = document.getElementById('qr-steps');
+  var QR_VANS = (function () {
+    var r = rng(4821), A = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789', vin = function (w) { var x = w; while (x.length < 17) x += A[Math.floor(r() * A.length)]; return x; };
+    return [['LNU 1965', 'Mercedes Vito', 'W1V'], ['LNU 2551', 'Fiat Scudo', 'ZFA'], ['LNU 3307', 'Renault Trafic', 'VF1'], ['LNU 4821', 'Mercedes Sprinter', 'W1V'], ['LNU 5019', 'MAN TGE', 'WMA'], ['LNU 5242', 'Citroen Jumpy', 'VF7'], ['LNU 6158', 'MAN TGE', 'WMA']]
+      .map(function (v) { return { plate: v[0], model: v[1], vin: vin(v[2]) }; });
+  })();
+  var QV = QR_VANS[3];
+  function qT(k) { return t('qr')[k]; }
+  function qLabel(cls) { return '<div class="ql' + (cls ? ' ' + cls : '') + '"><span class="ql-q">' + qrSvg(hashStr(QV.vin)) + '</span><b class="ql-p">' + QV.plate + '</b><code class="ql-v">' + QV.vin + '</code></div>'; }
+  function qHead(title, back) { return '<div class="q-hd"><i>' + haIc('chev') + '</i><div><small>ANDERA</small><b>' + esc(title) + '</b></div><span class="q-bt"><i></i>' + qT('printer') + '</span></div>'; }
+  function qScreen(k) {
+    if (k === 'list') return '<div class="ha-feed q-feed">' + qHead(qT('app')) + '<div class="q-ban"><span>' + haIc('doc') + '</span><div><b>' + qT('banT') + '</b><small>' + qT('banS') + '</small></div></div>' +
+      '<div class="q-srch"><i>' + haIc('info') + '</i><span id="q-type" data-ph="' + esc(qT('search')) + '">' + esc(qT('search')) + '</span></div><h5>' + qT('vans') + '<small>' + qT('nVans') + '</small></h5><div class="ha-c q-list">' +
+      QR_VANS.map(function (v, k) { return '<div class="q-row' + (k === 3 ? ' me' : '') + '" id="' + (k === 3 ? 'q-me' : '') + '" style="--i:' + k + '"><span class="ha-ri g">' + haIc('van') + '</span><div><b>' + v.plate + '</b><small>' + v.model + ' · ' + v.vin + '</small></div>' + haIc('chev', 'ha-chv') + '</div>'; }).join('') + '</div></div>';
+    if (k === 'label') return '<div class="ha-feed q-feed">' + qHead(qT('label')) + '<div class="q-dk"><b>' + QV.plate + '</b><small>' + QV.model + ' · ' + QV.vin + '</small></div><h5>' + qT('label') + '<small>' + qT('size') + '</small></h5>' +
+      '<div class="ha-c q-prev">' + qLabel('big') + '<small>' + QV.plate.replace(' ', '') + '.png</small></div><div class="af-btn q-print" id="q-print"><span class="q-pi">' + haIc('slip') + '</span><span id="q-ptx">' + qT('print') + '</span><i class="q-prog"></i></div>' +
+      '<div class="q-2"><span class="af-btn">' + haIc('up') + ' ' + qT('dl') + '</span><span class="q-sendp">➤ ' + qT('send') + '</span></div></div>' + afToast('q-ok', 'ok', qT('printed'), QV.plate + ' · 35 × 25 mm', true);
+    if (k === 'scan') return '<div class="q-cam"><div class="q-camhd"><i>' + haIc('chev') + '</i><b>' + qT('scanT') + '</b></div><div class="q-vf"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i>' + qLabel('cam') + '<span class="q-line"></span></div>' +
+      '<p class="q-hint">' + qT('scanHint') + '</p><div class="q-found" id="q-found"><span class="af-ok">✓</span><div><small>' + qT('found') + '</small><b>' + QV.plate + '</b><small>' + QV.model + '</small></div></div>' +
+      '<div class="q-today" id="q-today"><img src="assets/img/app/veh.png" alt=""><div><small>' + qT('today') + '</small><b>' + QV.plate + '</b></div><span class="af-ok">✓</span></div></div>';
+  }
+  function qrBuild() {
+    if (!qrStage) return;
+    qr.scr = '';
+    var pr = '<svg viewBox="0 0 220 180" class="q-prsv"><rect x="10" y="40" width="200" height="132" rx="26" fill="#1E232C"/><rect x="10" y="40" width="200" height="60" rx="26" fill="#2A303B"/><rect x="40" y="52" width="140" height="8" rx="4" fill="#0B0D11"/>' +
+      '<rect x="40" y="112" width="140" height="42" rx="9" fill="#14171C"/><text x="110" y="139" text-anchor="middle" font-size="12" font-weight="800" letter-spacing="2" fill="#E9EFF9" font-family="sans-serif">ANDERA</text><circle class="q-led" cx="190" cy="80" r="5"/><path d="M178 66l6 6-6 6M184 72h-14" stroke="#5CC8FF" stroke-width="2" fill="none"/></svg>';
+    qrStage.innerHTML = '<div class="q-van"><img src="assets/img/app/sprinter.webp" alt=""><div class="q-spot" id="q-spot">' + qLabel('stuck') + '</div><span class="q-ring" id="q-ring"></span><span class="q-vtag" id="q-vtag"><span class="af-ok">✓</span>' + QV.plate + ' · ' + qT('onVan') + '</span></div>' +
+      '<div class="q-timer" id="q-timer"><small>' + qT('timer') + '</small><b id="q-tt">00:00</b><s>' + qT('office') + '</s></div>' +
+      '<div class="q-pr"><div class="q-out" id="q-out">' + qLabel() + '</div>' + pr + '<span class="q-bt2"><i></i>Bluetooth</span></div>' +
+      '<div class="q-fly" id="q-fly">' + qLabel() + '</div>' +
+      '<div class="af-ph q-ph"><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr" id="q-scr"></div></div></div>';
+  }
+  function qShow(k, html) { var el = document.getElementById('q-scr'); el.innerHTML = '<div class="af-sc' + (qr.scr && qr.scr !== k ? ' in' : '') + '">' + (html || qScreen(k)) + '</div>'; qr.scr = k; }
+  function qrRenderSteps() {
+    var st = t('qrSteps');
+    qrSteps.innerHTML = st.map(function (x, i) {
+      return '<li class="step' + (i === qr.s ? ' on' + (qr.auto ? ' auto' : '') : '') + '"><button type="button" data-qr-step="' + i + '" aria-current="' + (i === qr.s) + '">' +
+        '<span class="n">' + (i + 1) + '</span><span><span class="t">' + esc(x[1]) + '</span><span class="d">' + esc(x[2]) + '</span></span><span class="prog" style="--dur:' + qr.DUR[i] + 'ms"></span></button></li>';
+    }).join('');
+    document.getElementById('qr-now').innerHTML = '<b>' + esc(st[qr.s][1]) + '</b><p>' + esc(st[qr.s][2]) + '</p>';
+  }
+  function qrGo(i, keep) {
+    if (!qrStage) return;
+    qr.tm.forEach(clearTimeout); qr.tm = []; qr.s = i;
+    var $ = function (id) { return document.getElementById(id); }, at = function (ms, f) { qr.tm.push(setTimeout(f, reduce ? 0 : ms)); };
+    var add = function (id, c) { var e = $(id); if (e) e.classList.add(c || 'on'); }, tap = function (id) { var e = $(id); if (!e) return; e.classList.remove('af-tp'); void e.offsetWidth; e.classList.add('af-tp'); };
+    var tt = $('q-tt'), clock = function (a, b, ms) { if (reduce) { tt.textContent = '00:' + pad(b); return; } var t0 = performance.now(); (function st(now) { var k = Math.min(1, (now - t0) / ms), v = Math.round(a + (b - a) * k); tt.textContent = '00:' + pad(v); if (k < 1 && qr.s === i) requestAnimationFrame(st); })(t0); };
+    qrStage.className = 'qr-stage s' + (i + 1);
+    if (i === 0) { qShow('list'); tt.textContent = '00:00'; at(3600, function () { tap('q-me'); }); }
+    if (i === 1) {
+      qShow('list'); tt.textContent = '00:00'; clock(0, 12, 5500);
+      var ty = $('q-type'), txt = '4821', k0 = 0;
+      at(500, function f() { k0++; ty.textContent = txt.slice(0, k0); ty.classList.add('typed'); if (k0 < txt.length && qr.s === 1) qr.tm.push(setTimeout(f, 180)); });
+      at(1500, function () { add('q-scr', 'flt'); });
+      at(2600, function () { tap('q-me'); });
+      at(3100, function () { qShow('label'); $('q-scr').classList.remove('flt'); });
+    }
+    if (i === 2) {
+      qShow('label'); tt.textContent = '00:12'; clock(12, 31, 5800);
+      at(700, function () { tap('q-print'); }); at(1000, function () { add('q-print', 'busy'); $('q-ptx').textContent = qT('printing'); });
+      at(3300, function () { $('q-print').classList.remove('busy'); $('q-ptx').textContent = qT('print'); add('q-ok'); });
+    }
+    if (i === 3) {
+      qShow('label'); tt.textContent = '00:31'; clock(31, 42, 3200);
+      var sr = qrStage.getBoundingClientRect(), z = sr.width / 760, o = $('q-out').getBoundingClientRect(), sp = $('q-spot').getBoundingClientRect(), f = $('q-fly');
+      var x0 = (o.left - sr.left) / z, y0 = (o.top - sr.top) / z, x1 = (sp.left - sr.left) / z, y1 = (sp.top - sr.top) / z, sc = sp.width / o.width;
+      f.style.left = x0 + 'px'; f.style.top = y0 + 'px';
+      if (f.animate && !reduce) at(500, function () { f.style.opacity = 1; f.animate([{ transform: 'none' }, { transform: 'translate(' + ((x1 - x0) * .5) + 'px,' + ((y1 - y0) * .5 - 80) + 'px) rotate(-8deg) scale(' + ((1 + sc) / 2) + ')', offset: .55 }, { transform: 'translate(' + (x1 - x0) + 'px,' + (y1 - y0) + 'px) scale(' + sc + ')' }], { duration: 1500, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' }); });
+      at(2000, function () { add('q-spot'); f.style.opacity = 0; add('q-ring'); });
+      at(2700, function () { add('q-vtag'); });
+    }
+    if (i === 4) {
+      qShow('scan'); tt.textContent = '00:42';
+      at(2200, function () { add('q-found'); }); at(3500, function () { add('q-today'); });
+    }
+    if (i >= 4) add('q-spot');
+    qrRenderSteps();
+    if (!keep && window.innerWidth <= 980) { var b = qrSteps.querySelector('.on button'); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' }); }
+    qrSchedule();
+  }
+  function qrSchedule() {
+    clearTimeout(qr.timer);
+    if (!qr.auto || !qr.inView) return;
+    qr.timer = setTimeout(function () { qrGo((qr.s + 1) % 5, true); }, qr.DUR[qr.s]);
+  }
+  if (qrStage) {
+    qrBuild();
+    qrSteps.addEventListener('click', function (e) { var b = e.target.closest('[data-qr-step]'); if (!b) return; qr.auto = false; clearTimeout(qr.timer); qrGo(Number(b.dataset.qrStep)); });
+    var qrScale = function () { qrStage.style.transform = 'scale(' + (qrWrap.clientWidth / 760) + ')'; };
+    if ('ResizeObserver' in window) new ResizeObserver(qrScale).observe(qrWrap); else window.addEventListener('resize', qrScale);
+    qrScale(); qrGo(0, true);
+    new IntersectionObserver(function (en) {
+      var was = qr.inView; qr.inView = en[0].isIntersecting;
+      if (qr.inView && !was) qrGo(qr.s, true); else if (!qr.inView) { clearTimeout(qr.timer); qr.tm.forEach(clearTimeout); }
+    }, { threshold: .3 }).observe(document.getElementById('fleet-qr'));
   }
   function hsGo(i, user) {
     i = (i + hsEl.length) % hsEl.length;

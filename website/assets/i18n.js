@@ -150,6 +150,18 @@ window.LANU_I18N = {
       comm: 'Communication', commSub: 'Messages about requests, and announcements for the team.', msgs: 'Messages', anns: 'Announcements', newAnn: 'New announcement', annTitle: 'Announcement title', annTitleTxt: 'New route plan', msg: 'Message',
       forL: 'For', roles: ['Driver', 'Dispatcher', 'Manager', 'Admin', 'Employee'], pinned: 'Pinned on Home', pins: ['Only in the list', '1 day', '3 days', '7 days'], publish: 'Publish announcement', published: 'Published announcements', forDrv: 'For: Driver',
       annOld: 'Payslips', annOldTxt: 'Payslips will be in the app within a day. Thank you!' },
+    qrKicker: 'Andera App · Fleet QR codes', qrTitle: 'QR labels for every van — printed on the spot.',
+    qrSub: 'With the same label printer as the equipment, the app prints the QR label for any van in seconds. No trip to the office, no desk printer, no waiting.',
+    qrSteps: [
+      ['list', 'Every van, one tap away', 'Open Fleet QR codes in the Andera App: every van with plate, model and VIN, straight from the fleet.'],
+      ['pick', 'Pick the van', 'Search by plate, VIN or model. The label is ready instantly: the plate, a QR code with the VIN and the VIN in clear — 35 × 25 mm.'],
+      ['print', 'Print it on the spot', 'The same Bluetooth label printer as for the equipment. Tap Print label and it comes out in seconds — no office, no desk printer.'],
+      ['stick', 'Stick it in the van', 'The label goes on the van right away, in the same place on every van. From tap to sticker in under a minute.'],
+      ['scan', 'Scanned at every pre-trip', 'The driver scans the code at the pre-trip and the app knows which van they drive today — photos, damage and handover follow it.']
+    ],
+    qr: { app: 'Fleet QR codes', printer: 'Printer connected', banT: 'QR labels for the vans', banS: 'Each label carries the plate, a QR code with the VIN and the VIN in clear — 35 × 25 mm, ready to print.',
+      search: 'Search by plate, VIN or model…', vans: 'Vans', nVans: '86 vans', label: 'Label', size: '35 × 25 mm · 300 dpi', print: 'Print label', printing: 'Printing…', dl: 'Download PNG', send: 'Send PNG', printed: 'Label printed',
+      scanT: 'Pre-trip', scanHint: 'Point the camera at the van’s QR code', found: 'Van recognized', today: 'Your vehicle today', timer: 'From tap to sticker', office: 'Via the office: 1–2 days', onVan: 'Label on the van' },
     eqKicker: 'Andera App · Equipment', eqTitle: 'Equipment that always finds its owner.',
     eqSub: 'Uniforms, safety shoes and phones get a QR label. Hand them over with a signature, see in the Board who has what — and know whose it is when something turns up.',
     eqSteps: [
@@ -638,6 +650,18 @@ window.LANU_I18N = {
       comm: 'Kommunikation', commSub: 'Nachrichten zu Anfragen und Mitteilungen fürs Team.', msgs: 'Nachrichten', anns: 'Mitteilungen', newAnn: 'Neue Mitteilung', annTitle: 'Titel der Mitteilung', annTitleTxt: 'Neuer Tourenplan', msg: 'Nachricht',
       forL: 'Für', roles: ['Fahrer', 'Disponent', 'Manager', 'Admin', 'Mitarbeiter'], pinned: 'Auf dem Startbildschirm', pins: ['Nur in der Liste', '1 Tag', '3 Tage', '7 Tage'], publish: 'Mitteilung veröffentlichen', published: 'Veröffentlichte Mitteilungen', forDrv: 'Für: Fahrer',
       annOld: 'Lohnzettel', annOldTxt: 'Die Lohnzettel sind innerhalb eines Tages in der App. Danke!' },
+    qrKicker: 'Andera App · Flotten-QR-Codes', qrTitle: 'QR-Etiketten für jeden Transporter – direkt vor Ort gedruckt.',
+    qrSub: 'Mit demselben Etikettendrucker wie für die Ausrüstung druckt die App das QR-Etikett für jedes Fahrzeug in Sekunden. Kein Weg ins Büro, kein Bürodrucker, kein Warten.',
+    qrSteps: [
+      ['list', 'Jedes Fahrzeug, einen Tipp entfernt', 'Flotten-QR-Codes in der Andera App öffnen: jedes Fahrzeug mit Kennzeichen, Modell und FIN, direkt aus der Flotte.'],
+      ['pick', 'Fahrzeug wählen', 'Nach Kennzeichen, FIN oder Modell suchen. Das Etikett ist sofort fertig: Kennzeichen, QR-Code mit der FIN und die FIN im Klartext – 35 × 25 mm.'],
+      ['print', 'Direkt vor Ort drucken', 'Derselbe Bluetooth-Etikettendrucker wie für die Ausrüstung. Auf „Etikett drucken“ tippen – in Sekunden ist es da, ohne Büro und ohne Bürodrucker.'],
+      ['stick', 'Ins Fahrzeug kleben', 'Das Etikett kommt sofort ans Fahrzeug, bei jedem Transporter an dieselbe Stelle. Vom Tippen bis zum Aufkleber in unter einer Minute.'],
+      ['scan', 'Bei jedem Pre-Trip gescannt', 'Der Fahrer scannt den Code beim Pre-Trip und die App weiß, welches Fahrzeug er heute fährt – Fotos, Schäden und Übergabe hängen daran.']
+    ],
+    qr: { app: 'Flotten-QR-Codes', printer: 'Drucker verbunden', banT: 'QR-Etiketten für die Fahrzeuge', banS: 'Jedes Etikett trägt Kennzeichen, QR-Code mit FIN und die FIN im Klartext – 35 × 25 mm, druckfertig.',
+      search: 'Nach Kennzeichen, FIN oder Modell suchen…', vans: 'Fahrzeuge', nVans: '86 Fahrzeuge', label: 'Etikett', size: '35 × 25 mm · 300 dpi', print: 'Etikett drucken', printing: 'Wird gedruckt…', dl: 'PNG laden', send: 'PNG senden', printed: 'Etikett gedruckt',
+      scanT: 'Pre-Trip', scanHint: 'Kamera auf den QR-Code des Fahrzeugs richten', found: 'Fahrzeug erkannt', today: 'Dein Fahrzeug heute', timer: 'Vom Tippen bis zum Aufkleber', office: 'Über das Büro: 1–2 Tage', onVan: 'Etikett am Fahrzeug' },
     eqKicker: 'Andera App · Ausrüstung', eqTitle: 'Ausrüstung, die immer ihren Besitzer findet.',
     eqSub: 'Uniformen, Sicherheitsschuhe und Handys bekommen ein QR-Etikett. Übergabe mit Unterschrift, im Board sehen, wer was hat – und wissen, wem etwas gehört, wenn es irgendwo auftaucht.',
     eqSteps: [
