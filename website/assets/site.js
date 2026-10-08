@@ -109,7 +109,7 @@
       '<span class="m-livepill"><i></i>' + t('mLive') + ' <span data-clock>' + nowStr() + '</span></span>' +
       '<div class="m-topr"><span class="m-seg"><span>RO</span><span' + (lang === 'de' ? ' class="on"' : '') + '>DE</span><span' + (lang === 'en' ? ' class="on"' : '') + '>EN</span></span><span class="m-ic"><em>4</em></span><span class="m-ic"></span><span class="m-user"><i>D</i>' + t('mDispatcher') + '</span></div></div>';
   }
-  function renderMock() { if (page === 'da') renderDa(); else if (page === 'cp') renderCp(); else if (page === 'hs') renderHs(); else renderOps(); }
+  function renderMock() { if (page === 'da') renderDa(); else if (page === 'cp') renderCp(); else if (page === 'hs') renderHs(); else if (page === 'wr') renderWr(); else renderOps(); }
   function renderOps() {
     data = makeDay(dayOffset);
     if (dayOffset !== 0 || liveDelivered === undefined) liveDelivered = data.delivered;
@@ -174,11 +174,12 @@
   }
 
   mock.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr],[data-cp-act],[data-hs-act]');
+    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr],[data-cp-act],[data-hs-act],[data-wr-act]');
     if (!b || b.disabled) return;
     stopAuto();
     if (b.dataset.cpAct) { cpAction(b.dataset.cpAct, b.dataset.v, b); return; }
     if (b.dataset.hsAct) { hsAction(b.dataset.hsAct, b.dataset.v); return; }
+    if (b.dataset.wrAct) { wrAction(b.dataset.wrAct, b.dataset.v); return; }
     if (b.dataset.day) {
       dayOffset = Math.max(-59, Math.min(0, dayOffset + Number(b.dataset.day)));
       renderMock(); focusStep('history', true);
@@ -656,6 +657,211 @@
   }
 
 
+
+  // ------------------------------------------------------------------ Weekly Reports page (fictional figures)
+  var WR_TAB = { upload: 'sc', results: 'sc', send: 'sc', kpis: 'iadc', trend: 'iadc', insights: 'iadc', heat: 'iadc', drivers: 'iadc' };
+  var wrTab = 'sc', wrWeek = 0, wrUp = 'done', wrPrev = null, wrCat = -1, wrTier = 'all', wrLetter = 'all';
+  function nf(v, d) { return v.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function pp(v) { return (v >= 0 ? '+' : '−') + nf(Math.abs(v), 2) + ' pp'; }
+  function wrScore(off) {
+    var r = rng(5150 + off * 71);
+    return ROSTER.map(function (d) {
+      var x = { name: d.name, id: d.id, del: between(r, 40, 860) };
+      x.dcr = r() < .6 ? 100 : 99.4 + r() * .6; x.dsc = r() < .85 ? 0 : between(r, 900, 3200); x.lor = r() < .93 ? 0 : between(r, 1100, 2400);
+      x.pod = r() < .8 ? 100 : 97 + r() * 3; x.cc = r() < .75 ? 100 : 92 + r() * 8; x.ce = r() < .94 ? 0 : 1; x.cdf = r() < .55 ? 100 : (r() < .97 ? 92 + r() * 8 : 20 + r() * 20);
+      x.total = Math.max(60, 100 - (100 - x.dcr) * 1.4 - x.dsc / 900 - x.lor / 1100 - (100 - x.pod) * .5 - (100 - x.cc) * .3 - x.ce * 3 - (100 - x.cdf) * .06);
+      x.status = x.total >= 99 ? 'Fantastic Plus' : x.total >= 95 ? 'Fantastic' : x.total >= 88 ? 'Great' : x.total >= 80 ? 'Fair' : 'Poor';
+      return x;
+    }).sort(function (a, b) { return b.total - a.total || b.del - a.del; });
+  }
+  function wrIadcData(off, shallow) {
+    var r = rng(777 + off * 31), w = {};
+    w.est = 38800 + Math.floor(r() * 4200); w.dwc = 89.2 + r() * 5.6; w.iadc = 56.5 + r() * 7.5;
+    w.miss = Math.round((100 - w.dwc) / 100 * w.est); w.nc = Math.round((100 - w.iadc) / 100 * w.est * .45);
+    w.fs = 14 + Math.floor(r() * 20); w.hh = 21 + Math.floor(r() * 18);
+    if (shallow) return w;
+    w.prev = wrIadcData(off - 1, true);
+    w.weeks = []; for (var k = -10; k <= 0; k++) { var q = k === 0 ? w : wrIadcData(off + k, true); w.weeks.push({ n: weekInfo(off + k - 1).n, dwc: q.dwc, iadc: q.iadc }); }
+    w.sys = [1 + Math.floor(r() * 2), 3 + Math.floor(r() * 2)];
+    w.days = [0, 1, 2, 3, 4].map(function (d) { var sy = w.sys.indexOf(d) >= 0; return { dwc: w.dwc + (sy ? -2.6 : 1.6) + (r() - .5), iadc: w.iadc + (r() - .5) * 3 }; });
+    w.A = Math.round(w.miss * (.56 + r() * .06)); w.C = Math.round(w.miss * .36); w.D = Math.round(w.miss * .017); w.E = Math.max(0, w.miss - w.A - w.C - w.D);
+    w.F = w.hh * 2 + 3;
+    var drv = ROSTER.map(function (d) {
+      var x = { name: d.name, id: d.id, days: r() < .8 ? 5 : between(r, 3, 4), est: between(r, 110, 820) };
+      x.dwc = Math.min(99.8, 86.5 + Math.pow(r(), .55) * 13); x.adj = Math.min(99.9, x.dwc + .8 + r() * 1.4); x.iadc = Math.max(28, Math.min(88, w.iadc + (r() - .5) * 34));
+      x.dt = x.adj >= 95 ? 'OK' : x.adj >= 90 ? 'WATCH' : 'CRITICAL'; x.it = x.iadc >= 65 ? 'OK' : x.iadc >= 50 ? 'WATCH' : 'CRITICAL';
+      x.miss = Math.round(x.est * (100 - x.dwc) / 100);
+      var a = Math.round(x.miss * (.5 + r() * .3)), c = Math.round((x.miss - a) * .8), dd2 = r() < .2 ? 1 + Math.floor(r() * 4) : 0, e = Math.max(0, x.miss - a - c - dd2);
+      x.flags = [['A', a], ['C', c], ['D', dd2], ['E', e]].filter(function (f) { return f[1] > 0; });
+      x.nc = Math.round(x.est * (100 - x.iadc) / 100 * .4); x.hhp = 68 + Math.floor(r() * 30); x.fs = r() < .55 ? 0 : between(r, 1, 4); x.hd = r() < .5 ? 0 : between(r, 1, 5);
+      x.score = Math.max(4, Math.min(99, Math.round((100 - x.adj) * 5 + Math.max(0, 65 - x.iadc) * .9 + x.fs * 7 + x.hd * 4)));
+      return x;
+    }).sort(function (a, b) { return b.score - a.score; });
+    w.drivers = drv;
+    w.critD = drv.filter(function (x) { return x.dt === 'CRITICAL'; }).length; w.critI = drv.filter(function (x) { return x.it === 'CRITICAL'; }).length;
+    w.fsDrv = drv.filter(function (x) { return x.fs; }).length; w.hhDrv = drv.filter(function (x) { return x.hd; }).length;
+    var top = drv.slice().sort(function (a, b) { return b.miss - a.miss; }).slice(0, 10).reduce(function (t0, x) { return t0 + x.miss; }, 0);
+    w.top10 = top / Math.max(1, drv.reduce(function (t0, x) { return t0 + x.miss; }, 0)) * 100;
+    w.below = 4 + Math.floor(r() * 9);
+    return w;
+  }
+  function wrDelta(v, unit, goodWhenUp) {
+    var up = v >= 0, good = goodWhenUp ? up : !up;
+    return '<span class="wr-d ' + (good ? 'pos' : 'neg') + '">' + (up ? '↑' : '↓') + ' ' + unit + '</span>';
+  }
+  function chart(w, h, labels, series, yMin, yMax, targets, bands) {
+    var L = 46, R = 16, T = 14, B = 26, iw = w - L - R, ih = h - T - B, n = labels.length;
+    function X(i) { return L + (n === 1 ? iw / 2 : i * iw / (n - 1)); }
+    function Y(v) { return T + ih - (v - yMin) / (yMax - yMin) * ih; }
+    var g = '';
+    (bands || []).forEach(function (i) { g += '<rect x="' + (X(i) - 12) + '" y="' + T + '" width="24" height="' + ih + '" fill="#FDEFD5"/>'; });
+    for (var k = 0; k <= 4; k++) { var v = yMin + (yMax - yMin) * k / 4; g += '<path d="M' + L + ' ' + Y(v) + 'H' + (w - R) + '" stroke="#EDF0F5"/><text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + Math.round(v) + '%</text>'; }
+    targets.forEach(function (tg) { g += '<path d="M' + L + ' ' + Y(tg[0]) + 'H' + (w - R) + '" stroke="' + tg[1] + '" stroke-dasharray="4 4" opacity=".6"/><text class="tg" x="' + (w - R) + '" y="' + (Y(tg[0]) - 6) + '" text-anchor="end" fill="' + tg[1] + '">' + tg[2] + '</text>'; });
+    labels.forEach(function (lb, i) { g += '<text x="' + X(i) + '" y="' + (h - 6) + '" text-anchor="middle">' + lb + '</text>'; });
+    series.forEach(function (sr) {
+      var d = sr.vals.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join('');
+      g += '<path class="ln" d="' + d + '" stroke="' + sr.c + '"/>' + sr.vals.map(function (v, i) { return '<circle class="pt" style="--i:' + i + '" cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="4" fill="' + sr.c + '"/>'; }).join('');
+    });
+    return '<svg class="wr-ch" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' + g + '</svg>';
+  }
+  var WR_REASONS = [['Geo >25 m', .62], ['Geo >50 m', .27], ['GPS off', .11]], WR_ROWS = [
+    ['DWC', 'Geo >25 m', 'A', 1], ['DWC', 'Contact Miss', 'C', 1], ['DWC', 'Photo Defect', 'D', .8], ['DWC', 'OTP Miss', 'E', 1], ['DWC', 'Photo Manual Bypass', 'D', .2],
+    ['IADC', 'Unattended (Customer Safe Place)', 'B', .77], ['IADC', 'Mailbox Recommended', 'B', .19], ['IADC', 'Unattended (Recommended)', 'B', .035], ['IADC', 'Attended (Customer Safe Place)', 'B', .005]];
+  var WR_PLACES = ['Household Member', 'Doorstep', 'Safe Location', 'Neighbor', 'Mail Slot', 'Garage', 'Garden', 'Shed', 'Rear Door'];
+  function wrSubnav() {
+    return '<div class="hs-nav"><span class="dim">' + t('wrTitle') + '</span>' + [['sc', 'wrSc'], ['iadc', 'wrIadc']].map(function (x) {
+      return '<button type="button" data-wr-act="tab" data-v="' + x[0] + '"' + (wrTab === x[0] ? ' class="on"' : '') + '>' + t(x[1]) + '</button>';
+    }).join('') + '</div>';
+  }
+  function wrWeekPanel(extra) {
+    var wi = weekInfo(wrWeek - 1);
+    return '<div class="m-panel m-date m-week"><span class="ci">' + ICAL + '</span><div><b>' + t('daWeek', { n: wi.n }) + (wrTab === 'iadc' ? ' <span class="wr-st">· DTH1</span>' : '') + '</b><span>' + esc(wi.range) + '</span></div>' + (extra || '') +
+      '<div class="m-dnav"><button type="button" data-wr-act="week" data-v="-1" aria-label="Previous week"' + (wrWeek <= -8 ? ' disabled' : '') + '>‹</button><button type="button" data-wr-act="week" data-v="1" aria-label="Next week"' + (wrWeek >= 0 ? ' disabled' : '') + '>›</button></div></div>';
+  }
+  var WR_DOC = '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>';
+  var WR_IMG = '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>';
+  var WR_UPI = '<svg class="ic" width="16" height="16" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>';
+  function statusPill(st) { var c = { 'Fantastic Plus': 'fp', Fantastic: 'fa', Great: 'gr', Fair: 'fr', Poor: 'po' }[st]; return '<span class="wr-s ' + c + '">' + st + '</span>'; }
+  function wrUploadInner(n) {
+    var wi = weekInfo(wrWeek - 1);
+    var state = wrUp === 'done' ? '' : '<div class="wr-prog"><span class="wr-spin"></span><b>' + (wrUp === 'reading' ? t('wrReading') : wrUp === 'matching' ? t('wrMatching', { n: n }) : t('wrDoneUp', { n: n })) + '</b><span class="tr"><i style="width:' + (wrUp === 'reading' ? 35 : wrUp === 'matching' ? 75 : 100) + '%"></i></span></div>';
+    return '<div class="m-ph"><h4>' + t('wrUploadTitle') + '</h4></div><div class="wr-drop"><span class="wr-di">' + WR_DOC + '</span><div><b>' + t('wrUploadHead') + '</b><small>' + t('wrUploadNote') + '</small>' +
+      '<span class="wr-file"><span class="wr-ch-btn">' + t('wrChoose') + '</span>scorecard-' + new Date().getFullYear() + '-' + wi.n + '.pdf</span></div></div>' +
+      '<div class="wr-up-row"><button type="button" class="wr-upbtn" data-wr-act="upload">' + WR_UPI + t('wrUpload') + '</button>' + state + '</div><div class="m-foot">' + t('wrUploadFoot') + '</div>';
+  }
+  function wrSendInner(rows) {
+    var wi = weekInfo(wrWeek - 1), f = wrPrev === 'img' ? 'scorecard-' + wi.n + '.png' : 'scorecard-' + wi.n + '.pdf';
+    var prev = '';
+    if (wrPrev === 'img') prev = '<div class="wr-prev img"><div class="wr-pi"><b>LANU · ' + t('daWeek', { n: wi.n }) + '</b>' + rows.slice(0, 5).map(function (x, i) { return '<span><i>' + (i + 1) + '</i>' + esc(x.name) + '<em>' + nf(x.total, 2) + '%</em></span>'; }).join('') + '<small>Fantastic Plus · Fantastic · Great · Fair</small></div><span class="wr-saved">✓ ' + t('wrSaved', { f: f }) + '</span></div>';
+    if (wrPrev === 'pdf') prev = '<div class="wr-prev pdf"><div class="wr-pages"><span></span><span></span><span></span></div><span class="wr-saved">✓ ' + t('wrSaved', { f: f }) + ' · ' + t('wrPages', { n: rows.length + 1 }) + '</span></div>';
+    return '<div class="m-ph"><h4>' + t('wrSend') + '</h4></div>' +
+      '<button type="button" class="wr-dl' + (wrPrev === 'img' ? ' on' : '') + '" data-wr-act="img"><span class="wr-di">' + WR_IMG + '</span><span><b>' + t('wrImg') + '</b><small>' + t('wrImgNote') + '</small></span></button>' +
+      '<button type="button" class="wr-dl' + (wrPrev === 'pdf' ? ' on' : '') + '" data-wr-act="pdf"><span class="wr-di">' + WR_DOC + '</span><span><b>' + t('wrPdf') + '</b><small>' + t('wrPdfNote') + '</small></span></button>' + prev;
+  }
+  function wrDriversInner(w) {
+    var list = w.drivers.filter(function (x) { return (wrTier === 'all' || x.dt === wrTier || x.it === wrTier) && (wrLetter === 'all' || x.flags.some(function (f) { return f[0] === wrLetter; })); });
+    var tiers = ['all', 'OK', 'WATCH', 'CRITICAL'].map(function (tr) { return '<button type="button" class="hs-f' + (wrTier === tr ? ' on' : '') + '" data-wr-act="tier" data-v="' + tr + '">' + (tr === 'all' ? t('wrAll') : tr) + '</button>'; }).join('');
+    var lets = ['all', 'A', 'C', 'D', 'E'].map(function (l) { return '<button type="button" class="hs-f sq' + (wrLetter === l ? ' on' : '') + '" data-wr-act="letter" data-v="' + l + '">' + (l === 'all' ? t('wrAll') : l) + '</button>'; }).join('');
+    var C = t('wrCols'), tierP = function (tr) { return '<span class="wr-t ' + tr.toLowerCase() + '">' + tr + '</span>'; };
+    var FC = { A: 'a', C: 'c', D: 'd', E: 'e' };
+    return '<div class="m-ph"><h4>' + t('wrDrivers') + '</h4><span class="m-cnt">' + t('wrDrvCount', { n: w.drivers.length }) + '</span><span class="cp-btn">' + t('wrExport') + '</span></div><p class="wr-note">' + t('wrDrvNote') + '</p>' +
+      '<div class="wr-fil"><span class="m-search">' + t('wrSearchDrv') + '</span>' + tiers + '<span class="wr-sep"></span>' + lets + '</div>' +
+      '<table class="m-t dense wr-dt"><thead><tr><th>' + C[0] + '</th><th>' + C[1] + '</th><th class="r">' + C[2] + '</th><th class="r">' + C[3] + '</th><th class="r">' + C[4] + '</th><th class="r">' + C[5] + '</th><th>' + C[6] + '</th><th class="r">' + C[7] + '</th><th>' + C[8] + '</th><th class="r">' + C[9] + '</th><th class="r">' + C[10] + '</th><th class="r">' + C[11] + '</th><th class="r">' + C[12] + '</th><th class="r">' + C[13] + '</th><th class="r">' + C[14] + ' ↓</th></tr></thead><tbody>' +
+      list.slice(0, 9).map(function (x, i) {
+        return '<tr class="row-in" style="--i:' + i + '"><td><span class="da">' + avatar(x.name, 26) + '<b>' + esc(x.name) + '</b></span></td><td class="mono">' + x.id + '</td><td class="r">' + x.days + '</td><td class="r">' + x.est + '</td><td class="r">' + nf(x.dwc, 2) + '%</td><td class="r"><b>' + nf(x.adj, 2) + '%</b></td><td>' + tierP(x.dt) + '</td><td class="r">' + nf(x.iadc, 2) + '%</td><td>' + tierP(x.it) + '</td>' +
+          '<td class="r">' + x.miss + ' ' + x.flags.map(function (f) { return '<span class="wr-f ' + FC[f[0]] + '">' + f[0] + f[1] + '</span>'; }).join('') + '</td><td class="r">' + x.nc + '</td><td class="r">' + x.hhp + '%</td><td class="r' + (x.fs ? ' red' : '') + '">' + x.fs + '</td><td class="r' + (x.hd ? ' red' : '') + '">' + x.hd + '</td><td class="r"><span class="wr-sc">' + x.score + '</span></td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function wrBreakInner(w) {
+    var cats = t('wrCats'), vals = [w.A, w.nc, w.C, w.D, w.E, w.F], cols = ['#2F6BFF', '#7C3AED', '#F5A623', '#12B76A', '#06AED4', '#E5484D'], tags = ['DWC', 'IADC', 'DWC', 'DWC', 'DWC', 'D-2'];
+    var REAS = [WR_REASONS, [['Unattended (Customer Safe Place)', .77], ['Mailbox Recommended', .19], ['Unattended (Recommended)', .04]], [['Contact Miss', .82], ['No call before', .18]], [['Photo Defect', .8], ['Photo Manual Bypass', .2]], [['OTP Miss', 1]], [['Household DNR', .55], ['Confirmed false scan', .45]]];
+    return '<div class="m-ph"><h4>' + t('wrBreak') + '</h4><span class="m-cnt">' + t('wrBreakTag') + '</span></div><p class="wr-note">' + t('wrBreakNote') + '</p>' +
+      cats.map(function (c, i) {
+        var base = i === 1 || i === 5 ? vals[i] : w.miss, pc = vals[i] / base * 100;
+        var open = wrCat === i ? '<div class="wr-reas">' + REAS[i].map(function (q) { return '<span><i style="background:' + cols[i] + '"></i>' + q[0] + '<b>' + nf(Math.round(vals[i] * q[1])) + '</b></span>'; }).join('') + '</div>' : '';
+        return '<button type="button" class="wr-bar' + (wrCat === i ? ' on' : '') + '" data-wr-act="cat" data-v="' + i + '"><b>' + 'ABCDEF'[i] + '</b><span class="wr-bl">' + c + ' <small>' + tags[i] + '</small></span><span class="wr-bt"><i style="width:' + Math.max(1.5, pc) + '%;background:' + cols[i] + '"></i></span><span class="wr-bv">' + nf(vals[i]) + ' <small>' + nf(pc, 1) + '%</small></span></button>' + open;
+      }).join('');
+  }
+  function renderWr() {
+    var html = topBar(t('pageWr')) + wrSubnav() + '<div class="m-body">', wi = weekInfo(wrWeek - 1);
+    if (wrTab === 'sc') {
+      var rows = wrScore(wrWeek);
+      html += wrWeekPanel() + '<div class="m-grid2" style="grid-template-columns:1.6fr 1fr;align-items:stretch">' +
+        '<div class="m-panel cp-col" data-p="upload" data-wr="upload">' + wrUploadInner(rows.length) + '</div>' +
+        '<div class="m-panel" data-p="send" data-wr="send">' + wrSendInner(rows) + '</div></div>' +
+        '<div class="m-panel" data-p="results"><div class="m-ph"><h4>' + t('wrResults') + '</h4><span class="m-cnt">' + t('wrSorted') + '</span></div><p class="wr-note">' + t('wrUploadedBy') + '</p>' +
+        '<table class="m-t dense"><thead><tr><th>' + t('daAssoc') + '</th><th>' + t('wrStatus') + '</th><th class="r">' + t('wrTotal') + '</th><th class="r">' + t('wrDelivered') + '</th><th class="r">DCR</th><th class="r">DSC DPMO</th><th class="r">LoR DPMO</th><th class="r">POD</th><th class="r">CC</th><th class="r">CE</th><th class="r">CDF DPMO %</th></tr></thead><tbody>' +
+        (wrUp === 'done' ? rows.slice(0, 12).map(function (x, i) {
+          var g = function (v, ok) { return '<td class="r ' + (ok ? 'gr' : 'bad') + '">' + v + '</td>'; };
+          return '<tr class="row-in" style="--i:' + i + '"><td>' + who(x) + '</td><td>' + statusPill(x.status) + '</td><td class="r"><b class="wr-tot">' + nf(x.total, 2) + '%</b></td><td class="r"><b>' + x.del + '</b></td>' +
+            g(nf(x.dcr, x.dcr === 100 ? 0 : 2) + '%', x.dcr >= 99.5) + g(nf(x.dsc), !x.dsc) + g(nf(x.lor), !x.lor) + g(nf(x.pod, 0) + '%', x.pod >= 98) + g(nf(x.cc, 0) + '%', x.cc >= 95) + g(x.ce, !x.ce) +
+            '<td class="r">' + (x.cdf < 80 ? '<span class="dn r">' + nf(x.cdf, 0) + '%</span>' : '<span class="gr">' + nf(x.cdf, 0) + '%</span>') + '</td></tr>';
+        }).join('') : '<tr><td colspan="11" class="wr-wait">' + (wrUp === 'reading' ? t('wrReading') : t('wrMatching', { n: rows.length })) + '</td></tr>') + '</tbody></table></div>';
+    } else {
+      var w = wrIadcData(wrWeek), p = w.prev, K = t('wrK'), days = [0, 1, 2, 3, 4].map(function (d) { var x = new Date(); x.setDate(x.getDate() - x.getDay() + (wrWeek - 1) * 7 + d + 1); return pad(x.getDate()) + '.' + pad(x.getMonth() + 1); });
+      html += wrWeekPanel('<span class="m-pill g wr-cpl">' + t('wrComplete') + '</span><span class="wr-imp">' + t('wrLastImport', { d: ddmm(addD(TODAY, -1)) }) + '</span>') +
+        '<div class="m-panel wr-up2"><div class="wr-drop"><span class="wr-di">' + WR_DOC + '</span><div><b>' + t('wrUploadTitle') + ' <span class="m-cnt">' + t('wrIadcTag') + '</span></b><small>' + t('wrIadcNote') + '</small></div><button type="button" class="wr-upbtn" data-wr-act="noop">' + WR_UPI + t('wrUpload') + '</button></div></div>' +
+        '<div class="m-panel wr-k" data-p="kpis">' +
+        '<div><span>' + K[0] + '</span><b class="neg" data-count="' + Math.round(w.dwc * 100) + '" data-f="pct">' + pctf(w.dwc, 2) + '</b>' + wrDelta(w.dwc - p.dwc, pp(w.dwc - p.dwc), true) + '<small>' + t('wrFinal') + '</small></div>' +
+        '<div><span>' + K[1] + '</span><b class="amb" data-count="' + Math.round(w.iadc * 100) + '" data-f="pct">' + pctf(w.iadc, 2) + '</b>' + wrDelta(w.iadc - p.iadc, pp(w.iadc - p.iadc), true) + '<small>' + t('wrFinal') + '</small></div>' +
+        '<div><span>' + K[2] + '</span><b data-count="' + w.miss + '">' + nf(w.miss) + '</b>' + wrDelta(w.miss - p.miss, (w.miss >= p.miss ? '+' : '−') + nf(Math.abs(w.miss - p.miss)), false) + '<small>' + t('wrLocShare', { p: pctf(w.A / w.miss * 100, 1) }) + '</small></div>' +
+        '<div><span>' + K[3] + '</span><b data-count="' + w.nc + '">' + nf(w.nc) + '</b>' + wrDelta(w.nc - p.nc, (w.nc >= p.nc ? '+' : '−') + nf(Math.abs(w.nc - p.nc)), false) + '<small>' + t('wrHhShare', { p: pctf(77, 1) }) + '</small></div>' +
+        '<div><span>' + K[4] + '</span><b class="neg" data-count="' + w.fs + '">' + w.fs + '</b>' + wrDelta(w.fs - p.fs, (w.fs >= p.fs ? '+' : '−') + Math.abs(w.fs - p.fs), false) + '<small>' + t('wrDrvInv', { n: w.fsDrv }) + '</small></div>' +
+        '<div><span>' + K[5] + '</span><b class="neg" data-count="' + w.hh + '">' + w.hh + '</b>' + wrDelta(w.hh - p.hh, (w.hh >= p.hh ? '+' : '−') + Math.abs(w.hh - p.hh), false) + '<small>' + t('wrDrvInv', { n: w.hhDrv }) + '</small></div>' +
+        '<div><span>' + K[6] + '</span><b class="neg" data-count="' + (w.critD + w.critI) + '">' + (w.critD + w.critI) + '</b><small>' + t('wrCritSplit', { a: w.critD, b: w.critI }) + '</small></div>' +
+        '<div><span>' + K[7] + '</span><b data-count="' + w.est + '">' + nf(w.est) + '</b><small>' + t('wrDwcDays', { n: 5 }) + '</small></div></div>' +
+        '<div class="m-grid2" style="grid-template-columns:1fr 1fr">' +
+        '<div class="m-panel wr-chp" data-p="trend"><div class="m-ph"><h4>' + t('wrWeekly') + '</h4><span class="m-cnt">DWC · IADC</span></div><p class="wr-note">' + t('wrWeeklyNote') + '</p>' +
+        chart(590, 250, w.weeks.map(function (q) { return q.n; }), [{ vals: w.weeks.map(function (q) { return q.dwc; }), c: '#2F6BFF' }, { vals: w.weeks.map(function (q) { return q.iadc; }), c: '#7C3AED' }], 50, 100, [[95, '#2F6BFF', 'DWC 95%'], [65, '#7C3AED', 'IADC 65%']]) +
+        '<div class="wr-leg"><span style="--c:#2F6BFF">DWC</span><span style="--c:#7C3AED">IADC</span></div></div>' +
+        '<div class="m-panel wr-chp" data-p="trend"><div class="m-ph"><h4>' + t('wrDaily') + '</h4><span class="m-cnt">' + new Date().getFullYear() + '-' + wi.n + '</span></div><p class="wr-note">' + t('wrDailyNote') + '</p>' +
+        chart(590, 250, days, [{ vals: w.days.map(function (q) { return q.dwc; }), c: '#2F6BFF' }, { vals: w.days.map(function (q) { return q.iadc; }), c: '#7C3AED' }], 45, 100, [[95, '#2F6BFF', 'DWC 95%'], [65, '#7C3AED', 'IADC 65%']], w.sys) +
+        '<div class="wr-leg"><span style="--c:#2F6BFF">DWC</span><span style="--c:#7C3AED">IADC</span><span class="sys">' + t('wrSystemic') + '</span></div></div></div>';
+      var I = t('wrIns'), pw = weekInfo(wrWeek - 2).n;
+      var ins = [
+        I[0].replace('{dir}', t(w.dwc < p.dwc ? 'wrDown' : 'wrUp')).replace('{pw}', pw).replace('{a}', pctf(p.dwc, 2)).replace('{b}', pctf(w.dwc, 2)).replace('{d}', pp(w.dwc - p.dwc)),
+        I[1].replace('{dir}', t(w.iadc < p.iadc ? 'wrDown' : 'wrUp')).replace('{pw}', pw).replace('{a}', pctf(p.iadc, 2)).replace('{b}', pctf(w.iadc, 2)).replace('{d}', pp(w.iadc - p.iadc)).replace('{t}', pctf(65, 2)).replace('{k}', w.below),
+        I[2].replace('{a}', nf(p.miss)).replace('{b}', nf(w.miss)).replace('{c}', p.fs).replace('{e}', w.fs).replace('{f}', p.hh).replace('{g}', w.hh),
+        I[3].replace('{p}', pctf(w.A / w.miss * 100, 0)),
+        I[4].replace('{p}', pctf(77, 0)),
+        I[5].replace('{day}', days[w.sys[0]]).replace('{n}', 420 + w.sys[0] * 37).replace('{k}', 12 + w.sys[0] * 3),
+        I[6].replace('{p}', pctf(w.top10, 0))
+      ];
+      html += '<div class="m-panel" data-p="insights"><div class="m-ph"><h4>' + t('wrInsights') + '</h4><span class="m-cnt">' + t('wrGenerated') + '</span></div><p class="wr-note">' + t('wrInsNote') + '</p><ul class="wr-ins">' +
+        ins.map(function (x, i) { return '<li style="--i:' + i + '">' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+      var heat = WR_ROWS.map(function (row, ri) {
+        var tot = Math.round((row[2] === 'A' ? w.A : row[2] === 'C' ? w.C : row[2] === 'D' ? w.D : row[2] === 'E' ? w.E : w.nc) * row[3]), rr = rng(900 + ri * 13 + wrWeek), wts = WR_PLACES.map(function (pl, ci) { return ci === 0 && ri !== 1 ? 3 + rr() * 4 : rr() < .3 ? 0 : rr() * (ci < 4 ? 1.6 : .5); });
+        if (ri === 1) wts[0] = 0;
+        var sw = wts.reduce(function (a, b) { return a + b; }, 0) || 1;
+        return { b: row[0], n: row[1], tot: tot, cells: wts.map(function (x) { return Math.round(tot * x / sw); }) };
+      });
+      var mx = Math.max.apply(null, heat.map(function (h) { return Math.max.apply(null, h.cells); }));
+      html += '<div class="m-grid2" style="grid-template-columns:.8fr 1.2fr;align-items:stretch"><div class="m-panel" data-p="heat" data-wr="cats">' + wrBreakInner(w) + '</div>' +
+        '<div class="m-panel" data-p="heat"><div class="m-ph"><h4>' + t('wrHeat') + '</h4><span class="m-cnt">' + t('wrHeatTag') + '</span></div><p class="wr-note">' + t('wrHeatNote') + '</p><table class="wr-hm"><thead><tr><th></th>' +
+        WR_PLACES.map(function (pl) { return '<th>' + pl.replace(' ', '<br>') + '</th>'; }).join('') + '<th>' + t('wrTotalCol') + '</th></tr></thead><tbody>' +
+        heat.map(function (h, ri) { return '<tr><th><small>' + h.b + '</small>' + h.n + '</th>' + h.cells.map(function (v, ci) { var a = v ? .12 + .8 * Math.sqrt(v / mx) : 0; return '<td style="--a:' + a.toFixed(2) + ';--i:' + (ri + ci) + '"' + (a > .55 ? ' class="dk2"' : '') + '>' + (v ? nf(v) : '') + '</td>'; }).join('') + '<td class="tot">' + nf(h.tot) + '</td></tr>'; }).join('') +
+        '</tbody></table></div></div>' +
+        '<div class="m-panel" data-p="drivers" data-wr="drivers">' + wrDriversInner(w) + '</div>';
+    }
+    mock.innerHTML = html + '</div>';
+    layoutMock();
+  }
+  function wrSet(name, html) { var el = mock.querySelector('[data-wr="' + name + '"]'); if (el) el.innerHTML = html; }
+  function wrAction(act, v) {
+    if (act === 'tab') { wrTab = v; renderMock(); focusStep(v === 'sc' ? 'upload' : 'kpis', true); return; }
+    if (act === 'week') { wrWeek = Math.max(-8, Math.min(0, wrWeek + Number(v))); wrPrev = null; renderMock(); focusStep(active, true, true); return; }
+    if (act === 'upload') {
+      var n = ROSTER.length; wrUp = 'reading'; wrPrev = null; renderMock(); focusStep('upload', true, true);
+      setTimeout(function () { if (page !== 'wr' || wrTab !== 'sc') { wrUp = 'done'; return; } wrUp = 'matching'; wrSet('upload', wrUploadInner(n)); }, 900);
+      setTimeout(function () { if (page !== 'wr' || wrTab !== 'sc') { wrUp = 'done'; return; } wrUp = 'ok'; wrSet('upload', wrUploadInner(n)); }, 1800);
+      setTimeout(function () { wrUp = 'done'; if (page === 'wr' && wrTab === 'sc') { renderMock(); focusStep('results', true); } }, 2500);
+      return;
+    }
+    if (act === 'img' || act === 'pdf') { wrPrev = act; wrSet('send', wrSendInner(wrScore(wrWeek))); focusStep('send', true, true); return; }
+    if (act === 'cat') { wrCat = wrCat === Number(v) ? -1 : Number(v); wrSet('cats', wrBreakInner(wrIadcData(wrWeek))); focusStep('heat', true, true); return; }
+    if (act === 'tier' || act === 'letter') { if (act === 'tier') wrTier = v; else wrLetter = v; wrSet('drivers', wrDriversInner(wrIadcData(wrWeek))); focusStep('drivers', true, true); }
+  }
+
   // ------------------------------------------------------------------ Equipment: animated story (print → stick → scan → driver → sign → Board → found)
   var eq = { s: 0, item: 0, loop: 0, auto: !reduce, inView: false, timer: null, DUR: [4200, 3800, 4800, 4000, 5400, 5800, 6200] };
   var EQ_ITEMS = [
@@ -840,9 +1046,10 @@
     ops: { name: 'pageOps', steps: 'steps', first: 'overview', url: 'board.lanu.app/operations' },
     da: { name: 'pageDa', steps: 'stepsDa', first: 'kpis', url: 'board.lanu.app/associates' },
     cp: { name: 'pageCp', steps: 'stepsCp', first: 'kpis', url: 'board.lanu.app/phones' },
-    hs: { name: 'pageHs', steps: 'stepsHs', first: 'kpis', url: 'board.lanu.app/housing' }
+    hs: { name: 'pageHs', steps: 'stepsHs', first: 'kpis', url: 'board.lanu.app/housing' },
+    wr: { name: 'pageWr', steps: 'stepsWr', first: 'upload', url: 'board.lanu.app/reports' }
   };
-  var ORDER = ['ops', 'da', 'cp', 'hs'];
+  var ORDER = ['ops', 'da', 'cp', 'hs', 'wr'];
   var page = 'ops';
   var active = 'overview', auto = !reduce, timer = null, inView = false, DUR = 7000;
   function renderSteps() {
@@ -868,6 +1075,7 @@
   }
   function focusStep(id, keep, quiet) {
     if (page === 'hs' && HS_TAB[id] && hsTab !== HS_TAB[id]) { hsTab = HS_TAB[id]; renderMock(); }
+    if (page === 'wr' && WR_TAB[id] && wrTab !== WR_TAB[id]) { wrTab = WR_TAB[id]; renderMock(); }
     active = id;
     renderSteps();
     var panels = mock.querySelectorAll('[data-p]');
