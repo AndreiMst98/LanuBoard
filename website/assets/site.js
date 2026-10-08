@@ -109,7 +109,7 @@
       '<span class="m-livepill"><i></i>' + t('mLive') + ' <span data-clock>' + nowStr() + '</span></span>' +
       '<div class="m-topr"><span class="m-seg"><span>RO</span><span' + (lang === 'de' ? ' class="on"' : '') + '>DE</span><span' + (lang === 'en' ? ' class="on"' : '') + '>EN</span></span><span class="m-ic"><em>4</em></span><span class="m-ic"></span><span class="m-user"><i>D</i>' + t('mDispatcher') + '</span></div></div>';
   }
-  function renderMock() { if (page === 'da') renderDa(); else if (page === 'cp') renderCp(); else if (page === 'hs') renderHs(); else if (page === 'wr') renderWr(); else renderOps(); }
+  function renderMock() { if (page === 'da') renderDa(); else if (page === 'cp') renderCp(); else if (page === 'hs') renderHs(); else if (page === 'wr') renderWr(); else if (page === 'rc') renderRc(); else renderOps(); }
   function renderOps() {
     data = makeDay(dayOffset);
     if (dayOffset !== 0 || liveDelivered === undefined) liveDelivered = data.delivered;
@@ -174,12 +174,13 @@
   }
 
   mock.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr],[data-cp-act],[data-hs-act],[data-wr-act]');
+    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr],[data-cp-act],[data-hs-act],[data-wr-act],[data-rc-act]');
     if (!b || b.disabled) return;
     stopAuto();
     if (b.dataset.cpAct) { cpAction(b.dataset.cpAct, b.dataset.v, b); return; }
     if (b.dataset.hsAct) { hsAction(b.dataset.hsAct, b.dataset.v); return; }
     if (b.dataset.wrAct) { wrAction(b.dataset.wrAct, b.dataset.v); return; }
+    if (b.dataset.rcAct) { rcAction(b.dataset.rcAct, b.dataset.v); return; }
     if (b.dataset.day) {
       dayOffset = Math.max(-59, Math.min(0, dayOffset + Number(b.dataset.day)));
       renderMock(); focusStep('history', true);
@@ -1203,6 +1204,135 @@
     if (act === 'tier' || act === 'letter') { if (act === 'tier') wrTier = v; else wrLetter = v; wrSet('drivers', wrDriversInner(wrIadcData(wrWeek))); focusStep('drivers', true, true); }
   }
 
+
+  // ------------------------------------------------------------------ Recruiting page (fictional recruits)
+  var RCN = rosterOf(200), RC_ST = ['contacted', 'progress', 'training', 'employee', 'rejected', 'withdrew'], RC_SC = ['#56607A', '#2F6BFF', '#7C3AED', '#1E9E5A', '#B42318', '#93370D'];
+  var rc, rcDrawer = null, rcFileId = null, rcFilter = 'all', rcTok = 0, rcNewName = null, rcHi = null;
+  function makeRecruits() {
+    var r = rng(8080), recs = CPR.slice(78, 82).map(function (d) { return d.name; });
+    var DEF = [['training', 6, 1, 120, 0], ['progress', 4, 0, 95, 0], ['progress', 2, 0, 0, 0], ['employee', 6, 0, 140, 1], ['contacted', 1, 0, 0, 0], ['training', 5, 0, 110, 0], ['employee', 6, 1, 0, 0], ['rejected', 2, 0, 0, 0], ['withdrew', 3, 0, 85, 1]];
+    return DEF.map(function (q, i) {
+      var papers = [0, 1, 2, 3, 4, 5].map(function (k) { return k < q[1]; });
+      return { id: 'r' + i, name: RCN[160 + i].name, st: q[0], papers: papers, by: recs[i % 4], start: addD(TODAY, between(r, -20, 24)),
+        phone: (r() < .6 ? '+40 7' + between(r, 10, 79) : '+49 1' + between(r, 51, 79)) + ' ••• ' + between(r, 100, 999),
+        iban: papers[1] ? (r() < .5 ? 'DE' : 'RO') + between(r, 10, 99) + ' •••• •••• ' + between(r, 1000, 9999) : null, tr: q[3], trRec: !!q[4], month: i < 5 ? 0 : -1 };
+    });
+  }
+  function rcCount(st) { return rc.filter(function (x) { return x.st === st; }).length; }
+  function rcStPill(x) { var i = RC_ST.indexOf(x.st); return '<button type="button" class="rc-st" style="--c:' + RC_SC[i] + '" data-rc-act="status" data-v="' + x.id + '">' + t('rcStN')[i] + '</button>'; }
+  function rcPapersDots(x) { var n = x.papers.filter(Boolean).length; return '<span class="rc-pp">' + x.papers.map(function (p) { return '<i' + (p ? ' class="on"' : '') + '></i>'; }).join('') + '<b>' + n + '/6</b></span>'; }
+  function rcListInner() {
+    var F = ['progress', 'contacted', 'training', 'employee', 'rejected', 'withdrew', 'all', 'transport'], N = t('rcStN');
+    var chips = F.map(function (f) {
+      var n = f === 'all' ? rc.length : f === 'transport' ? rc.filter(function (x) { return x.tr && !x.trRec; }).length : rcCount(f);
+      var lb = f === 'all' ? t('rcAll') : f === 'transport' ? t('rcTransportF') : N[RC_ST.indexOf(f)];
+      return '<button type="button" class="hs-f' + (rcFilter === f ? ' on' : '') + '" data-rc-act="filter" data-v="' + f + '">' + lb + ' <b>' + n + '</b></button>';
+    }).join('');
+    var list = rc.filter(function (x) { return rcFilter === 'all' || (rcFilter === 'transport' ? x.tr && !x.trRec : x.st === rcFilter); }), C = t('rcCols');
+    return '<div class="m-ph"><h4>' + t('rcRecruits') + '</h4><span class="m-cnt">' + rc.length + '</span></div>' +
+      '<div class="rc-tools"><label><small>&nbsp;</small><span class="m-search">' + t('rcSearch') + '</span></label><label><small>' + t('rcMonth') + '</small><span class="rc-sel">' + t('rcAllM') + ' <i>▾</i></span></label><label class="rc-chips"><small>' + t('rcStatusL') + '</small><span>' + chips + '</span></label></div>' +
+      '<table class="m-t rc-t"><thead><tr>' + C.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      list.map(function (x, i) {
+        return '<tr class="row-in' + (rcHi === x.id ? ' add-in' : '') + '" style="--i:' + i + '"><td><button type="button" class="rc-nm" data-rc-act="open" data-v="' + x.id + '">' + avatar(x.name, 30) + '<span><b>' + esc(x.name) + '</b><small>' + x.phone + '</small></span></button></td><td>' + rcStPill(x) + '</td>' +
+          '<td>' + ddmm(x.start) + '</td><td>' + rcPapersDots(x) + '</td><td class="mono">' + (x.iban || '–') + '</td><td>' + (x.tr ? eur0(x.tr) + ' <span class="rc-tr' + (x.trRec ? ' ok' : '') + '">' + t(x.trRec ? 'rcRecovered' : 'rcOpen') + '</span>' : '–') + '</td>' +
+          '<td><span class="da">' + avatar(x.by, 22) + '<span>' + esc(x.by.split(' ')[0]) + '</span></span></td></tr>';
+      }).join('') + '</tbody></table><div class="m-foot">' + t('rcFoot') + '</div>';
+  }
+  function rcField(label, val, typed, cls) {
+    return '<div class="rc-fl' + (cls ? ' ' + cls : '') + '"><small>' + label + '</small><span class="rc-in"' + (typed ? ' data-type="' + esc(typed) + '"' : '') + '>' + (typed ? '' : val || '') + '</span></div>';
+  }
+  function rcYN(label, yes) { return '<div class="rc-fl"><small>' + label + '</small><span class="rc-yn"><i' + (yes === true ? ' class="on"' : '') + '>' + t('rcYes') + '</i><i' + (yes === false ? ' class="on"' : '') + '>' + t('rcNo') + '</i></span></div>'; }
+  function rcNewDrawer() {
+    var F = t('rcF'), S = t('rcSec'), H = t('rcHints'), nm = RCN[170 + (rcTok % 20)].name;
+    function sec(i, body) { return '<div class="rc-sec"><h5>' + S[i] + '</h5><span class="rc-how">' + (i < 2 ? '− ' : '+ ') + t('rcHow') + '</span>' + (i < 2 ? '<p class="rc-hint">' + H[i] + '</p>' : '') + body + '</div>'; }
+    return '<div class="m-panel rc-dr" data-p="rcnew"><div class="rc-dh"><div><b>' + t('rcNew') + '</b><small>' + t('rcNewSub') + '</small></div><button type="button" class="cp-x" data-rc-act="close">×</button></div>' +
+      sec(0, '<div class="rc-g2">' + rcField(F[0], '', nm, 'focus') + rcField(F[1], '', '+4917612345678') + rcField(F[2], '', nm.toLowerCase().replace(' ', '.') + '@mail.example') + rcField(F[3], ddmm(addD(TODAY, 14))) + '</div>') +
+      sec(1, rcField(F[4], '', 'DE89 3704 0044 0532 0130 00', 'iban') + '<span class="rc-ok">' + t('rcIbanOk') + '</span><div class="rc-g2">' + rcField(F[5], '') + rcField(F[6], '') + '</div>' + rcField(F[7], 'TK')) +
+      sec(2, '<div class="rc-g2">' + rcYN(F[8], false) + rcYN(F[9], null) + '</div>') +
+      sec(3, '<div class="rc-g2">' + rcField(F[10], '120') + rcField(F[11], ddmm(addD(TODAY, -2))) + '</div>' + rcField(F[12], 'BlueRoad Bus') + rcYN(F[13], false)) +
+      sec(4, rcField('', t('rcNoteDemo'), null, 'area')) +
+      '<div class="rc-act"><button type="button" class="hs-f" data-rc-act="close">' + t('rcCancel') + '</button><button type="button" class="wr-upbtn" data-rc-act="add" data-v="' + esc(nm) + '">+ ' + t('rcAdd') + '</button></div></div>';
+  }
+  function rcFileDrawer() {
+    var x = rc.filter(function (y) { return y.id === rcFileId; })[0] || rc[0], P = t('rcPaperN'), miss = x.papers.filter(function (p) { return !p; }).length, i = RC_ST.indexOf(x.st), Hh = t('rcHist');
+    var docs = [['Ausweis.pdf', 0], ['IBAN.jpg', 1], ['Steuer-ID.pdf', 2], ['SV-Ausweis.jpg', 3], ['Versicherung.pdf', 4], ['Fuehrerschein.jpg', 5]].filter(function (d) { return x.papers[d[1]]; });
+    var hist = [[Hh[0], -9, x.by], [Hh[1], -6, x.by]];
+    if (i >= 2) hist.push([Hh[2].replace('{d}', ddmm(x.start)), -3, CPR[80].name]);
+    hist.push([Hh[3].replace('{s}', t('rcStN')[i]), -1, CPR[81].name]);
+    return '<div class="m-panel rc-dr rc-file" data-p="rcfile"><div class="rc-dh"><div class="rc-fh">' + avatar(x.name, 46) + '<div><small>' + t('rcFileT') + '</small><b>' + esc(x.name) + '</b><span>' + x.phone + '</span></div></div>' + rcStPill(x) + '<button type="button" class="cp-x" data-rc-act="close">×</button></div>' +
+      '<div class="rc-facts"><div><small>' + t('rcPlanned') + '</small><b>' + ddmm(x.start) + '</b></div><div><small>' + t('rcBy') + '</small><b>' + esc(x.by) + '</b></div><div><small>' + t('rcBank') + '</small><b class="mono">' + (x.iban ? x.iban.replace(/ •••• •••• /, ' 3704 0044 0532 ') : '–') + '</b></div></div>' +
+      '<div class="rc-sec"><h5>' + t('rcPapers') + ' <span class="rc-cnt' + (miss ? '' : ' ok') + '">' + (miss ? t('rcMissing', { n: miss }) : t('rcComplete')) + '</span></h5><div class="rc-chk">' + P.map(function (p, k) { return '<span class="' + (x.papers[k] ? 'ok' : '') + '">' + (x.papers[k] ? '✓' : '○') + ' ' + p + '</span>'; }).join('') + '</div></div>' +
+      '<div class="rc-sec"><h5>' + t('rcDocs') + '</h5><div class="rc-docs">' + docs.map(function (d, k) { return '<span class="rc-doc" style="--i:' + k + '"><i>' + (/pdf$/.test(d[0]) ? 'PDF' : 'JPG') + '</i>' + d[0] + '</span>'; }).join('') + '<span class="rc-doc add">+ ' + t('rcUpload') + '</span></div></div>' +
+      (x.tr ? '<div class="rc-sec"><h5>' + t('rcSec')[3] + '</h5><p class="rc-trl">' + eur0(x.tr) + ' · BlueRoad Bus · ' + (x.trRec ? '<span class="rc-tr ok">' + t('rcRecovered') + '</span>' : '<span class="rc-tr">' + t('rcToRecover', { n: eur0(x.tr) }) + '</span>') + '</p></div>' : '') +
+      '<div class="rc-sec"><h5>' + t('rcHistory') + '</h5><ul class="cp-tl rc-tl">' + hist.reverse().map(function (h, k) { return '<li class="' + (k === 0 ? 'cur' : '') + '"><b>' + esc(h[0]) + '</b><span>' + ddmm(addD(TODAY, h[1])) + ' · ' + esc(h[2]) + '</span></li>'; }).join('') + '</ul><span class="rc-note">' + t('rcAddNote') + '…</span></div></div>';
+  }
+  function renderRc() {
+    if (!rc) rc = makeRecruits();
+    var K = t('rcK'), miss = rc.filter(function (x) { return x.papers.some(function (p) { return !p; }) && x.st !== 'rejected' && x.st !== 'withdrew'; }).length;
+    var hired = rc.filter(function (x) { return x.st === 'employee' && x.month === 0; }).length, trOpen = rc.reduce(function (a, x) { return a + (x.tr && !x.trRec ? x.tr : 0); }, 0);
+    var recs = CPR.slice(78, 82).map(function (d) { return d.name; }), mine = recs.map(function (nm) { return rc.filter(function (x) { return x.by === nm; }); });
+    var mx = Math.max.apply(null, mine.map(function (l) { return l.length; }));
+    var html = topBar(t('pageRc')) + '<div class="m-body">' +
+      '<div class="rc-head"><div><b>' + t('pageRc') + '</b><span>' + t('rcSub') + '</span></div><button type="button" class="wr-upbtn rc-newb" data-rc-act="new">+ ' + t('rcNew') + '</button></div>' +
+      '<div class="rc-k" data-p="rckpis">' + [[K[0], rcCount('training'), ''], [K[1], rcCount('progress') + rcCount('contacted'), ''], [K[2], miss, 'amb'], [K[3], hired, 'pos'], [K[4], eurc(trOpen), '']].map(function (k) {
+        return '<div class="m-panel" data-p="rckpis"><small>' + k[0] + '</small><b class="' + k[2] + '">' + k[1] + '</b></div>';
+      }).join('') + '</div>' +
+      '<div class="m-panel" data-p="rcwho"><div class="m-ph"><h4>' + t('rcWho') + '</h4><span class="m-ago">' + t('rcAllMonths') + '</span></div>' +
+      recs.map(function (nm, i) {
+        var l = mine[i];
+        return '<div class="tl-r rc-who" style="--i:' + i + '"><span class="da">' + avatar(nm, 28) + '<b>' + esc(nm) + '</b></span><span class="wr-bt tl-b"><span class="tl-s" style="width:' + (l.length / mx * 100) + '%">' +
+          RC_ST.map(function (st, k) { var c = l.filter(function (x) { return x.st === st; }).length; return c ? '<i style="flex:' + c + ';background:' + RC_SC[k] + '"></i>' : ''; }).join('') + '</span></span><span class="wr-bv">' + l.length + '</span></div>';
+      }).join('') + '<div class="wr-leg wrap">' + t('rcStN').map(function (n, k) { return '<span style="--c:' + RC_SC[k] + '">' + n + '</span>'; }).join('') + '</div></div>' +
+      '<div class="m-panel" data-p="rclist" data-rc="list">' + rcListInner() + '</div></div>';
+    if (rcDrawer) html += '<div class="rc-back"></div>' + (rcDrawer === 'new' ? rcNewDrawer() : rcFileDrawer());
+    mock.innerHTML = html;
+    rcHi = null;
+    layoutMock();
+    if (rcDrawer === 'new') rcType(++rcTok);
+  }
+  function rcType(tok) {
+    var els = Array.prototype.slice.call(mock.querySelectorAll('[data-type]')), ok = mock.querySelector('.rc-ok');
+    if (reduce) { els.forEach(function (el) { el.textContent = el.dataset.type; }); if (ok) ok.classList.add('on'); return; }
+    var k = 0;
+    (function next() {
+      if (tok !== rcTok || k >= els.length) {
+        if (tok !== rcTok) return;
+        if (ok) ok.classList.add('on');
+        setTimeout(function () { // pan down to the end of the form, like scrolling the drawer
+          var dr = mock.querySelector('.rc-dr'); if (tok !== rcTok || !dr || active !== 'rcnew') return;
+          var H = screenEl.clientHeight, bottom = (dr.offsetTop + dr.offsetHeight) * cam.z;
+          if (bottom > cam.y + H) { cam.y = Math.max(0, bottom - H + 16); layoutMock(); }
+        }, 700);
+        return;
+      }
+      var el = els[k], txt = el.dataset.type, j = 0;
+      el.classList.add('typing');
+      var iv = setInterval(function () {
+        if (tok !== rcTok) { clearInterval(iv); return; }
+        el.textContent = txt.slice(0, ++j);
+        if (j >= txt.length) { clearInterval(iv); el.classList.remove('typing'); k++; setTimeout(next, 260); }
+      }, 45);
+    })();
+  }
+  function rcAction(act, v) {
+    if (act === 'new') { focusStep('rcnew', true); return; }
+    if (act === 'close') { rcTok++; focusStep('rclist', true); return; }
+    if (act === 'open') { rcFileId = v; rcDrawer = null; focusStep('rcfile', true); return; }
+    if (act === 'filter') { rcFilter = v; mock.querySelector('[data-rc="list"]').innerHTML = rcListInner(); focusStep('rclist', true, true); return; }
+    if (act === 'status') {
+      var x = rc.filter(function (y) { return y.id === v; })[0], i = RC_ST.indexOf(x.st);
+      x.st = i < 3 ? RC_ST[i + 1] : i === 3 ? 'contacted' : 'progress';
+      if (x.st === 'employee') x.month = 0;
+      rcHi = x.id; renderMock(); focusStep(active, true, true);
+      return;
+    }
+    if (act === 'add') {
+      rcTok++;
+      rc.unshift({ id: 'n' + rcTok, name: v, st: 'contacted', papers: [false, true, false, false, true, false], by: CPR[78].name, start: addD(TODAY, 14), phone: '+49 176 ••• 678', iban: 'DE89 •••• •••• 3000', tr: 120, trRec: false, month: 0 });
+      rcHi = 'n' + rcTok; rcFilter = 'all'; rcDrawer = null; renderMock(); focusStep('rclist', true);
+    }
+  }
+
   // ------------------------------------------------------------------ Equipment: animated story (print → stick → scan → driver → sign → Board → found)
   var eq = { s: 0, item: 0, loop: 0, auto: !reduce, inView: false, timer: null, DUR: [4200, 3800, 4800, 4000, 5400, 5800, 6200] };
   var EQ_ITEMS = [
@@ -1392,9 +1522,10 @@
     da: { name: 'pageDa', steps: 'stepsDa', first: 'kpis', url: 'board.lanu.app/associates' },
     cp: { name: 'pageCp', steps: 'stepsCp', first: 'kpis', url: 'board.lanu.app/phones' },
     hs: { name: 'pageHs', steps: 'stepsHs', first: 'kpis', url: 'board.lanu.app/housing' },
-    wr: { name: 'pageWr', steps: 'stepsWr', first: 'upload', url: 'board.lanu.app/reports' }
+    wr: { name: 'pageWr', steps: 'stepsWr', first: 'upload', url: 'board.lanu.app/reports' },
+    rc: { name: 'pageRc', steps: 'stepsRc', first: 'rckpis', url: 'board.lanu.app/recruiting' }
   };
-  var ORDER = ['ops', 'da', 'cp', 'hs', 'wr'];
+  var ORDER = ['ops', 'da', 'cp', 'hs', 'wr', 'rc'];
   var page = 'ops';
   var active = 'overview', auto = !reduce, timer = null, inView = false, DUR = 7000;
   function renderSteps() {
@@ -1433,6 +1564,7 @@
   function focusStep(id, keep, quiet) {
     if (page === 'hs' && HS_TAB[id] && hsTab !== HS_TAB[id]) { hsTab = HS_TAB[id]; renderMock(); }
     if (page === 'wr' && WR_TAB[id] && wrTab !== WR_TAB[id]) { wrTab = WR_TAB[id]; renderMock(); }
+    if (page === 'rc') { var want = id === 'rcnew' ? 'new' : id === 'rcfile' ? 'file' : null; if (rcDrawer !== want) { rcDrawer = want; renderMock(); } }
     active = id;
     renderSteps();
     var panels = mock.querySelectorAll('[data-p]');
