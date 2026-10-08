@@ -16,7 +16,7 @@
     <a href="#top" class="nav-logo" aria-label="LANU Services GmbH"><img src="assets/img/lanu-logo-on-dark.png" width="640" height="459" alt="LANU Services GmbH"></a>
     <nav class="nav-links" aria-label="Main">
       <a href="#board" data-i18n="navBoard">LANU Board</a>
-      <a href="#products" data-i18n="navApp">LANU App</a>
+      <a href="#equipment" data-i18n="navApp">LANU App</a>
       <a href="#products" data-i18n="navMdm">LANU MDM</a>
       <a href="#contact" data-i18n="navContact">Contact</a>
     </nav>
@@ -119,6 +119,24 @@
           <div class="screen" id="screen"><div class="m" id="mock"></div><div class="fx" aria-hidden="true"><div class="fx-c"><small data-i18n="pageLoading">Loading page</small><b id="fx-t"></b><span class="fx-bar"><i></i></span></div></div></div>
         </div>
         <div class="step-now" id="step-now" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tour equip" id="equipment" aria-labelledby="eq-title">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <p class="kicker" data-i18n="eqKicker">LANU App · Equipment</p>
+      <h2 id="eq-title" data-i18n="eqTitle">Equipment that always finds its owner.</h2>
+      <p data-i18n="eqSub"></p>
+    </div>
+    <div class="tour-grid" data-reveal style="--d:.1s">
+      <ol class="steps" id="eq-steps"></ol>
+      <div class="eq-col">
+        <div class="eq-picks" role="group" data-i18n-aria="eqPickLabel" aria-label="Choose an item" id="eq-picks"></div>
+        <div class="eq-wrap" id="eq-wrap"><div class="eq-stage s1" id="eq-stage" aria-hidden="true"></div></div>
+        <div class="step-now" id="eq-now" aria-live="polite"></div>
       </div>
     </div>
   </div>

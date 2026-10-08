@@ -39,7 +39,7 @@
     b.addEventListener('click', function () {
       lang = b.dataset.lang;
       try { localStorage.setItem('lanu-lang', lang); } catch (e) {}
-      applyCopy(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd();
+      applyCopy(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true);
     });
   });
 
@@ -655,6 +655,140 @@
     }
   }
 
+
+  // ------------------------------------------------------------------ Equipment: animated story (print → stick → scan → driver → sign → Board → found)
+  var eq = { s: 0, item: 0, loop: 0, auto: !reduce, inView: false, timer: null, DUR: [4200, 3800, 4800, 4000, 5400, 5800, 6200] };
+  var EQ_ITEMS = [
+    { key: 'jacket', code: 'LANU-U-000012', tx: 104, ty: 92 },
+    { key: 'shoes', code: 'LANU-I-000009', tx: 96, ty: 182 },
+    { key: 'phone', code: 'LANU-T-000001', tx: 76, ty: 150 }
+  ];
+  var eqStage = document.getElementById('eq-stage'), eqWrap = document.getElementById('eq-wrap'), eqSteps = document.getElementById('eq-steps');
+  function qrSvg(seed) {
+    var r = rng(seed), cells = '';
+    function finder(x, y) { return '<rect x="' + x + '" y="' + y + '" width="7" height="7"/><rect x="' + (x + 1) + '" y="' + (y + 1) + '" width="5" height="5" fill="#fff"/><rect x="' + (x + 2) + '" y="' + (y + 2) + '" width="3" height="3"/>'; }
+    for (var y = 0; y < 21; y++) for (var x = 0; x < 21; x++) {
+      if ((x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12)) continue;
+      if (r() < .48) cells += '<rect x="' + x + '" y="' + y + '" width="1" height="1"/>';
+    }
+    return '<svg class="qr" viewBox="-1 -1 23 23" shape-rendering="crispEdges"><rect x="-1" y="-1" width="23" height="23" fill="#fff"/><g fill="#0B1B34">' + finder(0, 0) + finder(14, 0) + finder(0, 14) + cells + '</g></svg>';
+  }
+  var EQ_ART = {
+    jacket: '<svg viewBox="0 0 280 340"><path d="M92 40l28-12q20 16 40 0l28 12 62 40 12 120-34 6-6-86v200H58V120l-6 86-34-6 12-120z" fill="#163057"/><path d="M58 120h164v8H58z" fill="#0F2443"/>' +
+      '<path d="M120 28q20 34 40 0l-8-4q-12 14-24 0z" fill="#0C1B35"/><path d="M140 46v274" stroke="#0C1B35" stroke-width="3"/><path d="M58 236h164v12H58zM58 262h164v12H58z" fill="#D7E1F0" opacity=".85"/>' +
+      '<path d="M24 170l32 4-2 12-32-4zM256 170l-32 4 2 12 32-4z" fill="#D7E1F0" opacity=".85"/><rect x="70" y="76" width="44" height="12" rx="3" fill="#2F6BFF"/><text x="92" y="86" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" font-family="sans-serif">LANU</text></svg>',
+    shoes: '<svg viewBox="0 0 280 340"><g transform="translate(14 -14)" opacity=".55"><path d="M30 230q0-60 40-70l50-10q20-30 50-32l30 2q15 40 50 65 18 11 16 37v18H30z" fill="#1F2329"/></g>' +
+      '<path d="M30 236q0-60 40-70l50-10q20-30 50-32l30 2q15 40 50 65 18 11 16 37v18H30z" fill="#2E333B"/><path d="M200 126q15 40 50 65 18 11 16 37v8h-60q-6-60-6-110z" fill="#3A4049"/>' +
+      '<path d="M120 156l50-8M126 168l50-8M132 180l50-8" stroke="#8A93A6" stroke-width="4" stroke-linecap="round"/><path d="M30 252h236" stroke="#F5A623" stroke-width="6"/><rect x="24" y="256" width="248" height="24" rx="8" fill="#16181C"/>' +
+      '<path d="M222 196q24 10 40 26v22h-48z" fill="#4A515C"/></svg>',
+    phone: '<svg viewBox="0 0 280 340"><rect x="70" y="20" width="140" height="290" rx="22" fill="#1B2029"/><rect x="78" y="28" width="124" height="274" rx="16" fill="#252B35"/>' +
+      '<rect x="92" y="44" width="40" height="40" rx="12" fill="#14181F"/><circle cx="104" cy="56" r="7" fill="#0B0D11" stroke="#3A4250" stroke-width="2"/><circle cx="120" cy="72" r="5" fill="#0B0D11" stroke="#3A4250" stroke-width="2"/>' +
+      '<rect x="62" y="96" width="8" height="40" rx="3" fill="#F5A623"/><text x="140" y="280" text-anchor="middle" font-size="11" font-weight="800" fill="#4B5565" font-family="sans-serif">LANU</text></svg>'
+  };
+  var EQ_ICO = {
+    jacket: '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M8 3l4 3 4-3 5 3-2 6-2-1v10H7V11l-2 1-2-6z"/></svg>',
+    shoes: '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M3 17v-6l5-1 3-4h4l1 5 5 2v4z"/><path d="M3 17h18"/></svg>',
+    phone: '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>'
+  };
+  var SIG = 'M14 64c14-34 30 22 44-6s22-36 30-10 8 40 26 8 30-34 40-6 12 22 30 4 22-14 34-4';
+  function eqLabel(it, name) {
+    return '<div class="lbl"><span class="lbl-qr">' + qrSvg(hashStr(it.code)) + '</span><span class="lbl-t"><b>LANU</b><code>' + it.code + '</code><small>' + esc(name) + '</small></span></div>';
+  }
+  function eqBuild() {
+    if (!eqStage) return;
+    var it = EQ_ITEMS[eq.item], name = t('eqNames')[eq.item], drv = CPR[40 + (eq.loop % 20)].name, other = CPR[61].name;
+    var drivers = [CPR[63 + (eq.loop % 5)].name, drv, CPR[70].name, CPR[71].name];
+    var doc = 'EQ-' + ('00000' + (41 + eq.loop)).slice(-6), today = ddmm(TODAY), tabs = t('eqTabs');
+    var lbl = eqLabel(it, name), ico = '<span class="ap-ico">' + EQ_ICO[it.key] + '</span>';
+    eqStage.style.setProperty('--tx', it.tx + 'px'); eqStage.style.setProperty('--ty', it.ty + 'px');
+    function head(title, ti) {
+      return '<div class="ap-h"><span>‹</span><div><small>LANU</small><b>' + title + '</b></div><i></i></div>' + (ti === undefined ? '' :
+        '<div class="ap-tabs">' + tabs.map(function (x, k) { return '<span' + (k === ti ? ' class="on"' : '') + '>' + x + (k === 0 ? ' <em>1</em>' : '') + '</span>'; }).join('') + '</div>');
+    }
+    var itemCard = '<div class="ap-card">' + ico + '<div><b>' + esc(name) + '</b><small>' + it.code + '</small></div></div>';
+    var rows = [0, 1, 2].map(function (k) {
+      var x = EQ_ITEMS[k], cur = k === eq.item, mine = cur ? drv : (k === (eq.item + 1) % 3 ? other : '');
+      return '<div class="bd-row' + (cur ? ' cur' : '') + '"><span class="ap-ico sm">' + EQ_ICO[x.key] + '</span><span class="bd-n"><b>' + esc(t('eqNames')[k]) + '</b><small>' + x.code + '</small></span>' +
+        (cur ? '<span class="bd-h"><span class="old"><span class="m-pill g">' + t('eqInStock') + '</span></span><span class="new">' + avatar(drv, 20) + '<b>' + esc(drv) + '</b><span class="m-pill b">' + t('eqIssued') + '</span></span></span>'
+          : '<span class="bd-h">' + (mine ? avatar(mine, 20) + '<b>' + esc(mine) + '</b><span class="m-pill b">' + t('eqIssued') + '</span>' : '<span class="m-pill g">' + t('eqInStock') + '</span>') + '</span>') + '</div>';
+    }).join('');
+    eqStage.innerHTML =
+      '<div class="van"><span class="van-chip">' + t('eqFoundVan') + '</span></div>' +
+      '<div class="pr"><svg class="pr-back" viewBox="0 0 230 230"><rect x="10" y="0" width="206" height="226" rx="30" fill="#1C2027"/><rect x="24" y="8" width="178" height="40" rx="18" fill="#272C35"/><rect x="208" y="96" width="20" height="44" rx="7" fill="#F5A623" transform="rotate(-8 218 118)"/></svg>' +
+      '<div class="lb-fly">' + lbl + '</div>' +
+      '<svg class="pr-front" viewBox="0 0 230 230"><path d="M10 58h206v138a30 30 0 0 1-30 30H40a30 30 0 0 1-30-30z" fill="#262B34"/><rect x="34" y="52" width="158" height="9" rx="4.5" fill="#0B0D11"/>' +
+      '<rect x="44" y="128" width="138" height="66" rx="10" fill="#14171C"/><text x="113" y="148" text-anchor="middle" font-size="12" font-weight="800" letter-spacing="2" fill="#E9EFF9" font-family="sans-serif">LANU</text>' +
+      '<circle cx="72" cy="172" r="8" fill="none" stroke="#C8D0DC" stroke-width="2"/><rect class="pr-led" x="100" y="169" width="26" height="6" rx="3"/><rect x="146" y="164" width="16" height="16" rx="3" fill="none" stroke="#C8D0DC" stroke-width="2"/></svg></div>' +
+      '<div class="it" style="--tx:' + it.tx + 'px;--ty:' + it.ty + 'px">' + EQ_ART[it.key] + '<div class="lb-on">' + lbl + '</div><span class="pop"></span></div>' +
+      '<div class="ow">' + avatar(drv, 30) + '<span><small>' + t('eqOwner') + '</small><b>' + esc(drv) + '</b></span></div>' +
+      '<div class="bd"><div class="bd-bar"><i></i><i></i><i></i><span>board.lanu.app/equipment</span></div><div class="bd-in">' +
+      '<div class="bd-t"><b>' + t('eqEquipment') + '</b><span class="m-livepill"><i></i>' + t('mLive') + '</span></div>' +
+      '<div class="bd-k"><div><small>' + t('eqInStock') + '</small><b><s>12</s><span>11</span></b></div><div><small>' + t('eqWith') + '</small><b><s>4</s><span>5</span></b></div><div><small>' + t('eqToCheck') + '</small><b>0</b></div></div>' +
+      '<div class="bd-doc"><span class="bd-di"><svg class="ic" width="18" height="18" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></span><div><b>' + doc + ' · ' + t('eqHandover') + '</b><small>' + t('eqSigned', { name: esc(drv) }) + ' · ' + t('eqJustNow') + '</small></div>' +
+      '<svg class="bd-sig" viewBox="0 0 240 90"><path d="' + SIG + '"/></svg></div>' +
+      '<div class="bd-h4">' + t('eqInventory') + '</div>' + rows + '</div></div>' +
+      '<div class="ph"><div class="ph-scr">' +
+      '<div class="ps ps-scan">' + head(t('eqHandover'), 0) + '<div class="vf"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><span class="vf-qr">' + qrSvg(hashStr(it.code)) + '</span><span class="vf-line"></span><small>' + t('eqScanHint') + '</small></div>' +
+      '<div class="ap-found"><span class="ap-ok">✓ ' + t('eqDetected') + '</span>' + itemCard + '<span class="m-pill g">' + t('eqInStock') + '</span></div><div class="ap-btn">' + t('eqContinue') + ' ›</div></div>' +
+      '<div class="ps ps-driver">' + head(t('eqHandover'), 1) + '<div class="ap-search">' + t('eqSearchDriver') + '</div>' +
+      drivers.map(function (n, k) { return '<div class="ap-drv' + (k === 1 ? ' pick' : '') + '">' + avatar(n, 30) + '<b>' + esc(n) + '</b><span class="ap-chk">✓</span>' + (k === 1 ? '<span class="tap"></span>' : '') + '</div>'; }).join('') +
+      '<div class="ap-btn">' + t('eqContinue') + ' ›</div></div>' +
+      '<div class="ps ps-sign">' + head(t('eqHandover'), 2) + '<div class="ap-card">' + avatar(drv, 30) + '<div><small>' + t('eqDriver') + '</small><b>' + esc(drv) + '</b></div></div>' + itemCard +
+      '<p class="ap-txt">' + t('eqConfirm') + '</p><small class="ap-lb">' + t('eqSignature') + '</small><div class="ap-sig"><svg viewBox="0 0 240 90"><path d="' + SIG + '"/></svg></div>' +
+      '<div class="ap-btn press">✓ ' + t('eqComplete') + '</div><div class="ap-done"><span>✓</span><b>' + t('eqDone') + '</b><small>' + doc + '</small></div></div>' +
+      '<div class="ps ps-found">' + head(t('eqItemTitle')) + '<div class="vf mini"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><span class="vf-qr">' + qrSvg(hashStr(it.code)) + '</span><span class="vf-line"></span></div>' +
+      '<div class="ap-res"><div class="ap-big">' + ico + '<b>' + it.code + '</b><small>' + esc(name) + '</small><span class="m-pill b">' + t('eqIssued') + '</span></div>' +
+      '<div class="ap-card"><small class="ap-bl">' + t('eqBelongs') + '</small>' + avatar(drv, 34) + '<div><b>' + esc(drv) + '</b><small>' + t('eqIssuedOn', { d: today, doc: doc }) + '</small></div></div>' +
+      '<div class="ap-acts"><span class="ap-btn sm">' + t('eqReturn') + '</span><span class="ap-btn sm red">' + t('eqLost') + '</span></div></div></div>' +
+      '</div></div>';
+    document.getElementById('eq-picks').innerHTML = t('eqPicks').map(function (p, k) {
+      return '<button type="button" data-eq-item="' + k + '" aria-pressed="' + (k === eq.item) + '">' + EQ_ICO[EQ_ITEMS[k].key] + p + '</button>';
+    }).join('');
+  }
+  function eqRenderSteps() {
+    var st = t('eqSteps');
+    eqSteps.innerHTML = st.map(function (x, i) {
+      return '<li class="step' + (i === eq.s ? ' on' + (eq.auto ? ' auto' : '') : '') + '"><button type="button" data-eq-step="' + i + '" aria-current="' + (i === eq.s) + '">' +
+        '<span class="n">' + (i + 1) + '</span><span><span class="t">' + esc(x[1]) + '</span><span class="d">' + esc(x[2]) + '</span></span><span class="prog" style="--dur:' + eq.DUR[i] + 'ms"></span></button></li>';
+    }).join('');
+    document.getElementById('eq-now').innerHTML = '<b>' + esc(st[eq.s][1]) + '</b><p>' + esc(st[eq.s][2]) + '</p>';
+  }
+  function eqGo(i, keep) {
+    if (!eqStage) return;
+    eq.s = i;
+    eqStage.className = 'eq-stage';
+    void eqStage.offsetWidth;
+    eqStage.className = 'eq-stage s' + (i + 1) + ' it-' + EQ_ITEMS[eq.item].key;
+    eqRenderSteps();
+    if (!keep && window.innerWidth <= 980) { var b = eqSteps.querySelector('.on button'); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' }); }
+    eqSchedule();
+  }
+  function eqSchedule() {
+    clearTimeout(eq.timer);
+    if (!eq.auto || !eq.inView) return;
+    eq.timer = setTimeout(function () {
+      if (eq.s === 6) { eq.loop++; eq.item = (eq.item + 1) % 3; eqBuild(); eqGo(0, true); }
+      else eqGo(eq.s + 1, true);
+    }, eq.DUR[eq.s]);
+  }
+  if (eqStage) {
+    eqSteps.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-eq-step]'); if (!b) return;
+      eq.auto = false; clearTimeout(eq.timer); eqGo(Number(b.dataset.eqStep));
+    });
+    document.getElementById('eq-picks').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-eq-item]'); if (!b) return;
+      eq.item = Number(b.dataset.eqItem); eqBuild(); eqGo(0, true);
+    });
+    var eqScale = function () { eqStage.style.transform = 'scale(' + (eqWrap.clientWidth / 760) + ')'; };
+    if ('ResizeObserver' in window) new ResizeObserver(eqScale).observe(eqWrap); else window.addEventListener('resize', eqScale);
+    eqScale();
+    new IntersectionObserver(function (en) {
+      var was = eq.inView; eq.inView = en[0].isIntersecting;
+      if (eq.inView && !was) eqGo(eq.s, true); else if (!eq.inView) clearTimeout(eq.timer);
+    }, { threshold: .3 }).observe(document.getElementById('equipment'));
+  }
+
   // ------------------------------------------------------------------ page menu with a futuristic switch transition
   var tabs = document.querySelectorAll('[data-page]'), ind = document.querySelector('.pages-ind'), switching = false, urlTimer;
   function moveInd() {
@@ -1012,6 +1146,8 @@
   renderTicker();
   observeReveal();
   moveInd();
+  eqBuild();
+  eqGo(0, true);
   if (!reduce) {
     countUp(document.getElementById('hv-count'), liveDelivered === undefined ? 8412 : liveDelivered, fmt, 1600);
     countUp(document.querySelector('.hv-num'), 64, String, 1400);
