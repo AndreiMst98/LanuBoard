@@ -31,6 +31,7 @@
     document.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(function (el) { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
     heroWords('hero-title', t('heroTitle'), t('heroHl'));
+    ddSync();
     heroWords('hero-title2', t('hs2Title'), t('hs2Hl'));
     heroWords('hero-title3', t('hs3Title'), t('hs3Hl'));
     document.querySelectorAll('[data-i18n-idx]').forEach(function (el) { el.textContent = t(el.dataset.i18nIdx)[Number(el.dataset.k)]; });
@@ -2606,6 +2607,33 @@
     }).join('');
     observeReveal();
   }
+
+  // ------------------------------------------------------------------ themed dropdown (the native select list can't follow the dark theme everywhere)
+  function ddSync() {
+    var v = document.getElementById('f-size-v'), lab = document.querySelector('#dd-size .dd-val');
+    if (v && lab) { lab.textContent = v.value || t('fSizePick'); lab.classList.toggle('dd-ph', !v.value); }
+  }
+  (function dropdown() {
+    var dd = document.getElementById('dd-size'); if (!dd) return;
+    var btn = dd.querySelector('.dd-btn'), list = dd.querySelector('.dd-list'), opts = Array.prototype.slice.call(list.children), val = document.getElementById('f-size-v'), act = -1;
+    function mark(i) { act = i; opts.forEach(function (o, k) { o.classList.toggle('act', k === i); }); if (i >= 0) list.setAttribute('aria-activedescendant', opts[i].id); }
+    function open() { if (!list.hidden) return; list.hidden = false; dd.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); var cur = opts.findIndex(function (o) { return o.dataset.v === val.value; }); mark(cur < 0 ? 0 : cur); list.focus(); }
+    function close(focusBtn) { if (list.hidden) return; list.hidden = true; dd.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); if (focusBtn) btn.focus(); }
+    function pick(i) { val.value = opts[i].dataset.v; opts.forEach(function (o, k) { o.setAttribute('aria-selected', String(k === i)); }); ddSync(); close(true); }
+    btn.addEventListener('click', function () { if (list.hidden) open(); else close(true); });
+    btn.addEventListener('keydown', function (e) { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open(); } });
+    list.addEventListener('click', function (e) { var li = e.target.closest('[role=option]'); if (li) pick(opts.indexOf(li)); });
+    list.addEventListener('mousemove', function (e) { var li = e.target.closest('[role=option]'); if (li) mark(opts.indexOf(li)); });
+    list.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); mark(Math.min(opts.length - 1, act + 1)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); mark(Math.max(0, act - 1)); }
+      else if (e.key === 'Home') { e.preventDefault(); mark(0); } else if (e.key === 'End') { e.preventDefault(); mark(opts.length - 1); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (act >= 0) pick(act); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(true); } else if (e.key === 'Tab') close(false);
+    });
+    document.addEventListener('pointerdown', function (e) { if (!dd.contains(e.target)) close(false); });
+    ddSync();
+  })();
 
   // ------------------------------------------------------------------ contact form (not connected yet: see website/README.md)
   var form = document.getElementById('form');

@@ -296,7 +296,6 @@
       <p data-i18n="contactSub">Tell us a little about your operation and we’ll show you the Board live.</p>
       <ul class="contact-list">
         <li><svg class="ic" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span>[email@andera-group.de]</span></li>
-        <li><svg class="ic" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg><span>[+49 …]</span></li>
       </ul>
     </div>
     <form class="form glow" id="form" novalidate data-reveal style="--d:.1s">
@@ -308,8 +307,11 @@
         <div class="field"><label for="f-email" data-i18n="fEmail">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required><span class="err" data-i18n="eEmail">Please enter an email address, like name@company.com.</span></div>
         <div class="field"><label for="f-phone"><span data-i18n="fPhone">Phone</span> <small data-i18n="optional">(optional)</small></label><input id="f-phone" name="phone" type="tel" autocomplete="tel"></div>
       </div>
-      <div class="field"><label for="f-size" data-i18n="fSize">How many drivers do you work with?</label>
-        <select id="f-size" name="size"><option value="" data-i18n="fSizePick">Choose…</option><option>1–20</option><option>21–50</option><option>51–100</option><option>100+</option></select></div>
+      <div class="field"><label id="f-size-l" for="f-size" data-i18n="fSize">How many drivers do you work with?</label>
+        <div class="dd" id="dd-size"><input type="hidden" name="size" id="f-size-v">
+          <button type="button" class="dd-btn" id="f-size" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="f-size-l f-size"><span class="dd-val">Choose…</span><svg class="ic" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <ul class="dd-list" role="listbox" tabindex="-1" aria-labelledby="f-size-l" hidden><li role="option" id="dd-o0" data-v="1–20">1–20</li><li role="option" id="dd-o1" data-v="21–50">21–50</li><li role="option" id="dd-o2" data-v="51–100">51–100</li><li role="option" id="dd-o3" data-v="100+">100+</li></ul>
+        </div></div>
       <div class="field"><label for="f-msg"><span data-i18n="fMsg">Message</span> <small data-i18n="optional">(optional)</small></label><textarea id="f-msg" name="message" rows="4"></textarea></div>
       <button type="submit" class="btn btn-primary" data-i18n="fSend">Send request</button>
       <p class="form-ok" id="form-ok" role="status" hidden data-i18n="fOk">Thank you! We’ll get back to you shortly.</p>

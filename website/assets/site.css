@@ -541,10 +541,10 @@ a.prod:hover{transform:translateY(-4px)}
 .field{display:flex;flex-direction:column;gap:7px}
 .field label{font-weight:600;font-size:14px}
 .field small{font-weight:400;color:var(--dim)}
-.field input,.field select,.field textarea{width:100%;min-height:48px;padding:12px 14px;border-radius:10px;border:1px solid rgba(160,190,255,.28);font:16px var(--body);color:var(--text);background:rgba(6,13,27,.6);transition:border-color .2s,box-shadow .2s}
+.field input,.field select,.field textarea,.field .dd-btn{width:100%;min-height:48px;padding:12px 14px;border-radius:10px;border:1px solid rgba(160,190,255,.28);font:16px var(--body);color:var(--text);background:rgba(6,13,27,.6);transition:border-color .2s,box-shadow .2s}
 .field select option{color:#0B1B34}
 .field textarea{resize:vertical}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(92,200,255,.18)}
+.field input:focus,.field select:focus,.field textarea:focus,.field .dd-btn:focus-visible,.dd.open .dd-btn{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(92,200,255,.18)}
 .field .err{display:none;font-size:13px;color:#FF8A80}
 .field.bad input{border-color:#FF8A80}
 .field.bad .err{display:block}
@@ -1745,3 +1745,17 @@ a.prod:hover{transform:translateY(-4px)}
 @media (max-width:980px){.qrs .tour-grid{grid-template-columns:1fr}}
 
 .it-shoes .it>.it-img{filter:drop-shadow(0 0 1px rgba(200,225,255,.35)) drop-shadow(0 0 26px rgba(92,200,255,.22)) drop-shadow(0 30px 40px rgba(0,0,0,.45))}
+
+/* themed dropdown for the contact form */
+.dd{position:relative}
+.field .dd-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;cursor:pointer}
+.dd-val.dd-ph{color:var(--muted)}
+.dd-btn .ic{flex:none;color:var(--muted);transition:transform .25s var(--ease)}
+.dd.open .dd-btn .ic{transform:rotate(180deg);color:var(--cyan)}
+.dd-list{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;margin:0;padding:6px;list-style:none;border-radius:12px;background:#0B1630;border:1px solid rgba(92,200,255,.35);box-shadow:0 18px 44px rgba(0,0,0,.55),0 0 30px rgba(59,155,255,.12);outline:none;animation:ddIn .18s var(--ease)}
+@keyframes ddIn{from{opacity:0;transform:translateY(-6px)}}
+.dd-list li{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-radius:8px;color:var(--text);font:16px var(--body);cursor:pointer}
+.dd-list li.act{background:rgba(92,200,255,.12)}
+.dd-list li[aria-selected=true]{color:var(--cyan);font-weight:600}
+.dd-list li[aria-selected=true]::after{content:"✓";font-weight:700}
+@media (prefers-reduced-motion:reduce){.dd-list{animation:none}}
