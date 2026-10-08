@@ -368,7 +368,7 @@ a.prod:hover{transform:translateY(-4px)}
 .bd-row.cur{background:#F3F7FF}
 
 /* Income Overview: owner section, emerald accent, steps on top */
-.owner{position:relative;padding:120px 0 110px;--acc:#10B981;--acc2:#6EE7B7;background:radial-gradient(1000px 520px at 50% 0%,rgba(16,185,129,.14),transparent 60%),linear-gradient(rgba(110,231,183,.04) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,rgba(110,231,183,.04) 1px,transparent 1px) 0 0/48px 48px,#050C14;border-top:1px solid rgba(16,185,129,.2)}
+.owner{position:relative;padding:100px 0 110px;--acc:#10B981;--acc2:#6EE7B7;background:radial-gradient(1000px 520px at 50% 0%,rgba(16,185,129,.14),transparent 60%),linear-gradient(rgba(110,231,183,.04) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,rgba(110,231,183,.04) 1px,transparent 1px) 0 0/48px 48px,#050C14;border-top:1px solid rgba(16,185,129,.2)}
 .owner .sec-head{margin:0 auto 34px;text-align:center}.owner .kicker{color:var(--acc2)}.owner .kicker::before{background:var(--acc2)}
 .ow-steps{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 .ow-steps button{position:relative;overflow:hidden;width:100%;height:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line-2);border-radius:14px;background:rgba(255,255,255,.03);color:var(--muted);font:600 13.5px/1.25 var(--body);text-align:left;cursor:pointer;transition:all .25s}
