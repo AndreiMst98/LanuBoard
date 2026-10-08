@@ -2855,7 +2855,7 @@
   haBuild();
 
   // ------------------------------------------------------------------ Andera App: requests & documents (driver phone ⇄ Andera Board ⇄ office phone)
-  var af = { s: 0, auto: !reduce, inView: false, timer: null, tm: [], DUR: [6000, 7000, 7000, 8000, 8000, 7500], scr: {} };
+  var af = { s: 0, auto: !reduce, inView: false, timer: null, tm: [], DUR: [6500, 8000, 8000, 8000, 9000, 8500], scr: {}, bd: -1 };
   var afStage = document.getElementById('af-stage'), afWrap = document.getElementById('af-wrap'), afSteps = document.getElementById('af-steps');
   function afT(k, v) { var x = t('af')[k]; if (v) Object.keys(v).forEach(function (q) { x = x.replace('{' + q + '}', v[q]); }); return x; }
   function afHd(title) { return '<div class="af-hd"><i>' + haIc('chev') + '</i><b>' + esc(title) + '</b></div>'; }
@@ -2936,20 +2936,90 @@
       '<div class="af-btn" id="af-pub">' + haIc('mega') + ' ' + afT('publish') + '</div><div class="af-done" id="af-adone"><span>✓</span>' + afT('annSent', { n: 75 }) + '</div></div>';
     return x;
   }
-  var AF_PLAN = [['dHome', 'oHome'], ['dTo', 'oHome'], ['dReq', 'oReq'], ['dPay', 'oPay'], ['dDmg', 'oDmg'], ['dHome', 'oAnn']];
+  var AF_PLAN = [['dHome', 'oHome'], ['dTo', 'oHome'], ['dReq', 'oReq'], ['dPay', 'oHome'], ['dDmg', 'oDmg'], ['dHome', 'oHome']];
+  function afB(k, v) { var x = t('afb')[k]; if (v) Object.keys(v).forEach(function (q) { x = x.replace('{' + q + '}', v[q]); }); return x; }
+  // Andera Board pages (App admin + Fleet → Accidents), drawn after the real screens with fictional data
+  function afBoard(i) {
+    var m = pmn(), loc = lang === 'de' ? 'de-DE' : 'en-GB', fleet = i === 4;
+    var tabs = fleet ? afB('ftabs') : afB('tabs'), act = [1, 5, 5, 3, 5, 7][i];
+    var h = '<div class="ab-top"><span class="ab-burg"><i></i><i></i><i></i></span><div class="ab-tt"><b>' + (fleet ? afB('fleet') : afB('admin')) + '</b><small>' + esc(new Date().toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '</small></div>' +
+      '<span class="ab-sync"><i></i>' + afB('synced') + '</span><span class="ab-lang"><i>RO</i><i' + (lang === 'de' ? ' class="on"' : '') + '>DE</i><i' + (lang === 'de' ? '' : ' class="on"') + '>EN</i></span><span class="ab-me"><i>LK</i>Laura Kern</span></div>' +
+      '<div class="ab-tabs">' + tabs.map(function (x, k) { return '<span class="' + (k === 0 ? 'mu' : '') + (k === act ? ' on' : '') + '">' + esc(x) + (!fleet && k === 6 ? '<em id="ab-gbd">2</em>' : '') + '</span>'; }).join('') + '</div><div class="ab-pg" id="ab-pg">';
+    if (i === 0) {
+      h += '<h3>' + afB('dash') + '</h3><p class="ab-sub">' + afB('dashSub') + '</p><div class="ab-warn">' + haIc('warn') + '<b>' + esc(afB('need', { n: 2 })) + '</b> ' + afB('old') + '</div>' +
+        '<div class="ab-k4">' + afB('kpis').map(function (x, k) { return '<div><span>' + haIc(['coin', 'slip', 'doc', 'chat'][k]) + '</span><div><small>' + esc(x) + '</small><b>0</b><em>' + afB('nothing') + '</em></div></div>'; }).join('') + '</div>' +
+        '<div class="ab-g2"><div class="ab-card"><h4>' + afB('handle') + ' <em>2</em></h4>' +
+          [['Sorin Matei', '20.09'], ['Daniel Rusu', '22.09']].map(function (r) { return '<div class="ab-row"><span class="ab-ri">' + haIc('chat') + '</span><div><b>' + afB('gen') + '</b><small>' + r[0] + '</small></div><em>' + r[1] + '</em></div>'; }).join('') + '</div>' +
+        '<div class="ab-card"><h4>' + esc(afB('paysM', { m: m })) + '</h4><div class="ab-pn"><b>61</b><span>' + afB('ofAct', { n: 75 }) + '</span><i>81%</i></div><div class="ab-pb"><i style="width:81%"></i></div>' +
+          '<h4 class="mt">' + afB('onLeave') + '</h4><div class="ab-k3"><div><b>0</b><small>' + afB('today') + '</small></div><div><b>0</b><small>' + afB('week') + '</small></div><div><b class="am">1</b><small>' + afB('next') + '</small></div></div></div></div>';
+    }
+    if (i === 1 || i === 2) {
+      var cal = '<div class="ab-cal"><div class="ab-ch"><b>' + afB('cal') + '</b><span>2026 ▾</span><span>' + esc(new Date(2026, 9, 1).toLocaleDateString(loc, { month: 'long' })) + ' ▾</span></div><div class="ab-cg">';
+      (lang === 'de' ? ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'] : ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']).forEach(function (d) { cal += '<i class="h">' + d + '</i>'; });
+      [28, 29, 30].forEach(function (d) { cal += '<i class="ot">' + d + '</i>'; });
+      for (var d = 1; d <= 32; d++) {
+        var dd = d > 31 ? 1 : d, chip = '';
+        if (d >= 19 && d <= 25) chip = '<u class="ap">Radu</u>';
+        if (d === 14 || d === 15) chip = '<u class="me" id="ab-c' + d + '">Mihai</u>';
+        cal += '<i class="' + (d > 31 ? 'ot' : '') + (d === 8 ? ' td' : '') + ((d + 2) % 7 === 0 || (d + 2) % 7 === 6 ? ' we' : '') + '"><b>' + dd + '</b>' + chip + '</i>';
+      }
+      cal += '</div><div class="ab-lg"><span><i class="ap"></i>' + afB('legend')[0] + '</span><span><i class="pe"></i>' + afB('legend')[1] + '</span><span><i class="ov"></i>' + afB('legend')[2] + '</span></div></div>';
+      var rows = [[HA.drv, afB('vacT') + ' · ' + t('af').vacSub, 'now', 1], ['Radu Ionescu', '19 – 25 Oct · ' + afB('vacT'), '06.10', 0], ['Daniel Rusu', '22 – 26 Sep · ' + afB('vacT'), '22.09', 0]];
+      h += '<h3>' + afB('leave') + '</h3><p class="ab-sub">' + afB('leaveSub') + '</p>' + cal + '<div class="ab-g2 lv"><div class="ab-card ab-list"><h4>' + afB('list') + ' <em id="ab-act">' + esc(afB('active', { n: i === 1 ? 0 : 1 })) + '</em><small>' + afB('openFirst') + '</small></h4>' +
+        rows.map(function (r) { return '<div class="ab-lr' + (r[3] ? ' me' + (i === 2 ? ' sel shown' : '') : '') + '" id="' + (r[3] ? 'ab-lme' : '') + '"><span class="ab-av">' + r[0].split(' ').map(function (q) { return q[0]; }).join('') + '</span><div><b>' + esc(r[0]) + '</b><small>' + esc(r[1]) + '</small></div><div class="ab-rt"><em>' + r[2] + '</em><i class="ab-st ' + (r[3] ? 'pe' : 'ok') + '" id="' + (r[3] ? 'ab-lst' : '') + '">' + (r[3] ? afB('pending') : afB('approved')) + '</i></div></div>'; }).join('') + '</div>' +
+        '<div class="ab-card ab-det"><h4>' + afB('detail') + '</h4><div class="ab-who"><span class="ab-av lg">MS</span><div><b>' + esc(HA.drv) + '</b><small>' + esc(afB('sentAt', { d: '08/10/2026', h: '09:41' })) + '</small></div></div>' +
+          '<div class="ab-kv"><div><small>' + afB('starts') + '</small><b>14/10/2026</b></div><div><small>' + afB('ends') + '</small><b>15/10/2026</b></div><div><small>' + afB('dur') + '</small><b>' + esc(afB('days', { n: 2 })) + '</b></div><div><small>' + afB('status') + '</small><i class="ab-st pe" id="ab-dst">' + afB('pending') + '</i></div></div>' +
+          '<small class="ab-lb">' + afB('reqStatus') + '</small><div class="ab-pills">' + afB('st').map(function (x, k) { return '<span class="p' + k + (k === 0 ? ' on' : '') + '" id="ab-sp' + k + '"><i></i>' + esc(x) + '</span>'; }).join('') + '</div>' +
+          '<div class="ab-sv"><small>' + afB('note') + '</small><span class="ab-btn" id="ab-save">' + afB('save') + '</span></div></div></div>';
+    }
+    if (i === 3) {
+      var miss = ['Victor Ene', 'Dragos Oprea', 'Lena Vogel', 'George Toma', HA.drv, 'Paul Schmitt'];
+      h += '<div class="ab-hrow"><div><h3>' + afB('pay') + '</h3><p class="ab-sub">' + afB('paySub') + '</p></div><span class="ab-btn" id="ab-up">' + haIc('up') + ' ' + afB('upBtn') + '</span></div>' +
+        '<div class="ab-card"><h4>' + afB('byMonth') + '<small>' + esc(m) + ' 2026</small></h4><div class="ab-g2 py"><div><div class="ab-pn"><span>' + afB('uploaded') + '</span><b id="ab-pn">61</b><span>' + afB('ofAct', { n: 75 }) + '</span><i id="ab-pp">81%</i></div><div class="ab-pb"><i id="ab-pb" style="width:81%"></i></div>' +
+          '<small class="ab-lb rd">' + afB('noSlip') + ' <em id="ab-nos">14</em></small>' +
+          miss.map(function (n, k) { return '<div class="ab-pr" id="ab-pr' + k + '"><span class="ab-av">' + n.split(' ').map(function (q) { return q[0]; }).join('') + '</span><b>' + esc(n) + '</b><span class="ab-mb a"><i>+</i> ' + afB('addSlip') + '</span><span class="ab-mb b">✓ ' + afB('done') + '</span><span class="ab-mb">+ ' + afB('fine') + '</span></div>'; }).join('') +
+          '</div><div class="ab-fn"><b>' + afB('finesUp') + '</b><small>' + afB('finesTxt') + '</small><div class="ab-pr"><span class="ab-av">DR</span><div><b>Daniel Rusu</b><small>fine-0912.pdf · 18/09/2026</small></div><span class="ab-mb">' + afB('open') + '</span></div></div></div></div>';
+    }
+    if (i === 4) {
+      var acc = [['07.10.2026', 'Sorin Matei', 'LNU 5019', 'Lindenweg 12, Musterstadt', 1, 6], ['06.10.2026', 'Felix Braun', 'LNU 5242', 'Am Hafen 3, Neustadt', 0, 2], ['01.10.2026', 'Elena Marin', 'LNU 2551', 'Bahnhofstr. 8, Musterstadt', 0, 1], ['28.09.2026', 'Jonas Becker', 'LNU 6158', 'Gartenweg 27, Neustadt', 1, 4], ['25.09.2026', 'Victor Ene', 'LNU 1469', 'Musterstadt', 0, 6]];
+      var row = function (r, me) { return '<tr' + (me ? ' class="ab-new" id="ab-new"' : '') + '><td><b>' + r[0] + '</b></td><td><b>' + esc(r[1]) + '</b></td><td><b>' + r[2] + '</b> <small>Mercedes Sprinter</small></td><td>' + esc(r[3]) + '</td><td>' + (r[4] ? '<i class="ab-y">' + afB('yes') + '</i>' : afB('no')) + '</td><td>' + r[5] + '</td><td><i class="ab-src' + (me ? ' app' : '') + '">' + (me ? afB('app') : afB('board')) + '</i></td></tr>'; };
+      h += '<div class="ab-k4 ac">' + afB('kAcc').map(function (x, k) { return '<div><div><small>' + esc(x) + '</small><b class="' + ['', 'am', 'rd', 'vi'][k] + '" id="ab-ka' + k + '">' + [9, 3, 3, 0][k] + '</b></div></div>'; }).join('') + '</div>' +
+        '<div class="ab-card"><h4 id="ab-accn">' + esc(afB('accN', { n: 9 })) + '<span class="ab-btn sm">+ ' + afB('newRep') + '</span></h4><table class="ab-tb"><thead><tr>' + afB('cols').map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        row([ddmm(TODAY), HA.drv, 'LNU 4821', t('af').places[1] + ' · Musterstadt', 0, 3], true) + acc.map(function (r) { return row(r); }).join('') + '</tbody></table>' +
+        '<div class="ab-pop" id="ab-pop"><b>LNU 4821 · ' + esc(t('af').places[1]) + '</b><small>' + esc(HA.drv) + ' · ' + afB('app') + '</small><div>' + [3, 0, 5].map(function (f) { return '<i style="background-image:url(' + FL_IMG[f] + ')"></i>'; }).join('') + '</div></div></div>';
+    }
+    if (i === 5) {
+      h += '<h3>' + afB('comm') + '</h3><p class="ab-sub">' + afB('commSub') + '</p><div class="ab-seg"><span>' + afB('msgs') + '</span><span class="on">' + afB('anns') + '</span></div>' +
+        '<div class="ab-card"><h4>' + afB('newAnn') + '</h4><small class="ab-lb">' + afB('annTitle') + '</small><div class="ab-in" id="ab-at"></div><small class="ab-lb">' + afB('msg') + '</small><div class="ab-in area" id="ab-am"></div>' +
+          '<small class="ab-lb">' + afB('forL') + '</small><div class="ab-chips">' + afB('roles').map(function (x, k) { return '<span id="ab-r' + k + '">' + esc(x) + '</span>'; }).join('') + '</div>' +
+          '<small class="ab-lb">' + afB('pinned') + '</small><div class="ab-chips">' + afB('pins').map(function (x, k) { return '<span class="' + (k === 0 ? 'on' : '') + '" id="ab-pi' + k + '">' + esc(x) + '</span>'; }).join('') + '</div><span class="ab-btn" id="ab-pub">' + afB('publish') + '</span></div>' +
+        '<div class="ab-card"><h4>' + afB('published') + ' <em id="ab-pubn">1</em></h4><div class="ab-an n" id="ab-annew"><b>' + afB('annTitleTxt') + '</b><p>' + esc(t('af').annTxt) + '</p><small>' + afB('forDrv') + ' · ' + ddmm(TODAY) + '</small></div>' +
+          '<div class="ab-an"><b>' + afB('annOld') + '</b><p>' + afB('annOldTxt') + '</p><small>' + afB('forDrv') + ' · 01/10/2026</small></div></div>';
+    }
+    return h + '</div>';
+  }
   function afBuild() {
     if (!afStage) return;
-    af.scr = {};
-    afStage.innerHTML = '<svg class="af-lines" viewBox="0 0 760 540"><path d="M288 270 H322"/><path d="M438 270 H472"/></svg>' +
+    af.scr = {}; af.bd = -1;
+    afStage.innerHTML = '<div class="ab" id="ab"><span class="af-lbl"><i></i>' + afT('hub') + '</span><div class="ab-bar"><i></i><i></i><i></i><span id="ab-url">board.andera.app/app-admin</span></div><div class="ab-body" id="ab-in"></div></div>' +
       '<div class="af-ph af-d"><span class="af-lbl"><i></i>' + afT('drv') + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr" id="af-ds"></div></div></div>' +
-      '<div class="af-ph af-o"><span class="af-lbl"><i></i>' + esc(afT('off')) + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr" id="af-os"></div></div></div>' +
-      '<div class="af-hub" id="af-hub"><span class="af-hc"><img src="assets/img/andera-mark.png" alt=""></span><b>' + afT('hub') + '</b><small><i></i>' + afT('sync') + '</small></div>' +
+      '<div class="af-ph af-o" id="af-o"><span class="af-lbl"><i></i>' + esc(afT('off')) + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr" id="af-os"></div></div></div>' +
       '<div class="af-pill" id="af-pill"></div>';
   }
   function afShow(phone, key, html) {
     var el = document.getElementById(phone === 'd' ? 'af-ds' : 'af-os');
     el.innerHTML = '<div class="af-sc' + (af.scr[phone] && af.scr[phone] !== key ? ' in' : '') + '">' + html + '</div>';
     af.scr[phone] = key;
+  }
+  function afPt(el, fx, fy) { var r = afStage.getBoundingClientRect(), b = el.getBoundingClientRect(), z = r.width / 760; return [(b.left - r.left + b.width * (fx === undefined ? .5 : fx)) / z, (b.top - r.top + b.height * (fy === undefined ? .5 : fy)) / z]; }
+  function afFly(a, b, txt, ic, green) {
+    var p = document.getElementById('af-pill');
+    p.className = 'af-pill' + (green ? ' g' : ''); p.innerHTML = haIc(ic) + '<span>' + esc(txt) + '</span>';
+    if (!p.animate) return;
+    var mx = (a[0] + b[0]) / 2, my = Math.min(a[1], b[1]) - 40;
+    p.animate([{ left: a[0] + 'px', top: a[1] + 'px', opacity: 0, transform: 'translate(-50%,-50%) scale(.6)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .15 },
+      { left: mx + 'px', top: my + 'px', offset: .5 }, { opacity: 1, offset: .85 },
+      { left: b[0] + 'px', top: b[1] + 'px', opacity: 0, transform: 'translate(-50%,-50%) scale(.7)' }], { duration: 1400, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' });
   }
   function afRenderSteps() {
     var st = t('afSteps');
@@ -2959,60 +3029,69 @@
     }).join('');
     document.getElementById('af-now').innerHTML = '<b>' + esc(st[af.s][1]) + '</b><p>' + esc(st[af.s][2]) + '</p>';
   }
-  function afFly(from, txt, ic, green) {
-    var p = document.getElementById('af-pill'), hub = document.getElementById('af-hub'), A = [150, 250], H = [380, 252], B = [610, 250];
-    var a = from === 'd' ? A : B, b = from === 'd' ? B : A;
-    p.className = 'af-pill' + (green ? ' g' : ''); p.innerHTML = haIc(ic) + '<span>' + esc(txt) + '</span>';
-    if (!p.animate) return;
-    p.animate([{ left: a[0] + 'px', top: a[1] + 'px', opacity: 0, transform: 'translate(-50%,-50%) scale(.6)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .15 },
-      { left: H[0] + 'px', top: (H[1] - 34) + 'px', opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .5 }, { opacity: 1, offset: .85 },
-      { left: b[0] + 'px', top: b[1] + 'px', opacity: 0, transform: 'translate(-50%,-50%) scale(.7)' }], { duration: 1500, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' });
-    setTimeout(function () { hub.classList.remove('hit'); void hub.offsetWidth; hub.classList.add('hit'); }, 700);
-  }
+  var AF_URL = ['app-admin', 'app-admin/leave', 'app-admin/leave', 'app-admin/payroll', 'fleet/accidents', 'app-admin/communication'];
   function afGo(i, keep) {
     if (!afStage) return;
     af.tm.forEach(clearTimeout); af.tm = []; af.s = i;
     var X = afScreens(), pl = AF_PLAN[i], $ = function (id) { return document.getElementById(id); };
-    var at = function (ms, f) { af.tm.push(setTimeout(f, reduce ? 0 : ms)); }, add = function (id, c) { var e = $(id); if (e) e.classList.add(c || 'on'); };
+    var at = function (ms, f) { af.tm.push(setTimeout(f, reduce ? 0 : ms)); }, add = function (id, c) { var e = $(id); if (e) e.classList.add(c || 'on'); }, rm = function (id, c) { var e = $(id); if (e) e.classList.remove(c || 'on'); };
     var tap = function (id) { var e = $(id); if (!e) return; e.classList.remove('af-tp'); void e.offsetWidth; e.classList.add('af-tp'); };
-    afShow('d', pl[0], X[pl[0]]); afShow('o', pl[1], X[pl[1]]);
+    var up = function (on) { var o = $('af-o'); if (o) o.classList.toggle('up', on); };
+    var otoast = function (ic, title, sub, g) { var o = $('af-ot-new'); if (!o) return; o.className = 'ha-toast on' + (g ? ' g' : ''); o.querySelector('i').innerHTML = haIc(ic); o.querySelector('b').textContent = title; o.querySelector('small').textContent = sub; };
+    afShow('d', pl[0], X[pl[0]]); afShow('o', pl[1], X[pl[1]]); up(false);
+    $('ab-in').innerHTML = '<div class="ab-pgw' + (af.bd !== i && af.bd !== -1 && !(af.bd === 1 && i === 2) ? ' in' : '') + '">' + afBoard(i) + '</div>'; af.bd = i;
+    $('ab-url').textContent = 'board.andera.app/' + AF_URL[i];
     afStage.className = 'af-stage st' + (i + 1);
-    var pills = afT('pills'), m = pmn();
+    var pills = afT('pills'), m = pmn(), drvAt = function (id) { return afPt($(id)); };
     if (i === 0) {
       var ring = $('af-ring'), L = 2 * Math.PI * 33; ring.style.strokeDasharray = L; ring.style.strokeDashoffset = L; void ring.getBoundingClientRect();
       ring.style.transition = reduce ? 'none' : 'stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1) .3s'; ring.style.strokeDashoffset = L * (1 - .82);
       if (!reduce) { var sc = $('af-score'), t0 = performance.now(); (function st(now) { var k = Math.max(0, Math.min(1, (now - t0 - 300) / 1500)), e = 1 - Math.pow(1 - k, 3); sc.textContent = nf(84.6 * e, 1); if (k < 1 && af.s === 0) requestAnimationFrame(st); })(t0); }
-      at(2600, function () { tap('af-qto'); });
+      at(2600, function () { up(true); }); at(5600, function () { up(false); });
     }
     if (i === 1) {
       at(900, function () { add('af-c14'); }); at(1400, function () { add('af-c15'); add('af-sum'); });
-      at(2300, function () { tap('af-send'); }); at(2700, function () { add('af-dt-sent'); afFly('d', pills[0], 'cal'); });
-      at(4100, function () { add('af-ot-new'); $('af-need').textContent = 3; tap('af-need'); $('af-oreq').textContent = 3; $('af-ovacn').textContent = 1; add('af-ovac', 'hot'); });
+      at(2300, function () { tap('af-send'); }); at(2700, function () { add('af-dt-sent'); afFly(drvAt('af-send'), afPt($('ab-lme'), .3, .5), pills[0], 'cal'); });
+      at(3800, function () { add('ab-lme', 'shown'); add('ab-c14'); add('ab-c15'); $('ab-act').textContent = afB('active', { n: 1 }); tap('ab-act'); });
+      at(4300, function () { add('ab-lme', 'sel'); });
+      at(5000, function () { up(true); otoast('cal', afT('newReq'), afT('newReqSub', { n: HA.drv })); $('af-need').textContent = 3; $('af-oreq').textContent = 3; $('af-ovacn').textContent = 1; add('af-ovac', 'hot'); });
+      at(7300, function () { up(false); });
     }
     if (i === 2) {
-      at(1600, function () { tap('af-appr'); }); at(2000, function () { add('af-odone'); $('af-otag').textContent = afT('okTag'); add('af-otag', 'okk'); afFly('o', pills[1], 'ok', true); });
-      at(3400, function () { add('af-dt-ok'); $('af-rtag').textContent = afT('okTag'); add('af-rtag', 'okk'); add('af-rvac', 'hot'); });
+      add('ab-c14'); add('ab-c15');
+      var pg = $('ab-pg'); at(250, function () { pg.style.transform = 'translateY(-' + Math.max(0, pg.offsetHeight + pg.offsetTop - $('ab-in').clientHeight + 6) + 'px)'; });
+      at(1300, function () { tap('ab-sp1'); rm('ab-sp0'); add('ab-sp1'); });
+      at(2000, function () { tap('ab-save'); });
+      at(2400, function () { var st = $('ab-lst'), ds = $('ab-dst'); st.className = ds.className = 'ab-st ok'; st.textContent = ds.textContent = afB('approved'); });
+      at(2900, function () { pg.style.transform = ''; });
+      at(3600, function () { add('ab-c14', 'ok'); add('ab-c15', 'ok'); afFly(afPt($('ab-c14')), drvAt('af-rvac'), pills[1], 'ok', true); });
+      at(4800, function () { add('af-dt-ok'); $('af-rtag').textContent = afT('okTag'); add('af-rtag', 'okk'); add('af-rvac', 'hot'); });
+      at(5600, function () { up(true); add('af-odone'); $('af-otag').textContent = afT('okTag'); add('af-otag', 'okk'); }); at(7400, function () { up(false); });
     }
     if (i === 3) {
-      at(1000, function () { tap('af-up'); });
-      at(1300, function () { var n = $('af-pn'), pp = $('af-pp'), t0 = performance.now(); add('af-pb', 'go');
-        (function st(now) { var k = Math.min(1, (now - t0) / 1600), v = Math.round(61 + 14 * k); n.textContent = v; pp.textContent = Math.round(v / 75 * 100) + '%'; if (k < 1 && af.s === 3) requestAnimationFrame(st); })(t0);
-        [0, 1, 2, 3, 4].forEach(function (k) { at(1300 + k * 300, function () { add('af-m' + k, 'ok'); }); }); });
-      at(3000, function () { add('af-pdone'); afFly('o', afT('pills')[2].replace('{m}', m), 'slip'); });
-      at(4400, function () { add('af-p0', 'show'); }); at(5400, function () { tap('af-p0'); }); at(5800, function () { add('af-pdf'); });
+      at(900, function () { tap('ab-up'); });
+      at(1300, function () { var n = $('ab-pn'), pp = $('ab-pp'), nos = $('ab-nos'), t0 = performance.now(); $('ab-pb').style.width = '100%';
+        (function st(now) { var k = Math.min(1, (now - t0) / 1800), v = Math.round(61 + 14 * k); n.textContent = v; pp.textContent = Math.round(v / 75 * 100) + '%'; nos.textContent = 75 - v; if (k < 1 && af.s === 3) requestAnimationFrame(st); })(t0);
+        [0, 1, 2, 3, 4, 5].forEach(function (k) { at(1300 + k * 260, function () { add('ab-pr' + k, 'ok'); }); }); });
+      at(3300, function () { afFly(afPt($('ab-pr4'), .3, .5), drvAt('af-p0'), pills[2].replace('{m}', m), 'slip'); });
+      at(4500, function () { add('af-p0', 'show'); }); at(5500, function () { tap('af-p0'); }); at(5900, function () { add('af-pdf'); });
     }
     if (i === 4) {
       at(800, function () { tap('af-pl1'); add('af-pl1'); });
       [0, 1, 2].forEach(function (k) { at(1500 + k * 550, function () { add('af-im' + k); }); });
-      at(3400, function () { tap('af-rep'); }); at(3800, function () { add('af-dt-rep'); afFly('d', pills[3], 'warn'); });
-      at(5200, function () { add('af-dnew', 'show'); });
+      at(3400, function () { tap('af-rep'); }); at(3800, function () { add('af-dt-rep'); afFly(drvAt('af-rep'), afPt($('ab-accn'), .2, 2.2), pills[3], 'warn'); });
+      at(4900, function () { add('ab-new', 'show'); [[0, 10], [1, 4], [3, 1]].forEach(function (q) { var e = $('ab-ka' + q[0]); e.textContent = q[1]; tap('ab-ka' + q[0]); }); $('ab-accn').firstChild.textContent = afB('accN', { n: 10 }); });
+      at(5800, function () { add('ab-pop'); });
+      at(6600, function () { up(true); add('af-dnew', 'show'); }); at(8300, function () { up(false); });
     }
     if (i === 5) {
-      var full = afT('annTxt'), ty = $('af-type'), k0 = 0;
-      if (reduce) ty.textContent = full; else at(500, function step() { k0 += 2; ty.textContent = full.slice(0, k0); if (k0 < full.length && af.s === 5) af.tm.push(setTimeout(step, 45)); });
-      at(3000, function () { tap('af-pub'); }); at(3400, function () { add('af-adone'); afFly('o', pills[4], 'mega'); });
-      at(4400, function () { var sc = $('af-ds'), f = sc.querySelector('.ha-feed'), tg = $('af-dann'); f.style.transform = 'translateY(' + (-Math.max(0, Math.min(f.offsetHeight - sc.clientHeight, tg.offsetTop - 250))) + 'px)'; });
-      at(5100, function () { add('af-dt-ann'); add('af-dann', 'show'); });
+      var type = function (id, txt, from, step) { var e = $(id), k = 0; if (reduce) { e.textContent = txt; return; } at(from, function f() { k += 2; e.textContent = txt.slice(0, k); if (k < txt.length && af.s === 5) af.tm.push(setTimeout(f, step)); }); };
+      type('ab-at', afB('annTitleTxt'), 400, 60); type('ab-am', afT('annTxt'), 1300, 40);
+      at(3200, function () { tap('ab-r0'); add('ab-r0'); }); at(3600, function () { tap('ab-pi2'); rm('ab-pi0'); add('ab-pi2'); });
+      at(4100, function () { tap('ab-pub'); }); at(4400, function () { add('ab-annew', 'show'); $('ab-pubn').textContent = 2; afFly(afPt($('ab-pub')), [130, 120], pills[4], 'mega'); });
+      at(5000, function () { var sc = $('af-ds'), f = sc.querySelector('.ha-feed'), tg = $('af-dann'); f.style.transform = 'translateY(' + (-Math.max(0, Math.min(f.offsetHeight - sc.clientHeight, tg.offsetTop - 250))) + 'px)'; });
+      at(5600, function () { add('af-dt-ann'); add('af-dann', 'show'); });
+      at(6300, function () { up(true); otoast('mega', afT('annIn'), afT('annSent', { n: 75 }), true); }); at(8000, function () { up(false); });
     }
     afRenderSteps();
     if (!keep && window.innerWidth <= 980) { var b = afSteps.querySelector('.on button'); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' }); }
