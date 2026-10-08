@@ -2126,19 +2126,17 @@
     var vehMonth = OW.veh.reduce(function (a, v) { return a + v.amount; }, 0), expMonth = OW.exp.reduce(function (a, v) { return a + v.amount; }, 0), dispMonth = 6 * 3120;
     var per = function (x) { return x / nAll * (months ? nAll : 1); };
     var rows = days.map(function (d) {
-      // amounts are net; with VAT, revenue and vehicle/company costs are shown gross and the VAT owed to the tax office
-      // (VAT on revenue minus VAT on costs) is counted as a cost, so what is left never changes with VAT
-      var revN = d.N * R[0] + d.S * R[1] + d.RA * R[2] + d.T * R[3] + (d.cN * R[0] + d.cS * R[1]) * R[4] / 100;
-      var hw = (d.N + d.S + d.RA + d.T) * 1.02, drv = (hw + d.resc + d.nd) * R[5], payD = drv * cf + per(dispMonth) * cf, vexN = per(vehMonth) + per(expMonth);
-      var vat = (revN - vexN) * (vf - 1), left = revN - payD - vexN;
-      return { d: d, rev: revN * vf, revN: revN, vat: vat, cost: payD + vexN * vf + vat, left: left, hp: d.N + d.S + d.RA + d.T, hw: hw };
+      var rev = (d.N * R[0] + d.S * R[1] + d.RA * R[2] + d.T * R[3] + (d.cN * R[0] + d.cS * R[1]) * R[4] / 100) * vf;
+      var hw = (d.N + d.S + d.RA + d.T) * 1.02, drv = (hw + d.resc + d.nd) * R[5], fixed = per(dispMonth) * cf + per(vehMonth) * vf + per(expMonth) * vf;
+      var cost = drv * cf + fixed;
+      return { d: d, rev: rev, cost: cost, left: rev - cost, hp: d.N + d.S + d.RA + d.T, hw: hw };
     });
     var M = months || 1, S = function (k) { return rows.reduce(function (a, x) { return a + x[k]; }, 0) * M; }, sumD = function (k) { return days.reduce(function (a, x) { return a + x[k]; }, 0) * M; };
     var f = days.length / nAll * (months || 1);
-    var t = { rows: rows, rev: S('rev'), revN: S('revN'), vatPay: S('vat'), hp: S('hp'), hw: S('hw'), N: sumD('N'), Sd: sumD('S'), RA: sumD('RA'), T: sumD('T'), cN: sumD('cN'), cS: sumD('cS'), resc: sumD('resc'), nd: sumD('nd') };
+    var t = { rows: rows, rev: S('rev'), hp: S('hp'), hw: S('hw'), N: sumD('N'), Sd: sumD('S'), RA: sumD('RA'), T: sumD('T'), cN: sumD('cN'), cS: sumD('cS'), resc: sumD('resc'), nd: sumD('nd') };
     t.drvRoute = t.hw * R[5]; t.drvResc = t.resc * R[5]; t.drvNew = t.nd * R[5]; t.drvEst = 0; t.drv = t.drvRoute + t.drvResc + t.drvNew;
     t.disp = dispMonth * f; t.contr = OW.contr ? (t.drv + t.disp) * R[6] / 100 : 0; t.pay = t.drv + t.disp + t.contr;
-    t.veh = vehMonth * f * vf; t.exp = expMonth * f * vf; t.left1 = t.revN - t.pay; t.left2 = t.left1 - (vehMonth + expMonth) * f;
+    t.veh = vehMonth * f * vf; t.exp = expMonth * f * vf; t.left1 = t.rev - t.pay; t.left2 = t.left1 - t.veh - t.exp;
     return t;
   }
   function owPeriod() {
@@ -2174,9 +2172,9 @@
     h += '<div class="m-panel ow-how"><h4>' + t('owHow') + '</h4><div class="ts-topics">' + t('owTopics').map(function (x, i) { return '<button type="button" class="hs-f' + (OW.topic === i ? ' on' : '') + '" data-ow-act="topic" data-v="' + i + '">› ' + x[0] + '</button>'; }).join('') + '</div>' + (OW.topic >= 0 ? '<p class="rc-hint ts-topic">' + t('owTopics')[OW.topic][1] + '</p>' : '') + '</div>';
     h += '<div class="ow-chk"><button type="button" data-ow-act="contr" class="' + (OW.contr ? 'on' : '') + '"><i></i>' + t('owWithC') + '</button><button type="button" data-ow-act="vat" class="' + (OW.vat ? 'on' : '') + '"><i></i>' + t('owWithV') + '</button><span>' + t('owVatNote') + '</span></div>';
     h += missing ? '<div class="ow-ban" data-ows="costs"><b>' + t('owBanner', { n: missing }) + '</b><button type="button" class="wr-upbtn" data-ow-act="addcosts">+ ' + t('owAddCosts') + '</button></div>' : '<div class="ow-ban ok" data-ows="costs"><b>✓ ' + t('owCostsOk', { n: OW_FLEET }) + '</b></div>';
-    var pct = T.revN ? T.left1 / T.revN * 100 : 0;
+    var pct = T.rev ? T.left1 / T.rev * 100 : 0;
     h += '<div class="m-panel ow-k" data-ows="kpi">' + (money ? [
-      '<div><small>' + K[0] + '</small>' + owNum('rev', T.rev, 'e') + (OW.vat ? '<span>' + t('owVatIn', { n: '<b>' + eurc(T.rev - T.revN) + '</b>' }) + '</span><span>' + t('owNet', { n: '<b>' + eurc(T.revN) + '</b>' }) + '</span>' : '') + '</div>',
+      '<div><small>' + K[0] + '</small>' + owNum('rev', T.rev, 'e') + '</div>',
       '<div><small>' + K[1] + '</small>' + owNum('pay', T.pay, 'e') + '<span>' + t('owDrv') + ': <b>' + eurc(T.drv) + '</b></span><span>' + t('owDisp') + ': <b>' + eurc(T.disp) + '</b></span><span>' + t('owContr') + ': <b>' + eurc(T.contr) + '</b></span></div>',
       '<div class="g"><small>' + K[2] + '</small>' + owNum('l1', T.left1, 'e') + '<span>' + t('owOfRev', { p: '<b>' + pctf(pct, 1) + '</b>' }) + '</span></div>'
     ] : [
@@ -2185,7 +2183,7 @@
     h += '<div class="m-panel ow-k" data-ows="kpi">' +
       '<div><small>' + K[3] + '</small>' + owNum('veh', T.veh, 'e') + '<span>' + t('owMonthly') + ': <b>' + eurc(T.veh * .9) + '</b></span><span>' + t('owRepairs') + ': <b>' + eurc(T.veh * .1) + '</b></span></div>' +
       '<div><small>' + K[4] + '</small>' + owNum('exp', T.exp, 'e') + '</div>' +
-      '<div class="' + (T.left2 >= 0 ? 'g' : 'r') + '"><small>' + K[5] + '</small>' + owNum('l2', T.left2, 'e') + '<span>' + (T.veh + T.exp ? t('owAfterAll') : t('owNoCost')) + '</span>' + (OW.vat ? '<span>' + t('owVatPay', { n: '<b>' + eurc(T.vatPay) + '</b>' }) + '</span>' : '') + '</div></div>' +
+      '<div class="' + (T.left2 >= 0 ? 'g' : 'r') + '"><small>' + K[5] + '</small>' + owNum('l2', T.left2, 'e') + '<span>' + (T.veh + T.exp ? t('owAfterAll') : t('owNoCost')) + '</span></div></div>' +
       '<p class="ow-note">' + t('owLeftNote') + '</p>';
     var C = t('owCats'), cv = [[T.N, R[0]], [T.Sd, R[1]], [T.RA, R[2]], [T.T, R[3]]], vf = OW.vat ? 1 + R[7] / 100 : 1, canc = (T.cN * R[0] + T.cS * R[1]) * R[4] / 100 * vf, mul = 1;
     h += '<div class="m-panel ow-tb" data-ows="rev"><h4>' + t('owRevT') + '</h4><table><thead><tr><th></th>' + t('owCols').map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' +
