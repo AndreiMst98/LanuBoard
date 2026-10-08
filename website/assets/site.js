@@ -659,7 +659,9 @@
 
 
   // ------------------------------------------------------------------ Weekly Reports page (fictional figures)
-  var WR_TAB = { upload: 'sc', results: 'sc', send: 'sc', kpis: 'iadc', trend: 'iadc', insights: 'iadc', heat: 'iadc', drivers: 'iadc' };
+  var WR_TAB = { upload: 'sc', results: 'sc', send: 'sc', kpis: 'iadc', trend: 'iadc', insights: 'iadc', heat: 'iadc', drivers: 'iadc', cnkpis: 'cn', cntrend: 'cn', cnins: 'cn', cncat: 'cn', cndrivers: 'cn', cndnr: 'cn' };
+  var WR_ORDER = ['sc', 'iadc', 'cn'], WR_FIRST = { sc: 'upload', iadc: 'kpis', cn: 'cnkpis' };
+  var cnZip = null, cnMode = 'active', cnUnit = 'count', cnTier = 'all';
   var wrTab = 'sc', wrWeek = 0, wrUp = 'done', wrPrev = null, wrCat = -1, wrTier = 'all', wrLetter = 'all';
   function nf(v, d) { return v.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
   function pp(v) { return (v >= 0 ? '+' : '−') + nf(Math.abs(v), 2) + ' pp'; }
@@ -729,13 +731,13 @@
     ['IADC', 'Unattended (Customer Safe Place)', 'B', .77], ['IADC', 'Mailbox Recommended', 'B', .19], ['IADC', 'Unattended (Recommended)', 'B', .035], ['IADC', 'Attended (Customer Safe Place)', 'B', .005]];
   var WR_PLACES = ['Household Member', 'Doorstep', 'Safe Location', 'Neighbor', 'Mail Slot', 'Garage', 'Garden', 'Shed', 'Rear Door'];
   function wrSubnav() {
-    return '<div class="hs-nav"><span class="dim">' + t('wrTitle') + '</span>' + [['sc', 'wrSc'], ['iadc', 'wrIadc']].map(function (x) {
+    return '<div class="hs-nav"><span class="dim">' + t('wrTitle') + '</span>' + [['sc', 'wrSc'], ['iadc', 'wrIadc'], ['cn', 'cnTab']].map(function (x) {
       return '<button type="button" data-wr-act="tab" data-v="' + x[0] + '"' + (wrTab === x[0] ? ' class="on"' : '') + '>' + t(x[1]) + '</button>';
     }).join('') + '</div>';
   }
   function wrWeekPanel(extra) {
     var wi = weekInfo(wrWeek - 1);
-    return '<div class="m-panel m-date m-week"><span class="ci">' + ICAL + '</span><div><b>' + t('daWeek', { n: wi.n }) + (wrTab === 'iadc' ? ' <span class="wr-st">· DTH1</span>' : '') + '</b><span>' + esc(wi.range) + '</span></div>' + (extra || '') +
+    return '<div class="m-panel m-date m-week"><span class="ci">' + ICAL + '</span><div><b>' + t('daWeek', { n: wi.n }) + (wrTab === 'iadc' ? ' <span class="wr-st">· ST01</span>' : '') + '</b><span>' + esc(wi.range) + '</span></div>' + (extra || '') +
       '<div class="m-dnav"><button type="button" data-wr-act="week" data-v="-1" aria-label="Previous week"' + (wrWeek <= -8 ? ' disabled' : '') + '>‹</button><button type="button" data-wr-act="week" data-v="1" aria-label="Next week"' + (wrWeek >= 0 ? ' disabled' : '') + '>›</button></div></div>';
   }
   var WR_DOC = '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>';
@@ -782,9 +784,165 @@
         return '<button type="button" class="wr-bar' + (wrCat === i ? ' on' : '') + '" data-wr-act="cat" data-v="' + i + '"><b>' + 'ABCDEF'[i] + '</b><span class="wr-bl">' + c + ' <small>' + tags[i] + '</small></span><span class="wr-bt"><i style="width:' + Math.max(1.5, pc) + '%;background:' + cols[i] + '"></i></span><span class="wr-bv">' + nf(vals[i]) + ' <small>' + nf(pc, 1) + '%</small></span></button>' + open;
       }).join('');
   }
+
+  // ---------- Concessions report (fictional)
+  var CN_ZIPS = ['50667', '50668', '50670', '50672', '50674', '50676', '50677', '50678', '50733', '50735', '50737', '50739'];
+  var CN_KC = ['#E5484D', '#2F6BFF', '#7C3AED', '#F5A623', '#06AED4', '#98A2B3'], CN_PC = ['#2F6BFF', '#7C3AED', '#F5A623', '#12B76A', '#06AED4', '#E5484D', '#98A2B3'];
+  var cnCache = {};
+  function cnData(off, shallow) {
+    var key = off + (shallow ? 's' : '') + lang;
+    if (cnCache[key]) return cnCache[key];
+    var r = rng(4040 + off * 17), w = {};
+    w.del = 41000 + Math.floor(r() * 5000); w.dnr = 92 + Math.floor(r() * 32); w.dpmo = Math.round(w.dnr / w.del * 1e6); w.cost = w.dnr * (28 + r() * 5);
+    if (shallow) return (cnCache[key] = w);
+    w.prev = cnData(off - 1, true);
+    var wn = weekInfo(off - 1).n; w.wn = wn; w.win = [wn - 3, wn - 2, wn - 1, wn];
+    w.trend = []; for (var k = -6; k <= 0; k++) { var q = k === 0 ? w : cnData(off + k, true); w.trend.push({ n: wn + k, dpmo: q.dpmo, cost: q.cost }); }
+    w.revA = w.dnr + 10 + Math.floor(r() * 12); w.revB = w.revA - 8 - Math.floor(r() * 8); w.revDa = 41000 + Math.floor(r() * 2000); w.revDb = w.revDa - 13;
+    w.zips = CN_ZIPS.map(function (z, i) { return { z: z, n: Math.max(4, Math.round(100 * Math.pow(.74, i) * (.85 + r() * .3))) }; }).sort(function (a, b) { return b.n - a.n; });
+    w.zipTot = w.zips.reduce(function (a, z) { return a + z.n; }, 0);
+    w.kw = w.win.map(function () { return [0, 1, 2, 3, 4, 5].map(function (k) { return 6 + Math.floor(r() * (k > 3 ? 26 : 18)); }); });
+    w.kcost = [0, 1, 2, 3, 4, 5].map(function (k) { return 25 + k * 3 + r() * 9; });
+    w.pw = w.win.map(function () { return [0, 1, 2, 3, 4, 5, 6].map(function (k) { return k < 5 ? 8 + Math.floor(r() * (k < 2 ? 30 : 18)) : Math.floor(r() * 5); }); });
+    w.winTot = w.kw.reduce(function (a, ks) { return a + ks.reduce(function (b, c) { return b + c; }, 0); }, 0);
+    w.k1 = w.kw[3][0]; w.k1win = w.kw.reduce(function (a, ks) { return a + ks[0]; }, 0);
+    w.ret = 9 + Math.floor(r() * 8); w.lost = Math.floor(r() * 3);
+    var stationDpmo = w.dpmo;
+    w.drivers = ROSTER.slice(0, 60).map(function (d) {
+      var x = { name: d.name, id: d.id, del4: between(r, 1400, 3900) };
+      x.dnr4 = r() < .2 ? 0 : 1 + Math.floor(Math.pow(r(), 1.7) * 16); x.dpmo4 = Math.round(x.dnr4 / x.del4 * 1e6); x.vs = x.dpmo4 / stationDpmo;
+      x.tier = x.dnr4 === 0 ? 'OK' : x.vs <= 1 ? 'OK' : x.vs <= 2 ? 'WATCH' : 'CRITICAL';
+      x.wk = w.win.map(function () { return r() < .15 ? null : Math.floor(r() * Math.max(1, x.dnr4 / 2)); });
+      x.cost = x.dnr4 * (26 + r() * 10); x.ks = [0, 1, 2, 3, 4, 5].map(function () { return Math.floor(r() * 6); }); x.dom = x.ks.indexOf(Math.max.apply(null, x.ks));
+      x.flags = [0, 1, 2, 3, 4, 5, 6].filter(function (f) { return r() < [.4, .2, .18, .14, .04, .16, .06][f]; }).slice(0, 2);
+      x.score = Math.min(99, Math.round(x.vs * 22 + x.dnr4 * 2 + x.flags.length * 6));
+      return x;
+    }).filter(function (x) { return x.dnr4 > 0; }).sort(function (a, b) { return b.score - a.score; });
+    w.drvDnr = w.drivers.length;
+    var top10 = w.drivers.slice().sort(function (a, b) { return b.dnr4 - a.dnr4; }).slice(0, 10).reduce(function (a, x) { return a + x.dnr4; }, 0);
+    w.top10 = top10 / w.drivers.reduce(function (a, x) { return a + x.dnr4; }, 0) * 100;
+    var places = t('cnPlaces'), PL = [0, 1, 2, 3, 4, 2, 5], SUG = [[3, 0, 1, 4], [3, 1, 4], [1, 4], [4, 1], [3], [0, 1, 4]];
+    w.list = [];
+    for (var i = 0; i < 46; i++) {
+      var wk = i < 30 ? 3 : 3 - Math.floor(r() * 3), dEnd = addD(TODAY, (off - 1) * 7 - (3 - wk) * 7 - TODAY.getDay() + 6);
+      var del = addD(dEnd, -between(r, 2, 15)), pl = between(r, 0, 6), sg = SUG[between(r, 0, 5)], gps = r() < .7 ? between(r, 5, 24) : r() < .9 ? between(r, 26, 90) : between(r, 900, 6000);
+      var z = w.zips[Math.min(11, Math.floor(Math.pow(r(), 1.6) * 12))].z, dv = w.drivers[Math.floor(Math.pow(r(), 1.3) * Math.min(25, w.drivers.length))];
+      var fl = []; if (sg.indexOf(3) >= 0 && pl !== 3) fl.push(0); if (gps > 25) fl.push(1); if (pl === 1) fl.push(2); if (r() < .1) fl.push(3);
+      w.list.push({ wk: w.win[wk], date: dEnd, del: del, time: pad(between(r, 9, 20)) + ':' + pad(between(r, 0, 59)), drv: dv.name, tr: 'DE58' + between(r, 10000000, 99999999), zip: z, pl: pl,
+        sug: sg, app: sg.indexOf(pl) < 0, gps: gps, ct: between(r, 0, 2), ph: between(r, 0, 2), fl: fl, ret: i % 4 === 1 ? (function (d) { var lim = addD(TODAY, -1); return d > lim ? lim : d; })(addD(dEnd, between(r, 3, 9))) : null });
+    }
+    w.list.sort(function (a, b) { return b.date - a.date || b.del - a.del; });
+    w.noContact = w.list.filter(function (x) { return x.ct === 1; }).length / w.list.length * 100;
+    w.elsewhere = w.list.filter(function (x) { return x.app; }).length / w.list.length * 100;
+    return (cnCache[key] = w);
+  }
+  function eurc(v) { return v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+  function comboChart(w, h, labels, bars, line, rev, legend) {
+    var L = 56, R = 14, T = 14, B = 26, iw = w - L - R, ih = h - T - B, n = labels.length, mx = Math.ceil(Math.max.apply(null, bars.concat(line)) * 1.1 / 750) * 750;
+    function X(i) { return L + (i + .5) * iw / n; } function Y(v) { return T + ih - v / mx * ih; }
+    var g = '';
+    for (var k = 0; k <= 4; k++) { var v = mx * k / 4; g += '<path d="M' + L + ' ' + Y(v) + 'H' + (w - R) + '" stroke="#EDF0F5"/><text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + nf(v) + '</text>'; }
+    bars.forEach(function (v, i) { g += '<rect class="bar" style="--i:' + i + '" x="' + (X(i) - 16) + '" y="' + Y(v) + '" width="32" height="' + (Y(0) - Y(v)) + '" rx="3" fill="#B794F4"/>'; });
+    g += '<path class="ln" d="' + line.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join('') + '" stroke="#2F6BFF"/>';
+    line.forEach(function (v, i) { var rv = rev.indexOf(i) >= 0; g += '<circle class="pt" style="--i:' + i + '" cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="' + (rv ? 7 : 4) + '" fill="' + (rv ? '#F5A623' : '#2F6BFF') + '"' + (rv ? ' stroke="#93570D" stroke-width="1.5"' : '') + '/>'; });
+    labels.forEach(function (lb, i) { g += '<text x="' + X(i) + '" y="' + (h - 6) + '" text-anchor="middle">' + lb + '</text>'; });
+    return '<svg class="wr-ch" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' + g + '</svg>';
+  }
+  function groupBars(w, h, groups, vals, colors, fmtV) {
+    var L = 44, R = 10, T = 12, B = 26, iw = w - L - R, ih = h - T - B, n = groups.length, k = vals[0].length, mx = Math.max.apply(null, vals.map(function (a) { return Math.max.apply(null, a); })) * 1.08;
+    function Y(v) { return T + ih - v / mx * ih; }
+    var gw = iw / n, bw = Math.min(18, (gw - 24) / k), g = '';
+    for (var q = 0; q <= 4; q++) { var v = mx * q / 4; g += '<path d="M' + L + ' ' + Y(v) + 'H' + (w - R) + '" stroke="#EDF0F5"/><text x="' + (L - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + fmtV(v) + '</text>'; }
+    groups.forEach(function (gr, i) {
+      var x0 = L + i * gw + (gw - bw * k) / 2;
+      vals[i].forEach(function (v, j) { g += '<rect class="bar" style="--i:' + (i * k + j) + '" x="' + (x0 + j * bw).toFixed(1) + '" y="' + Y(v).toFixed(1) + '" width="' + (bw - 2).toFixed(1) + '" height="' + (Y(0) - Y(v)).toFixed(1) + '" fill="' + colors[j] + '"/>'; });
+      g += '<text x="' + (L + i * gw + gw / 2) + '" y="' + (h - 6) + '" text-anchor="middle">' + gr + '</text>';
+    });
+    return '<svg class="wr-ch" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' + g + '</svg>';
+  }
+  function cnCatsInner(w) {
+    var eu = cnUnit === 'euro', vals = w.kw.map(function (ks) { return ks.map(function (c, k) { return eu ? c * w.kcost[k] : c; }); });
+    return '<div class="m-ph"><h4>' + t('cnCatsT') + '</h4><span class="cn-tg"><button type="button" class="hs-f on">' + t('cnWindowB') + '</button><span class="wr-sep"></span>' +
+      '<button type="button" class="hs-f' + (!eu ? ' on' : '') + '" data-wr-act="cnunit" data-v="count">' + t('cnCount') + '</button><button type="button" class="hs-f' + (eu ? ' on' : '') + '" data-wr-act="cnunit" data-v="euro">' + t('cnEuro') + '</button></span></div>' +
+      groupBars(600, 240, w.win.map(function (n) { return 'W' + n; }), vals, CN_KC, function (v) { return eu ? nf(v) + ' €' : nf(v); }) +
+      '<div class="wr-leg wrap">' + t('cnKs').map(function (k, i) { return '<span style="--c:' + CN_KC[i] + '"><b>K' + (i + 1) + '</b> ' + k + '</span>'; }).join('') + '</div>';
+  }
+  function cnDrvInner(w) {
+    var C = t('cnDrvCols'), list = w.drivers.filter(function (x) { return cnTier === 'all' || x.tier === cnTier; }), F = t('cnFlags');
+    var tiers = ['all', 'OK', 'WATCH', 'CRITICAL'].map(function (tr) { return '<button type="button" class="hs-f' + (cnTier === tr ? ' on' : '') + '" data-wr-act="cntier" data-v="' + tr + '">' + (tr === 'all' ? t('wrAll') : tr) + '</button>'; }).join('');
+    return '<div class="m-ph"><h4>' + t('wrDrivers') + '</h4><span class="m-cnt">' + t('wrDrvCount', { n: w.drivers.length }) + '</span><span class="cp-btn">' + t('wrExport') + '</span></div>' +
+      '<div class="wr-fil"><span class="m-search">' + t('wrSearchDrv') + '</span>' + tiers + '</div>' +
+      '<table class="m-t dense wr-dt"><thead><tr><th>' + C[0] + '</th><th>' + C[1] + '</th><th class="r">' + C[2] + '</th><th class="r">' + C[3] + '</th><th class="r">' + C[4] + '</th><th class="r">' + C[5] + '</th><th>' + C[6] + '</th>' +
+      w.win.map(function (n) { return '<th class="r">W' + n + '</th>'; }).join('') + '<th class="r">' + C[7] + '</th><th>' + C[8] + '</th><th>' + C[9] + '</th><th>' + C[10] + '</th><th class="r">' + C[11] + ' ↓</th></tr></thead><tbody>' +
+      list.slice(0, 9).map(function (x, i) {
+        var mxk = Math.max.apply(null, x.ks) || 1;
+        return '<tr class="row-in" style="--i:' + i + '"><td><span class="da">' + avatar(x.name, 26) + '<b>' + esc(x.name) + '</b></span></td><td class="mono">' + x.id + '</td><td class="r">' + nf(x.del4) + '</td><td class="r">' + x.dnr4 + '</td><td class="r">' + nf(x.dpmo4) + '</td><td class="r">' + nf(x.vs, 2) + '×</td>' +
+          '<td><span class="wr-t ' + x.tier.toLowerCase() + '">' + x.tier + '</span></td>' + x.wk.map(function (v) { return '<td class="r">' + (v === null ? '—' : v) + '</td>'; }).join('') + '<td class="r">' + eurc(x.cost) + '</td>' +
+          '<td><span class="cn-spark">' + x.ks.map(function (v, k) { return '<i style="height:' + (3 + v / mxk * 15) + 'px;background:' + CN_KC[k] + '"></i>'; }).join('') + '</span></td><td><span class="cn-dom" style="background:' + CN_KC[x.dom] + '">K' + (x.dom + 1) + '</span></td>' +
+          '<td class="wrp fl">' + x.flags.map(function (f) { return '<span class="cn-fl' + (f === 3 || f === 4 ? ' red' : '') + '">' + F[f] + '</span>'; }).join('') + '</td><td class="r"><span class="wr-sc">' + x.score + '</span></td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function cnDnrInner(w) {
+    var C = t('cnDnrCols'), P = t('cnPlaces'), CT = t('cnContacts'), PH = t('cnPhoto'), FL = t('cnDnrFlags');
+    var all = w.list.filter(function (x) { return !cnZip || x.zip === cnZip; });
+    var list = all.filter(function (x) { return cnMode === 'ret' ? x.ret : cnMode === 'active' ? !x.ret : true; });
+    var act = w.list.filter(function (x) { return !x.ret; }).length;
+    var modes = [['active', 'cnActive'], ['with', 'cnWithRet'], ['ret', 'cnRetOnly']].map(function (m) { return '<button type="button" class="hs-f' + (cnMode === m[0] ? ' on' : '') + '" data-wr-act="cnmode" data-v="' + m[0] + '">' + t(m[1]) + '</button>'; }).join('');
+    return '<div class="m-ph"><h4>' + t('cnDnr') + '</h4><span class="m-cnt">' + t('cnDnrCount', { a: act * 9 + 6, b: w.list.length * 9 + 4 }) + '</span><span class="cp-btn">' + t('wrExport') + '</span></div>' +
+      '<div class="wr-fil"><span class="m-search">' + t('cnSearchDnr') + '</span>' + modes + (cnZip ? '<button type="button" class="cn-chip" data-wr-act="cnzipx">' + t('cnZipF', { z: cnZip }) + ' ×</button>' : '') + '</div>' +
+      '<table class="m-t dense wr-dt cn-dnr"><thead><tr>' + C.map(function (c, i) { return '<th' + (i === 8 ? ' class="r"' : '') + '>' + c + (i === 1 ? ' ↓' : '') + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      list.slice(0, 11).map(function (x, i) {
+        return '<tr class="row-in' + (x.ret ? ' ret' : '') + '" style="--i:' + i + '"><td><b>W' + x.wk + '</b></td><td>' + ddmm(x.date) + '</td><td class="wrp">' + ddmm(x.del) + ' ' + x.time + '</td><td class="lnk wrp">' + esc(x.drv) + '</td><td class="mono">' + x.tr + '</td><td>' + x.zip + '</td><td>' + P[x.pl] + '</td>' +
+          '<td class="wrp sg">' + x.sug.slice(0, 2).map(function (k) { return P[k]; }).join(', ') + (x.sug.length > 2 ? ' +' + (x.sug.length - 2) : '') + (x.app ? ' <span class="cn-app">' + t('cnApp') + '</span>' : '') + '</td><td class="r">' + nf(x.gps) + ' m</td><td>' + CT[x.ct] + '</td><td>' + PH[x.ph] + '</td>' +
+          '<td class="wrp fl">' + (x.ret ? '<span class="cn-fl ret">' + t('cnRetracted', { d: ddmm(x.ret) }) + '</span>' : '') + x.fl.slice(0, x.ret ? 1 : 2).map(function (f) { return '<span class="cn-fl' + (f === 3 ? ' red' : '') + '">' + FL[f] + '</span>'; }).join('') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function renderCn() {
+    var w = cnData(wrWeek), p = w.prev, K = t('cnK'), y = new Date().getFullYear(), I = t('cnIns');
+    var h = '<div class="m-panel m-date m-week"><span class="ci">' + ICAL + '</span><div><b>' + t('cnReport', { y: y, n: w.wn }) + ' <span class="wr-st">· ST01</span></b><span>' + t('cnWindow', { w: w.win.map(function (n) { return 'W' + n; }).join(' · '), n: w.list.filter(function (x) { return !x.ret; }).length * 9 + 6 }) + '</span></div>' +
+      '<span class="cn-rev">' + t('cnRevised', { w: w.win[0], a: w.revA, b: w.revB }) + '</span><span class="cn-rev">' + t('cnRevDel', { w: w.win[1], a: nf(w.revDa), b: nf(w.revDb) }) + '</span>' +
+      '<div class="m-dnav"><button type="button" data-wr-act="week" data-v="-1" aria-label="Previous week"' + (wrWeek <= -8 ? ' disabled' : '') + '>‹</button><button type="button" data-wr-act="week" data-v="1" aria-label="Next week"' + (wrWeek >= 0 ? ' disabled' : '') + '>›</button></div></div>' +
+      '<div class="m-panel wr-up2"><div class="wr-drop"><span class="wr-di">' + WR_DOC + '</span><div><b>' + t('cnUploadHead') + ' <span class="m-cnt">' + t('cnUploadTag') + '</span></b><small>' + t('cnUploadNote') + '</small></div><button type="button" class="wr-upbtn" data-wr-act="noop">' + WR_UPI + t('wrUpload') + '</button></div></div>';
+    var dd3 = function (a, b, f, upGood) { return wrDelta(a - b, (a >= b ? '+' : '−') + f(Math.abs(a - b)), upGood); };
+    var dpmo4 = Math.round(w.trend.slice(-4).reduce(function (a, q) { return a + q.dpmo; }, 0) / 4);
+    h += '<div class="m-panel wr-k" data-p="cnkpis">' +
+      '<div><span>' + K[0] + '</span><b data-count="' + w.dnr + '">' + w.dnr + '</b>' + dd3(w.dnr, p.dnr, nf, false) + '<small>' + t('cnReportWeek') + '</small></div>' +
+      '<div><span>' + K[1] + '</span><b data-count="' + w.dpmo + '">' + nf(w.dpmo) + '</b>' + dd3(w.dpmo, p.dpmo, nf, false) + '<small>' + t('cnOver4', { n: nf(dpmo4) }) + '</small></div>' +
+      '<div><span>' + K[2] + '</span><b>' + eurc(w.cost) + '</b>' + dd3(w.cost, p.cost, eurc, false) + '<small>' + t('cnAvgCost', { n: eurc(w.cost / w.dnr) }) + '</small></div>' +
+      '<div><span>' + K[3] + '</span><b data-count="' + w.del + '">' + nf(w.del) + '</b>' + dd3(w.del, p.del, nf, true) + '<small>' + t('cnReportWeek') + '</small></div>' +
+      '<div><span>' + K[4] + '</span><b class="neg" data-count="' + w.k1 + '">' + w.k1 + '</b><small>' + t('cnK1Note', { p: pctf(100, 0), n: w.k1win }) + '</small></div>' +
+      '<div><span>' + K[5] + '</span><b data-count="' + w.drvDnr + '">' + w.drvDnr + '</b><small>' + t('cnDrvNote', { a: w.drvDnr, b: 60 }) + '</small></div>' +
+      '<div><span>' + K[6] + '</span><b data-count="' + w.ret + '">' + w.ret + '</b><button type="button" class="cn-link" data-wr-act="cnret">↗ ' + t('cnSeeList') + '</button></div>' +
+      '<div><span>' + K[7] + '</span><b class="neg">' + w.lost + '</b><small>' + t('cnInWindow') + '</small></div></div>';
+    var mz = w.zips[0].n;
+    h += '<div class="m-grid2" style="grid-template-columns:1.35fr 1fr;align-items:stretch">' +
+      '<div class="m-panel wr-chp" data-p="cntrend"><div class="m-ph"><h4>' + t('cnTrend') + '</h4><span class="m-cnt">' + t('cnTrendTag') + '</span></div>' +
+      comboChart(680, 260, w.trend.map(function (q) { return q.n; }), w.trend.map(function (q) { return q.cost; }), w.trend.map(function (q) { return q.dpmo; }), [2, 3, 4]) +
+      '<div class="wr-leg"><span style="--c:#2F6BFF">DPMO</span><span class="sq" style="--c:#B794F4">' + t('cnCost') + '</span><span class="dot" style="--c:#F5A623">' + t('cnRevisedL') + '</span></div></div>' +
+      '<div class="m-panel" data-p="cntrend"><div class="m-ph"><h4>' + t('cnZip') + '</h4><span class="m-cnt">' + t('cnZipTag') + '</span></div>' +
+      w.zips.map(function (z) { return '<button type="button" class="cn-zip' + (cnZip === z.z ? ' on' : '') + '" data-wr-act="zip" data-v="' + z.z + '"><b>' + z.z + '</b><span class="wr-bt"><i style="width:' + (z.n / mz * 100) + '%;background:#2F6BFF"></i></span><span class="wr-bv">' + z.n + ' <small>' + pctf(z.n / w.zipTot * 100, 0) + '</small></span></button>'; }).join('') + '</div></div>';
+    var cats = w.kw.reduce(function (acc, ks) { return acc.map(function (a, k) { return a + ks[k]; }); }, [0, 0, 0, 0, 0, 0]);
+    var ins = [
+      I[0].replace('{dir}', t(w.dpmo < p.dpmo ? 'wrDown' : 'wrUp')).replace('{pw}', w.wn - 1).replace('{a}', nf(p.dpmo)).replace('{b}', nf(w.dpmo)).replace('{c}', eurc(p.cost)).replace('{d}', eurc(w.cost)).replace('{e}', p.dnr).replace('{f}', w.dnr),
+      I[1].replace('{w}', w.win[0]).replace('{a}', w.revA).replace('{b}', w.revB).replace('{r}', w.revA - w.revB),
+      I[2].replace('{w}', w.win[0] + '–' + w.wn).replace('{cats}', cats.map(function (c, k) { return 'K' + (k + 1) + ' ' + c + ' (' + eurc(c * w.kcost[k]) + ')'; }).join(', ')).replace('{n}', w.winTot).replace('{c}', eurc(cats.reduce(function (a, c, k) { return a + c * w.kcost[k]; }, 0))),
+      I[3].replace('{p}', pctf(100, 0)),
+      I[4].replace('{p}', pctf(w.noContact, 0)).replace('{q}', pctf(w.elsewhere, 0)),
+      I[5].replace('{z}', w.zips.slice(0, 3).map(function (z) { return z.z + ' (' + z.n + ')'; }).join(', ')).replace('{p}', pctf((w.zips[0].n + w.zips[1].n + w.zips[2].n) / w.zipTot * 100, 0)),
+      I[6].replace('{p}', pctf(w.top10, 0))
+    ];
+    h += '<div class="m-panel" data-p="cnins"><div class="m-ph"><h4>' + t('wrInsights') + '</h4><span class="m-cnt">' + t('wrGenerated') + '</span></div><ul class="wr-ins">' + ins.map(function (x, i) { return '<li style="--i:' + i + '">' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+    h += '<div class="m-grid2" style="grid-template-columns:1fr 1fr;align-items:stretch"><div class="m-panel wr-chp" data-p="cncat" data-wr="cncats">' + cnCatsInner(w) + '</div>' +
+      '<div class="m-panel wr-chp" data-p="cncat"><div class="m-ph"><h4>' + t('cnPlaceT') + '</h4><span class="m-cnt">' + t('cnWindowB') + '</span></div>' + groupBars(600, 240, w.win.map(function (n) { return 'W' + n; }), w.pw, CN_PC, function (v) { return nf(v); }) +
+      '<div class="wr-leg wrap">' + t('cnPlaces').map(function (pl, i) { return '<span style="--c:' + CN_PC[i] + '">' + pl + '</span>'; }).join('') + '</div></div></div>';
+    h += '<div class="m-panel" data-p="cndrivers" data-wr="cndrv">' + cnDrvInner(w) + '</div><div class="m-panel" data-p="cndnr" data-wr="cndnr">' + cnDnrInner(w) + '</div>';
+    return h;
+  }
   function renderWr() {
     var html = topBar(t('pageWr')) + wrSubnav() + '<div class="m-body">', wi = weekInfo(wrWeek - 1);
-    if (wrTab === 'sc') {
+    if (wrTab === 'cn') {
+      html += renderCn();
+    } else if (wrTab === 'sc') {
       var rows = wrScore(wrWeek);
       html += wrWeekPanel() + '<div class="m-grid2" style="grid-template-columns:1.6fr 1fr;align-items:stretch">' +
         '<div class="m-panel cp-col" data-p="upload" data-wr="upload">' + wrUploadInner(rows.length) + '</div>' +
@@ -848,7 +1006,7 @@
   }
   function wrSet(name, html) { var el = mock.querySelector('[data-wr="' + name + '"]'); if (el) el.innerHTML = html; }
   function wrAction(act, v) {
-    if (act === 'tab') { wrTab = v; renderMock(); focusStep(v === 'sc' ? 'upload' : 'kpis', true); return; }
+    if (act === 'tab') { wrTab = v; renderMock(); focusStep(WR_FIRST[v], true); return; }
     if (act === 'week') { wrWeek = Math.max(-8, Math.min(0, wrWeek + Number(v))); wrPrev = null; renderMock(); focusStep(active, true, true); return; }
     if (act === 'upload') {
       var n = ROSTER.length; wrUp = 'reading'; wrPrev = null; renderMock(); focusStep('upload', true, true);
@@ -859,6 +1017,12 @@
     }
     if (act === 'img' || act === 'pdf') { wrPrev = act; wrSet('send', wrSendInner(wrScore(wrWeek))); focusStep('send', true, true); return; }
     if (act === 'cat') { wrCat = wrCat === Number(v) ? -1 : Number(v); wrSet('cats', wrBreakInner(wrIadcData(wrWeek))); focusStep('heat', true, true); return; }
+    if (act === 'zip') { cnZip = cnZip === v ? null : v; renderMock(); focusStep('cndnr', true); return; }
+    if (act === 'cnret') { cnMode = 'ret'; renderMock(); focusStep('cndnr', true); return; }
+    if (act === 'cnmode') { cnMode = v; wrSet('cndnr', cnDnrInner(cnData(wrWeek))); focusStep('cndnr', true, true); return; }
+    if (act === 'cnzipx') { cnZip = null; wrSet('cndnr', cnDnrInner(cnData(wrWeek))); focusStep('cndnr', true, true); return; }
+    if (act === 'cnunit') { cnUnit = v; wrSet('cncats', cnCatsInner(cnData(wrWeek))); focusStep('cncat', true, true); return; }
+    if (act === 'cntier') { cnTier = v; wrSet('cndrv', cnDrvInner(cnData(wrWeek))); focusStep('cndrivers', true, true); return; }
     if (act === 'tier' || act === 'letter') { if (act === 'tier') wrTier = v; else wrLetter = v; wrSet('drivers', wrDriversInner(wrIadcData(wrWeek))); focusStep('drivers', true, true); }
   }
 
@@ -1041,6 +1205,10 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveInd);
 
   // ------------------------------------------------------------------ guided tour
+  function pageSteps() {
+    var all = t(PAGES[page].steps);
+    return page === 'wr' ? all.filter(function (x) { return WR_TAB[x[0]] === wrTab; }) : all;
+  }
   var stepsEl = document.getElementById('steps'), nowEl = document.getElementById('step-now');
   var PAGES = {
     ops: { name: 'pageOps', steps: 'steps', first: 'overview', url: 'board.lanu.app/operations' },
@@ -1053,11 +1221,11 @@
   var page = 'ops';
   var active = 'overview', auto = !reduce, timer = null, inView = false, DUR = 7000;
   function renderSteps() {
-    stepsEl.innerHTML = t(PAGES[page].steps).map(function (s, i) {
+    stepsEl.innerHTML = pageSteps().map(function (s, i) {
       return '<li style="--i:' + i + '" class="step' + (s[0] === active ? ' on' + (auto ? ' auto' : '') : '') + '"><button type="button" data-step="' + s[0] + '" aria-current="' + (s[0] === active) + '">' +
         '<span class="n">' + (i + 1) + '</span><span><span class="t">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + '</span></span><span class="prog" style="--dur:' + DUR + 'ms"></span></button></li>';
     }).join('');
-    var cur = t(PAGES[page].steps).filter(function (s) { return s[0] === active; })[0];
+    var cur = pageSteps().filter(function (s) { return s[0] === active; })[0];
     nowEl.innerHTML = '<b>' + esc(cur[1]) + '</b><p>' + esc(cur[2]) + '</p>';
   }
   stepsEl.addEventListener('click', function (e) {
@@ -1115,8 +1283,9 @@
     clearTimeout(timer);
     if (!auto || !inView) return;
     timer = setTimeout(function () {
-      var ids = t(PAGES[page].steps).map(function (s) { return s[0]; }), i = ids.indexOf(active);
-      if (i === ids.length - 1) switchPage(ORDER[(ORDER.indexOf(page) + 1) % ORDER.length], true);
+      var ids = pageSteps().map(function (s) { return s[0]; }), i = ids.indexOf(active), wt = WR_ORDER.indexOf(wrTab);
+      if (i === ids.length - 1 && page === 'wr' && wt < WR_ORDER.length - 1) focusStep(WR_FIRST[WR_ORDER[wt + 1]], true);
+      else if (i === ids.length - 1) switchPage(ORDER[(ORDER.indexOf(page) + 1) % ORDER.length], true);
       else focusStep(ids[i + 1], true);
     }, DUR);
   }

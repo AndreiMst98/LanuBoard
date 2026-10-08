@@ -709,12 +709,36 @@ a.prod:hover{transform:translateY(-4px)}
 .wr-fil .m-search{margin:0 8px 0 0;width:260px;height:34px}
 .hs-f.sq{min-width:34px;padding:0 10px}
 .wr-sep{width:1px;height:22px;margin:0 6px;background:#E3E6EE}
-.wr-dt{font-size:11.5px}.wr-dt th{font-size:10.5px}.wr-dt td,.wr-dt th{padding-left:6px;padding-right:6px}.wr-dt .da{gap:7px}.wr-dt td:first-child,.wr-dt th:first-child{padding-left:18px}.wr-dt td.mono{font:600 11px ui-monospace,Menlo,monospace;color:#3A4459}
+.wr-dt{font-size:11.5px}.wr-dt th{font-size:10.5px}.wr-dt td,.wr-dt th{padding-left:5px;padding-right:5px}.wr-dt td.mono{font-size:10.5px!important}.wr-dt .da{gap:7px}.wr-dt td:first-child,.wr-dt th:first-child{padding-left:18px}.wr-dt td.mono{font:600 11px ui-monospace,Menlo,monospace;color:#3A4459}
 .wr-dt td.red{color:#B42318;font-weight:700}
 .wr-t{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.03em}
 .wr-t.ok{background:#DDF3E6;color:#146C3E}.wr-t.watch{background:#FEF0C7;color:#93370D}.wr-t.critical{background:#FDE7E7;color:#B42318}
 .wr-f{display:inline-flex;margin-left:3px;padding:1px 5px;border-radius:5px;color:#fff;font-size:9.5px;font-weight:800}
 .wr-f.a{background:#2F6BFF}.wr-f.c{background:#F5A623}.wr-f.d{background:#12B76A}.wr-f.e{background:#06AED4}
 .wr-sc{display:inline-flex;min-width:30px;justify-content:center;padding:2px 7px;border-radius:7px;background:#FDE7E7;color:#B42318;font-weight:800}
+
+/* Concessions mock */
+.cn-rev{margin-left:10px;padding:3px 10px;border-radius:999px;background:#FEF0C7;color:#93370D;font-weight:700;font-size:11px}
+.m-week .cn-rev+.cn-rev{margin-left:6px}
+.cn-tg{margin-left:auto;display:flex;align-items:center;gap:6px}
+.cn-link{grid-column:1/-1;justify-self:start;padding:0;border:0;background:none;font:600 12px var(--body);color:#2F6BFF;cursor:pointer}
+.cn-link:hover{text-decoration:underline}
+.cn-zip{display:grid;grid-template-columns:70px 1fr 74px;align-items:center;gap:12px;width:100%;padding:6px 18px;border:0;background:none;font:inherit;color:inherit;cursor:pointer;text-align:left}
+.cn-zip:hover,.cn-zip.on{background:#F3F7FF}.cn-zip>b{font-size:12.5px}
+.cn-zip .wr-bt{height:9px}
+.m-panel.on .cn-zip .wr-bt i{animation:barIn 1s var(--ease) both}
+.wr-ch .bar{transform-box:fill-box;transform-origin:50% 100%}
+.m-panel.on .wr-ch .bar{animation:barUp .7s var(--ease) both;animation-delay:calc(var(--i) * 30ms)}
+@keyframes barUp{from{transform:scaleY(0)}}
+.wr-leg.wrap{flex-wrap:wrap;row-gap:6px}.wr-leg b{color:#0B1B34}
+.wr-leg .sq::before{width:12px;height:10px;border-radius:2px}.wr-leg .dot::before{width:10px;height:10px;border-radius:50%}
+.cn-spark{display:inline-flex;align-items:flex-end;gap:2px;height:18px}.cn-spark i{width:5px;border-radius:1px}
+.cn-dom{display:inline-flex;padding:2px 7px;border-radius:6px;color:#fff;font-weight:800;font-size:10.5px}
+.cn-fl{display:inline-flex;margin:1px 3px 1px 0;padding:2px 7px;border-radius:6px;background:#EEF0F5;color:#3A4459;font-weight:600;font-size:10px;white-space:nowrap}
+.cn-fl.red{background:#FDE7E7;color:#B42318}.cn-fl.ret{background:#0C1B35;color:#fff;white-space:normal}
+.cn-app{display:inline-flex;padding:1px 6px;border-radius:5px;background:#FEF0C7;color:#93370D;font-weight:700;font-size:9.5px}
+.cn-chip{height:30px;padding:0 12px;border:0;border-radius:999px;background:#0C1B35;color:#fff;font:700 12px var(--body);cursor:pointer}
+.wr-dt td.wrp{white-space:normal}.wr-dt td.fl{min-width:96px;max-width:140px}.wr-dt td:first-child{white-space:normal}.wr-dt .da b{max-width:130px;line-height:1.25}.wr-dt td.sg{max-width:170px}.cn-dnr td.wrp:nth-child(3){max-width:84px}.cn-dnr td.lnk{max-width:120px}.cn-dnr{font-size:11px}.cn-dnr th{font-size:10px}.cn-dnr td.lnk{color:#2F6BFF;font-weight:600}
+.cn-dnr tr.ret td{color:#8A93A6;background:#FAFBFC}.cn-dnr tr.ret td.lnk{color:#8A93A6;text-decoration:line-through}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}[data-reveal]{opacity:1;transform:none}.hero h1 .w{opacity:1;transform:none;filter:none}.ticker-track{flex-wrap:wrap;width:auto}}
