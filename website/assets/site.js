@@ -2696,7 +2696,7 @@
     var mn = Math.min.apply(null, SPK), mx = Math.max.apply(null, SPK) || 1, pts = SPK.map(function (q, i) { return (i / (SPK.length - 1) * 200).toFixed(1) + ',' + (36 - (q - mn) / Math.max(1, mx - mn) * 30).toFixed(1); });
     pl.setAttribute('points', pts.join(' ')); ar.setAttribute('d', 'M0,40 L' + pts.join(' L') + ' L200,40 Z');
   }
-  var HS = { i: 0, timer: null, dur: 9000, durs: [9000, 9000, 14000], inView: true, busy: false }, hsEl = document.querySelectorAll('.hero-slide'), hsNav = document.getElementById('hs-nav');
+  var HS = { i: 0, timer: null, dur: 9000, durs: [9000, 9000, 21500], inView: true, busy: false }, hsEl = document.querySelectorAll('.hero-slide'), hsNav = document.getElementById('hs-nav');
   function hsMoney() {
     var arc = document.getElementById('hv2-arc'), left = document.getElementById('hv2-left'), pct = document.getElementById('hv2-pct'), bars = document.getElementById('hv2-bars'), eurEl = document.getElementById('hv2-eur');
     if (!arc) return;
@@ -2725,8 +2725,15 @@
     doc: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 15.5h5"/>',
     bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     home: '<path d="M4 11 12 4l8 7v9h-5.5v-5.5h-5V20H4z"/>', task: '<rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4.5h6M9 12l2 2 4-4"/>', user: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-4 4-5.6 7.5-5.6s6.3 1.6 7.5 5.6"/>',
+    shield: '<path d="M12 3l7 3v5.5c0 4.3-3 7.8-7 9-4-1.2-7-4.7-7-9V6z"/><path d="M12 9v5M9.5 11.5h5"/>', warn: '<path d="M12 4 21 19.5H3z"/><path d="M12 10v4.2M12 17h.01"/>',
+    shirt: '<path d="M8.5 4 4 6.5l1.8 4L8 9.6V20h8V9.6l2.2.9L20 6.5 15.5 4c-.6 1.4-1.9 2.2-3.5 2.2S9.1 5.4 8.5 4z"/>', van: '<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+    mega: '<path d="M4 10v4h3l7 4V6L7 10zM17.5 9.5a3.5 3.5 0 0 1 0 5"/>', info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>', plus: '<path d="M12 6v12M6 12h12"/>', perf: '<path d="M4.5 16a7.5 7.5 0 1 1 15 0"/><path d="M12 16l3.5-4.5"/>',
     chev: '<path d="M10 7l5 5-5 5"/>', up: '<path d="M5 16l5-5 3 3 6-6M14 8h5v5"/>', ok: '<path d="M5 12.5l4.5 4.5L19 7.5"/>'
   };
+  function haRows(rows, ics, cls, extra) {
+    return '<div class="ha-c ha-rows">' + rows.map(function (r, k) { var x = extra && extra[k] || {};
+      return '<div class="ha-row' + (x.c ? ' ' + x.c : '') + '"' + (x.id ? ' id="' + x.id + '"' : '') + '><span class="ha-ri ' + (Array.isArray(cls) ? cls[k] : cls) + '">' + haIc(ics[k]) + '</span><div><b>' + esc(r[0]) + (x.tag || '') + '</b><small>' + esc(r[1]) + '</small></div>' + (x.bd ? '<em' + (x.bid ? ' id="' + x.bid + '"' : '') + '>' + x.bd + '</em>' : '') + haIc('chev', 'ha-chv') + '</div>'; }).join('') + '</div>';
+  }
   function haIc(k, c) { return '<svg viewBox="0 0 24 24" class="ha-ic' + (c ? ' ' + c : '') + '" aria-hidden="true">' + HA_IC[k] + '</svg>'; }
   function haTop(name, admin) {
     var d = new Date(), loc = lang === 'de' ? 'de-DE' : 'en-GB';
@@ -2748,7 +2755,16 @@
     for (i = 0; i < 4; i++) d += '<div class="ha-act' + (i === 0 ? ' ha-to' : '') + '"><span class="k' + i + '">' + haIc(IC4[i]) + (i === 2 ? '<b></b>' : '') + '</span>' + esc(acts[i]) + '</div>';
     d += '</div><h5>' + esc(ha('top', { w: wk.n })) + '</h5><div class="ha-c ha-list">';
     HA.top.forEach(function (n, k) { d += '<div><i class="m' + k + '">' + (k + 1) + '</i><span>' + esc(n) + '</span><b>100</b></div>'; });
-    d += '</div></div><div class="ha-toast g" id="ha-dt"><i>' + haIc('ok') + '</i><div><b>' + ha('okTitle') + '</b><small>' + esc(ha('okTxt', { n: HA.off.split(' ')[0] })) + '</small></div></div>';
+    var pm = new Date(); pm.setDate(1); pm.setMonth(pm.getMonth() - 1);
+    var dr = ha('dReq');
+    d += '</div><h5 id="ha-dreq">' + ha('reqH') + '</h5>' + haRows([[dr[0][0], ha('dVacSent')], dr[1], dr[2]], ['cal', 'chat', 'coin'], 'b',
+        [{ id: 'ha-dvac', tag: '<i class="ha-tag s" id="ha-dvtag">' + ha('sentTag') + '</i>' }, { tag: '<i class="ha-tag ok">' + ha('okTag') + '</i>' }, { tag: '<i class="ha-tag s">' + ha('sentTag') + '</i>' }]) +
+      '<h5 id="ha-ddoc">' + ha('docs') + '</h5>' + haRows(ha('dDocs'), ['slip', 'doc', 'shirt', 'shield', 'warn'], ['v', 'v', 'g', 'v', 'v'], [null, { bd: '1', c: 'nwb' }]) +
+      '<h5>' + ha('upd') + '</h5><div class="ha-c ha-upd" id="ha-upd"><span>' + haIc('info') + '</span><div><b>' + esc(ha('updT', { m: pm.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long' }) })) + '</b><small>' + ha('updS') + '</small></div><button type="button" tabindex="-1">' + ha('read') + '</button></div>';
+    var dnav = ha('dnav'), DNI = ['home', 'perf', 'bell', 'user'];
+    d += '</div><nav class="ha-nav">';
+    for (i = 0; i < 4; i++) d += '<span' + (i === 0 ? ' class="on"' : '') + '>' + haIc(DNI[i]) + esc(dnav[i]) + '</span>';
+    d += '</nav><div class="ha-toast g" id="ha-dt"><i>' + haIc('ok') + '</i><div><b>' + ha('okTitle') + '</b><small>' + esc(ha('okTxt', { n: HA.off.split(' ')[0] })) + '</small></div></div>';
     var tiles = ha('tiles'), TI = ['chat', 'coin', 'slip'], res = ha('res'), RI = ['chat', 'coin', 'doc', 'cal'], RV = [4, 1, 2, 1], pend = ha('pend'), nav = ha('nav'), NI = ['home', 'task', 'bell', 'user'];
     var o = '<div class="ha-feed">' + haTop(HA.off, true) +
       '<div class="ha-sc ha-ops"><div class="ha-sc-h"><span>' + ha('ops') + '</span><em class="ha-live"><i></i>' + ha('live') + '</em></div>' +
@@ -2759,17 +2775,34 @@
     o += '</div><h5>' + ha('pending') + '</h5><div class="ha-pend">';
     for (i = 0; i < 6; i++) o += '<div' + (i === 0 ? ' id="ha-vac"' : '') + '><b' + (i === 0 ? ' id="ha-vacn"' : '') + '>' + (i === 1 ? 2 : 0) + '</b><small>' + esc(pend[i]) + '</small>' + (i === 1 ? '<em>2</em>' : i === 0 ? '<em class="nw">1</em>' : '') + '</div>';
     o += '</div><h5>' + ha('fleet') + '</h5><div class="ha-fl"><div class="dk"><img src="assets/img/app/pickup.png" alt=""><b>' + ha('pickup') + '</b><i>→</i></div><div><img src="assets/img/app/return.png" alt=""><b>' + ha('ret') + '</b><i>←</i></div></div>' +
-      '<h5>' + ha('tasks') + '<small>' + esc(ha('open', { n: 1 })) + '</small></h5><div class="ha-c ha-task"><i></i><span>' + esc(ha('task')) + '</span>' + avatar('Radu Ionescu', 24) + '</div></div>' +
+      '<h5 id="ha-otask">' + ha('tasks') + '<small id="ha-open">' + esc(ha('open', { n: 1 })) + '</small></h5><div class="ha-c ha-tasks"><div class="ha-task"><i></i><span>' + esc(ha('task')) + '</span>' + avatar('Radu Ionescu', 24) + '</div>' +
+        '<div class="ha-task ha-t2"><i></i><span>' + esc(ha('task2')) + '</span>' + avatar('Elena Marin', 24) + '</div><div class="ha-new" id="ha-newt"><span>' + haIc('plus') + '</span>' + ha('newTask') + '</div></div>' +
+      '<h5 id="ha-oreq">' + ha('reqH') + '</h5>' + haRows(ha('oReq'), ['cal', 'chat', 'coin'], 'b', [null, { bd: '2' }]) +
+      '<h5>' + ha('docs') + '</h5>' + haRows(ha('oDocs'), ['doc', 'shield', 'slip', 'warn'], 'v') +
+      '<h5 id="ha-oteam">' + ha('team') + '</h5>' + haRows(ha('oTeam'), ['shirt', 'van', 'warn', 'mega'], ['g', 'g', 'g', 'o'], [null, null, { id: 'ha-dmg', bd: '1', c: 'nwb' }, { id: 'ha-ann' }]) + '</div>' +
       '<div class="ha-toast" id="ha-ot"><i>' + haIc('cal') + '</i><div><b>' + ha('newReq') + '</b><small>' + esc(ha('newTxt', { n: HA.drv })) + '</small></div><button type="button" tabindex="-1">' + ha('approve') + '</button></div>' +
       '<nav class="ha-nav">';
-    for (i = 0; i < 4; i++) o += '<span' + (i === 0 ? ' class="on"' : '') + '>' + haIc(NI[i]) + (i === 1 ? '<b>1</b>' : '') + esc(nav[i]) + '</span>';
+    for (i = 0; i < 4; i++) o += '<span' + (i === 0 ? ' class="on"' : '') + '>' + haIc(NI[i]) + (i === 1 ? '<b id="ha-tb">1</b>' : '') + esc(nav[i]) + '</span>';
     o += '</nav>';
-    el.innerHTML = '<svg class="ha-link" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M30 64 C46 64,52 34,70 30"/></svg>' +
+    var bt = ha('bTabs'), pmn = new Date(); pmn.setDate(1); pmn.setMonth(pmn.getMonth() - 1); pmn = pmn.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long' });
+    var bd = '<div class="hb-bar"><i></i><i></i><i></i><span>board.lanu.app/app-admin</span></div><div class="hb-in">' +
+      '<div class="hb-h"><div><b>' + ha('bTitle') + '</b><small>' + esc(new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '</small></div><span class="hb-sync"><i></i>' + ha('bSync') + '</span></div>' +
+      '<div class="hb-tabs">' + bt.map(function (x, k) { return '<span' + (k === 0 ? ' class="on"' : '') + '>' + esc(x) + (k === 4 ? '<em id="hb-tbd">2</em>' : '') + '</span>'; }).join('') + '</div>' +
+      '<div class="hb-warn">' + haIc('warn') + '<b id="hb-need">' + esc(ha('bNeed', { n: 2 })) + '</b><span>' + ha('bOld') + '</span></div>' +
+      '<div class="hb-g"><div class="hb-card"><h6>' + ha('bHandle') + '<em id="hb-cnt">2</em></h6><div class="hb-list">' +
+        '<div class="hb-row hb-nw" id="hb-vac"><span>' + haIc('cal') + '</span><div><b>' + ha('bVac') + '<i class="ha-tag s" id="hb-vtag">' + ha('bNew') + '</i></b><small>' + esc(HA.drv) + ' · 14–15 Oct</small></div><em>' + ha('bNow') + '</em></div>' +
+        '<div class="hb-row"><span>' + haIc('chat') + '</span><div><b>' + ha('bGen') + '</b><small>Sorin Matei</small></div><em>20.09</em></div>' +
+        '<div class="hb-row"><span>' + haIc('chat') + '</span><div><b>' + ha('bGen') + '</b><small>Daniel Rusu</small></div><em>22.09</em></div></div></div>' +
+      '<div class="hb-card"><h6>' + esc(ha('bPay', { m: pmn })) + '</h6><div class="hb-pay"><b id="hb-pn">61</b><span>' + esc(ha('bOf', { n: 75 })) + '</span><i id="hb-pp">81%</i></div><div class="hb-pbar"><i id="hb-pbar" style="width:81%"></i></div>' +
+        '<small class="hb-miss">' + ha('bMiss') + '</small><div class="hb-chips"><span id="hb-chip">' + avatar(HA.drv, 14) + esc(HA.drv) + '</span><span>' + avatar('Victor Ene', 14) + 'Victor Ene</span><span>+13</span></div>' +
+        '<span class="hb-up" id="hb-up">' + haIc('up') + ha('bUpload') + '</span></div></div></div>';
+    el.innerHTML = '<div class="hb"><span class="ha-lbl"><i></i>LANU Board · ' + ha('bTitle') + '</span><div class="hb-scr">' + bd + '</div></div>' +
       '<div class="ha-ph ha-d"><span class="ha-lbl"><i></i>' + ha('drv') + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr">' + d + '</div></div></div>' +
       '<div class="ha-ph ha-o"><span class="ha-lbl"><i></i>' + esc(ha('off')) + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr">' + o + '</div></div></div>' +
       '<div class="ha-fly" id="ha-fly">' + haIc('cal') + '<span>' + esc(ha('sent')) + '</span></div>';
     if (HS.i === 2) haPlay();
   }
+  function pmn() { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long' }); }
   function haStop() { HA.tm.forEach(clearTimeout); HA.tm = []; }
   function haPlay() {
     haStop();
@@ -2777,6 +2810,9 @@
     var $ = function (id) { return document.getElementById(id); }, at = function (ms, f) { HA.tm.push(setTimeout(f, reduce ? 0 : ms)); };
     var set = function (id, v) { var e = $(id); if (e && e.textContent !== String(v)) { e.textContent = v; e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); } };
     el.className = 'hero-visual hv3'; el.querySelectorAll('.ha-feed').forEach(function (f) { f.style.transform = ''; });
+    var f0 = $('ha-fly'); f0.querySelector('span').textContent = ha('sent'); f0.querySelector('svg').innerHTML = HA_IC.cal;
+    $('hb-vtag').textContent = ha('bNew'); $('hb-cnt').textContent = 2; $('hb-tbd').textContent = 2; $('hb-need').textContent = ha('bNeed', { n: 2 }); $('hb-pn').textContent = 61; $('hb-pp').textContent = '81%'; $('hb-pbar').style.width = '81%';
+    $('ha-dvac').querySelector('small').textContent = ha('dVacSent'); $('ha-dvtag').textContent = ha('sentTag'); $('ha-open').textContent = ha('open', { n: 1 }); $('ha-tb').textContent = 1;
     $('ha-ot').querySelector('button').textContent = ha('approve'); $('ha-need').textContent = 2; $('ha-req').textContent = 2; $('ha-vacn').textContent = 0; $('ha-vapp').textContent = 1;
     var ring = $('ha-ring'), L = 2 * Math.PI * 33;
     ring.style.strokeDasharray = L; ring.style.transition = 'none'; ring.style.strokeDashoffset = L; void ring.getBoundingClientRect();
@@ -2788,16 +2824,31 @@
     at(1700, function () { el.classList.add('s-tap'); });
     var fly = $('ha-fly'), pt = function (q, fx, fy) { var r = el.getBoundingClientRect(), b = q.getBoundingClientRect(); return [b.left - r.left + b.width * fx, b.top - r.top + b.height * fy]; };
     var go = function (a, b) { fly.style.setProperty('--x0', a[0] + 'px'); fly.style.setProperty('--y0', a[1] + 'px'); fly.style.setProperty('--x1', b[0] + 'px'); fly.style.setProperty('--y1', b[1] + 'px'); };
-    at(2200, function () { go(pt(el.querySelector('.ha-to span'), .5, .5), pt(el.querySelector('.ha-o .ha-scr'), .5, .02)); el.classList.add('s-fly'); });
-    at(3100, function () { el.classList.add('s-new'); set('ha-need', 3); set('ha-req', 3); set('ha-vacn', 1); });
-    at(4700, function () { el.classList.add('s-ok'); });
-    at(5300, function () { el.classList.add('s-done'); set('ha-need', 2); set('ha-req', 2); set('ha-vacn', 0); set('ha-vapp', 2); $('ha-ot').querySelector('button').textContent = ha('approved'); });
-    at(5600, function () { go(pt(el.querySelector('.ha-o .ha-scr'), .5, .06), pt(el.querySelector('.ha-d .ha-scr'), .5, .04)); el.classList.add('s-back'); });
-    at(6300, function () { el.classList.add('s-ohide'); });
-    at(6500, function () { el.classList.add('s-recv'); });
+    at(2200, function () { go(pt(el.querySelector('.ha-to span'), .5, .5), pt($('hb-vac'), .35, .5)); el.classList.add('s-fly'); });
+    at(3000, function () { el.classList.add('s-bin'); set('hb-cnt', 3); set('hb-tbd', 3); $('hb-need').textContent = ha('bNeed', { n: 3 }); });
+    at(3500, function () { el.classList.add('s-p1'); });
+    at(3900, function () { el.classList.add('s-new'); set('ha-need', 3); set('ha-req', 3); set('ha-vacn', 1); });
+    at(5000, function () { el.classList.add('s-ok'); });
+    at(5500, function () { el.classList.add('s-done'); el.classList.add('s-p2'); $('hb-vtag').textContent = ha('okTag'); set('hb-cnt', 2); set('hb-tbd', 2); $('hb-need').textContent = ha('bNeed', { n: 2 }); set('ha-need', 2); set('ha-req', 2); set('ha-vacn', 0); set('ha-vapp', 2); $('ha-ot').querySelector('button').textContent = ha('approved'); });
+    at(6100, function () { go(pt($('hb-vac'), .35, .5), pt(el.querySelector('.ha-d .ha-scr'), .5, .04)); el.classList.add('s-back'); });
+    at(6600, function () { el.classList.add('s-ohide'); });
+    at(7000, function () { el.classList.add('s-recv'); });
     at(8300, function () { el.classList.add('s-dhide'); });
-    at(8600, function () { el.querySelectorAll('.ha-scr').forEach(function (s) { var f = s.querySelector('.ha-feed'), nv = s.querySelector('.ha-nav'); f.style.transform = 'translateY(' + (-Math.max(0, f.scrollHeight - s.clientHeight + (nv ? nv.offsetHeight : 0))) + 'px)'; }); });
-    at(12400, function () { el.querySelectorAll('.ha-feed').forEach(function (f) { f.style.transform = ''; }); });
+    // scroll both phones down in two stops, with something happening at each stop
+    var scr = function (ph, id, dy) { var s = el.querySelector(ph + ' .ha-scr'), f = s.querySelector('.ha-feed'), tg = id ? $(id) : null, max = f.offsetHeight - s.clientHeight;
+      f.style.transform = 'translateY(' + (-Math.max(0, Math.min(max, tg ? tg.offsetTop - dy : max))) + 'px)'; };
+    at(8500, function () { scr('.ha-d', 'ha-dreq', 150); scr('.ha-o', 'ha-otask', 60); });
+    at(10200, function () { el.classList.add('s-dok'); $('ha-dvac').querySelector('small').textContent = ha('dVacOk'); $('ha-dvtag').textContent = ha('okTag'); });
+    at(10500, function () { el.classList.add('s-tnew'); });
+    at(11200, function () { el.classList.add('s-t2'); set('ha-open', ha('open', { n: 2 })); set('ha-tb', 2); });
+    at(13300, function () { scr('.ha-d', null); scr('.ha-o', 'ha-oteam', 40); });
+    at(14000, function () { el.classList.add('s-upl'); });
+    at(14500, function () { var f2 = $('ha-fly'); f2.querySelector('span').textContent = ha('bSlip', { m: pmn() }); f2.querySelector('svg').innerHTML = HA_IC.slip;
+      go(pt($('hb-up'), .5, .5), pt($('ha-upd'), .5, .5)); el.classList.remove('s-fly', 's-back'); void f2.offsetWidth; el.classList.add('s-send'); set('hb-pn', 62); $('hb-pp').textContent = '83%'; $('hb-pbar').style.width = '83%'; });
+    at(15400, function () { el.classList.add('s-doc'); el.classList.add('s-slip'); });
+    at(15200, function () { el.classList.add('s-dmg'); });
+    at(17600, function () { el.classList.add('s-read'); el.classList.add('s-ann'); });
+    at(19300, function () { el.querySelectorAll('.ha-feed').forEach(function (f) { f.style.transform = ''; }); });
   }
   haBuild();
   function hsGo(i, user) {
