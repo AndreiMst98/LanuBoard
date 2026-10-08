@@ -1341,11 +1341,13 @@
     ts: { name: 'pageTs', steps: 'tsSteps', tabNames: 'tsTabs', base: 'timesheets', tabs: ['wd', 'rs', 'dp', 'ws', 'ap', 'af', 'ks'],
       first: { wd: 'tswd', rs: 'tsrs', dp: 'tsdp', ws: 'tsws', ap: 'tsap', af: 'tsaf', ks: 'tsks' },
       url: { wd: 'working-days', rs: 'rescue', dp: 'daily-protocol', ws: 'work-summary', ap: 'accommodation-problems', af: 'average-food', ks: 'kenjo-sync' },
-      of: { tswd: 'wd', tsrs: 'rs', tsdp: 'dp', tsdpd: 'dp', tsws: 'ws', tswsd: 'ws', tsap: 'ap', tsaf: 'af', tsks: 'ks', tsksx: 'ks' } }
+      of: { tswd: 'wd', tsrs: 'rs', tsdp: 'dp', tsdpd: 'dp', tsws: 'ws', tswsd: 'ws', tsap: 'ap', tsaf: 'af', tsks: 'ks', tsksx: 'ks' } },
+    fl: { name: 'pageFl', steps: 'flSteps', tabNames: 'flTabs', base: 'fleet', tabs: ['fv', 'fh', 'fp'], first: { fv: 'flsync', fh: 'flhist', fp: 'flph' },
+      url: { fv: 'vehicles', fh: 'history', fp: 'vehicle-photos' }, of: { flsync: 'fv', fldet: 'fv', flhist: 'fh', flph: 'fp', flapp: 'fp', flphv: 'fp' } }
   };
-  var P2ORDER = ['pl', 'ts'], P2ALIAS = { tsdpd: 'tsdp', tsksx: 'tsks' };
+  var P2ORDER = ['pl', 'ts', 'fl'], P2ALIAS = { tsdpd: 'tsdp', tsksx: 'tsks' };
   function P2() { return P2P[p2.page]; }
-  var p2 = { page: 'pl', ts: { rsSort: false, dpOpen: null, wsTab: 0, wsTopic: -1, ap: {}, apHi: null, ksF: 'all', ks: 'done', ksN: 0 }, tab: 'cap', active: 'capweeks', auto: !reduce, inView: false, timer: null, cam: { z: 1, x: 0, y: 0 }, colors: [0, 1, 2], sb: [], at: 'empty', copied: false, saved: null, edits: {}, hi: null, tok: 0 };
+  var p2 = { page: 'pl', fl: { f: 'all', keys: {}, add: {}, extra: {}, open: null, back: {}, leaving: null, toast: null, sent: {}, ph: null, appOn: false, appRow: 1, typing: null, hi: null, hiP: null, noted: false }, ts: { rsSort: false, dpOpen: null, wsTab: 0, wsTopic: -1, ap: {}, apHi: null, ksF: 'all', ks: 'done', ksN: 0 }, tab: 'cap', active: 'capweeks', auto: !reduce, inView: false, timer: null, cam: { z: 1, x: 0, y: 0 }, colors: [0, 1, 2], sb: [], at: 'empty', copied: false, saved: null, edits: {}, hi: null, tok: 0 };
   var mock2 = document.getElementById('mock2'), screen2 = document.getElementById('screen2'), steps2 = document.getElementById('steps2'), now2 = document.getElementById('step-now2');
   var WP_PAL = ['#FFF56B', '#64B5F6', '#FFB74D', '#81C784', '#F48FB1', '#B39DDB', '#4DD0E1'], WP_T = ['10:00', '10:50', '11:15'], SD_T = ['06:55', '14:15', '17:55'];
   function lday(d, o) { return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', o || { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }); }
@@ -1572,6 +1574,7 @@
       '<div class="m-panel" data-p="tsks"><div class="m-ph"><h4>' + t('tsKsRes', { d: day }) + '</h4><span class="ts-sm">' + t('tsKsUpd', { d: ddmm(TODAY).slice(0, 5) }) + '</span></div><div class="m-search">' + t('tsSearch') + '</div><div data-ts="ks">' + ksRows() + '</div></div>';
   }
   function p2Prep(id) { // state a step needs before the camera moves; true when the screen must be redrawn
+    if (flPrep(id)) return true;
     var T = p2.ts;
     if (id === 'tsdpd' && T.dpOpen === null) { T.dpOpen = tsData().dp.map(function (d) { return d.flag; }).indexOf(true); return true; }
     if (id === 'tsdp' && T.dpOpen !== null && p2.active !== 'tsdpd') { T.dpOpen = null; return true; }
@@ -1580,6 +1583,162 @@
     return false;
   }
   function tsSet(name, html) { var el = mock2.querySelector('[data-ts="' + name + '"]'); if (el) el.innerHTML = html; }
+  // ---------- Fleet (fictional plates, sources and drivers; drawn vans, no real photos)
+  var FL_ST = ['use', 'need', 'svc', 'def', 'ret'], FL_C = ['#1E9E5A', '#F5A623', '#2F6BFF', '#E5484D', '#98A2B3'];
+  function vanSvg(view, col) {
+    col = col || '#EEF1F5';
+    if (view === 'front') return '<svg viewBox="0 0 200 120" class="vsv"><rect x="52" y="22" width="96" height="78" rx="14" fill="' + col + '" stroke="#9AA3B1" stroke-width="2"/><path d="M60 32h80l6 30H54z" fill="#3B4A61"/><rect x="74" y="72" width="52" height="14" rx="4" fill="#2B3038"/><rect x="58" y="70" width="14" height="8" rx="3" fill="#FFF3C4"/><rect x="128" y="70" width="14" height="8" rx="3" fill="#FFF3C4"/><rect x="50" y="92" width="100" height="10" rx="4" fill="#2B3038"/><rect x="56" y="100" width="18" height="12" rx="3" fill="#16181C"/><rect x="126" y="100" width="18" height="12" rx="3" fill="#16181C"/><rect x="42" y="44" width="10" height="8" rx="2" fill="#2B3038"/><rect x="148" y="44" width="10" height="8" rx="2" fill="#2B3038"/></svg>';
+    if (view === 'back') return '<svg viewBox="0 0 200 120" class="vsv"><rect x="54" y="18" width="92" height="84" rx="10" fill="' + col + '" stroke="#9AA3B1" stroke-width="2"/><path d="M100 20v80" stroke="#9AA3B1" stroke-width="2"/><rect x="62" y="28" width="32" height="20" rx="3" fill="#3B4A61"/><rect x="106" y="28" width="32" height="20" rx="3" fill="#3B4A61"/><rect x="56" y="70" width="8" height="18" rx="2" fill="#E5484D"/><rect x="136" y="70" width="8" height="18" rx="2" fill="#E5484D"/><rect x="52" y="96" width="96" height="8" rx="3" fill="#2B3038"/><rect x="58" y="102" width="18" height="12" rx="3" fill="#16181C"/><rect x="124" y="102" width="18" height="12" rx="3" fill="#16181C"/></svg>';
+    return '<svg viewBox="0 0 200 120" class="vsv"><path d="M12 92V44q2-14 16-16h104q12 0 22 10l26 24q8 6 8 16v14q0 4-4 4H16q-4 0-4-4z" fill="' + col + '" stroke="#9AA3B1" stroke-width="2"/><path d="M148 38l26 24h-26z" fill="#3B4A61"/><path d="M104 32v62M146 32v62" stroke="#B9C1CC" stroke-width="1.5"/><rect x="12" y="84" width="176" height="10" rx="3" fill="#2B3038"/><rect x="180" y="70" width="8" height="6" rx="2" fill="#FFF3C4"/><circle cx="46" cy="96" r="13" fill="#16181C"/><circle cx="46" cy="96" r="5" fill="#9AA3B1"/><circle cx="160" cy="96" r="13" fill="#16181C"/><circle cx="160" cy="96" r="5" fill="#9AA3B1"/></svg>';
+  }
+  var FL_VIEW = [['side', 'flip ang-l'], ['front', ''], ['side', 'ang-r'], ['side', 'flip'], ['side', ''], ['side', 'ang-r2'], ['back', ''], ['side', 'flip ang-l2']];
+  var FL_IMG = ['assets/img/fleet/fl.jpg', 'assets/img/fleet/f.jpg', 'assets/img/fleet/fr.jpg', 'assets/img/fleet/l.jpg', 'assets/img/fleet/r.jpg', 'assets/img/fleet/rl.jpg', 'assets/img/fleet/b.jpg', 'assets/img/fleet/rr.jpg'];
+  function flPhoto(k) { return FL_IMG[k]; }
+  var FL_APPVAN = '<img class="fl-appvan" src="assets/img/fleet/app-van.png" alt="">';
+  function vanShot(k) { return '<div class="fl-shot"><img src="' + flPhoto(k) + '" alt=""></div>'; }
+  var flC;
+  function flData() {
+    if (flC) return flC;
+    var r = rng(7777), MK = [['Mercedes', 'Sprinter'], ['VW', 'Transporter'], ['MAN', 'TGE'], ['Fiat', 'Ducato'], ['Renault', 'Trafic'], ['Citroën', 'Jumpy']], SRC = ['FleetLease', 'VanRent', 'CityRent'], LOC = ['North depot', 'South depot', 'East depot'];
+    function plate() { return 'LN-' + 'ABCDEFGHKLMNPRSTVWXZ'[between(r, 0, 19)] + 'ABCDEFGHKLMNPRSTVWXZ'[between(r, 0, 19)] + ' ' + between(r, 1000, 9899); }
+    var issues = ['', 'sliding door problems', 'brake noise — check at service', 'reverse camera not working', 'front right door sticks', '', 'brakes at service / side door', '', '', '', '', '', '', ''];
+    var drv = shuffle(CPR.map(function (d) { return d.name; }), r);
+    var c = { v: [] };
+    for (var i = 0; i < 86; i++) {
+      var mk = i < 60 ? MK[0] : MK[between(r, 0, 5)], st = i === 2 || i === 9 ? 'need' : i === 5 || i === 12 ? 'svc' : i === 11 || i === 30 ? 'def' : 'use';
+      c.v.push({ plate: plate(), mk: mk, st: st, vin: '…' + between(r, 700000, 739999), iss: issues[i] || '', tuv: i === 4 ? 22 : null, src: SRC[i % 3], loc: LOC[i % 2], joined: addD(TODAY, -between(r, 300, 760)), km: between(r, 360, 540), com: between(r, 40, 112), fill: i % 3 === 0 && i > 14 });
+    }
+    c.v.sort(function (a, b) { return a.plate < b.plate ? -1 : 1; });
+    c.drove = c.v.slice(0, 14).map(function (x, i) { return [0, 1, 2, 3, 4, 5].map(function (k) { return { d: addD(TODAY, -k), n: drv[(i * 3 + k * 7) % drv.length] }; }); });
+    c.h = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) {
+      var mk = MK[between(r, 0, 5)];
+      return { plate: plate(), mk: mk, vin: '…0' + between(r, 10000, 99999), iss: i < 6 ? t('flHIssues')[i % 4] : '', src: SRC[(i + 1) % 3], loc: LOC[i % 3], joined: addD(TODAY, -between(r, 60, 420)), km: i % 3 ? between(r, 900, 82000) : null, ret: addD(TODAY, -Math.floor(i * 1.8) - 1), com: between(r, 1, 18), earlier: i === 7 };
+    });
+    c.ph = c.v.filter(function (x) { return x.mk[0] === 'Mercedes'; }).slice(0, 16).map(function (x, i) {
+      var n = i === 2 || i === 9 ? between(r, 3, 6) : i % 4 === 1 || i === 6 ? 0 : 8;
+      return { v: x, drv: drv[40 + i], n: n, dmg: i === 3 ? 0 : i === 11 ? 1 : -1, t0: between(r, 380, 640) };
+    });
+    return (flC = c);
+  }
+  function flPill(st) { var i = FL_ST.indexOf(st); return '<span class="fl-st" style="--c:' + FL_C[i] + '"><i></i>' + t('flSt')[i] + ' <small>▾</small></span>'; }
+  function flRowsHtml() {
+    var c = flData(), F = p2.fl, list = c.v.filter(function (x) { return F.f === 'all' || (F.f === 'fill' ? x.fill : x.st === F.f); });
+    var QR = '<span class="fl-qr"><svg viewBox="0 0 12 12" width="11" height="11"><path d="M1 1h4v4H1zM7 1h4v4H7zM1 7h4v4H1zM7 7h2v2H7zM9 9h2v2H9z" fill="currentColor"/></svg></span>';
+    return list.slice(0, 13).map(function (x, i) {
+      var idx = c.v.indexOf(x), iss = F.add[idx] !== undefined ? F.add[idx] : x.iss;
+      return '<tr class="row-in' + (F.hi === idx ? ' add-in' : '') + '" style="--i:' + i + '"><td><b class="fl-pl">' + x.plate + '</b></td><td><b>' + x.mk[0] + '</b><small class="blk">' + x.mk[1] + '</small></td><td>' + flPill(x.st) + '</td><td class="mono">' + x.vin + ' ' + QR + '</td>' +
+        '<td>' + (iss ? '<span class="fl-iss' + (F.typing === idx ? ' typing-cell' : '') + '" data-fliss="' + idx + '">⚠ ' + esc(iss) + '</span>' : '<button type="button" class="fl-add" data-p2-act="fladd" data-v="' + idx + '">' + t('flAdd') + '</button>') + '</td>' +
+        '<td>' + (x.tuv ? '<b>' + ddmm(addD(TODAY, x.tuv)) + '</b><small class="blk">' + t('flInDays', { n: x.tuv }) + '</small>' : '<span class="fl-add">' + t('flAdd') + '</span>') + '</td><td><span class="fl-add">' + t('flAdd') + '</span></td>' +
+        '<td>' + x.src + '<small class="blk">' + x.loc + '</small></td><td><b>' + ddmm(x.joined) + '</b><small class="blk">' + x.km + ' km</small></td>' +
+        '<td><button type="button" class="fl-key' + (F.keys[idx] ? ' on' : '') + '" data-p2-act="flkey" data-v="' + idx + '" aria-label="Key">' + (F.keys[idx] ? '✓' : '') + '</button></td>' +
+        '<td><button type="button" class="fl-com" data-p2-act="flcom" data-v="' + idx + '">💬 ' + (x.com + (F.extra[idx] || 0)) + '</button></td></tr>';
+    }).join('');
+  }
+  function flDrawer() {
+    var c = flData(), idx = p2.fl.open, x = c.v[idx], D = c.drove[Math.min(idx, 13)] || c.drove[0], CM = t('flComDemo');
+    return '<div class="rc-back"></div><div class="m-panel rc-dr fl-dr" data-p="fldet"><div class="rc-dh"><div class="rc-fh"><span class="fl-mini">' + FL_APPVAN + '</span><div><small>' + t('flDrawer') + '</small><b>' + x.plate + '</b><span>' + x.mk.join(' ') + ' · ' + x.src + '</span></div></div>' + flPill(x.st) + '<button type="button" class="cp-x" data-p2-act="flclose">×</button></div>' +
+      '<div class="rc-sec"><h5>' + t('flDrove') + '</h5><div class="fl-drove">' + D.map(function (q, k) { return '<span style="--i:' + k + '"><small>' + lday(q.d, { weekday: 'short', day: '2-digit', month: '2-digit' }) + '</small>' + avatar(q.n, 24) + '<b>' + esc(q.n) + '</b></span>'; }).join('') + '</div></div>' +
+      '<div class="rc-sec"><h5>' + t('flComments') + ' <span class="rc-cnt ok">' + (x.com + (p2.fl.extra[idx] || 0)) + '</span></h5><ul class="cp-tl rc-tl">' + CM.map(function (m, k) { var who = CPR[78 + k].name; return '<li class="' + (k === 2 ? 'cur' : '') + '"><b>' + esc(m) + '</b><span>' + ddmm(addD(TODAY, -6 + k * 2)) + ' · ' + esc(who) + '</span></li>'; }).reverse().join('') + '</ul>' +
+      '<button type="button" class="rc-note fl-wr" data-p2-act="flnote" data-v="' + idx + '">' + (p2.fl.noted ? '✓ ' + esc(t('flComDemo')[2]) : t('flWrite')) + '</button></div></div>';
+  }
+  function renderFl() {
+    var c = flData(), K = t('flK'), cnt = { all: c.v.length, fill: c.v.filter(function (x) { return x.fill; }).length };
+    FL_ST.forEach(function (s0) { cnt[s0] = c.v.filter(function (x) { return x.st === s0; }).length; });
+    var keys = Object.keys(p2.fl.keys).filter(function (k) { return p2.fl.keys[k]; }).length, F = ['all', 'use', 'need', 'svc', 'def', 'ret', 'fill'];
+    var h = '<div class="fl-kk" data-p="flsync">' + F.map(function (f, i) { return '<button type="button" class="ts-kk' + (p2.fl.f === f ? ' on' : '') + (f === 'fill' ? ' dash' : '') + '" data-p2-act="flf" data-v="' + f + '"><small>' + (i && i < 6 ? '<i style="background:' + FL_C[i - 1] + '"></i>' : '') + K[i] + '</small><b class="' + (f === 'def' ? 'neg' : f === 'fill' ? 'amb' : '') + '">' + cnt[f] + '</b></button>'; }).join('') + '</div>' +
+      '<div class="m-panel" data-p="flsync"><div class="m-ph"><h4>' + t('flVeh', { n: c.v.length }) + '</h4><span class="m-cnt g">' + t('flKeys', { a: keys, b: c.v.length }) + '</span><span class="m-ago">' + t('flAgo', { n: 5 }) + '</span></div><p class="wr-note">' + t('flSynced') + '</p><div class="m-search">' + t('flSearch') + '</div>' +
+      '<table class="m-t fl-t" data-p="fldet"><thead><tr><th colspan="2">' + t('flCols')[0] + '</th>' + t('flCols').slice(1).map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr></thead><tbody data-fl="rows">' + flRowsHtml() + '</tbody></table></div>';
+    if (p2.fl.open !== null) h += flDrawer();
+    p2.fl.hi = null;
+    return h;
+  }
+  function renderFh() {
+    var c = flData(), K = t('flHK'), list = c.h.filter(function (x, i) { return !p2.fl.back[i]; }), open = list.filter(function (x) { return x.iss; }).length;
+    return '<div class="ts-kks">' + [[K[0], list.length], [K[1], list.length], [K[2], ddmm(c.h[0].ret)], [K[3], open]].map(function (k) { return '<div class="ts-kk"><small>' + k[0] + '</small><b>' + k[1] + '</b></div>'; }).join('') + '</div>' +
+      (p2.fl.toast ? '<div class="fl-toast">✓ ' + esc(p2.fl.toast) + '</div>' : '') +
+      '<div class="m-panel" data-p="flhist"><div class="m-ph"><h4>' + t('flVeh', { n: list.length }) + '</h4><span class="m-ago">' + t('flAgo', { n: 1 }) + '</span></div><div class="m-search">' + t('flSearch') + '</div>' +
+      '<table class="m-t fl-t"><thead><tr><th colspan="2">' + t('flHCols')[0] + '</th>' + t('flHCols').slice(1).map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      c.h.map(function (x, i) {
+        if (p2.fl.back[i] && p2.fl.leaving !== i) return '';
+        return '<tr class="' + (p2.fl.leaving === i ? 'del-out' : '') + '"><td><b class="fl-pl">' + x.plate + '</b></td><td><b>' + x.mk[0] + '</b><small class="blk">' + x.mk[1] + '</small></td><td><span class="fl-st" style="--c:#98A2B3"><i></i>' + t('flSt')[5] + '</span></td><td class="mono">' + x.vin + '</td>' +
+          '<td>' + (x.iss ? '<span class="fl-iss">⚠ ' + esc(x.iss) + '</span>' : '<span class="fl-add">' + t('flAdd') + '</span>') + '</td><td>' + x.src + '<small class="blk">' + x.loc + '</small></td>' +
+          '<td><b>' + ddmm(x.joined) + '</b>' + (x.km ? '<small class="blk">' + nf(x.km) + ' km</small>' : '<span class="fl-fill">' + t('flToFill') + '</span>') + '</td>' +
+          '<td><b>' + ddmm(x.ret) + '</b>' + (x.earlier ? '<span class="m-pill blk2">' + t('flEarlier') + '</span>' : '<button type="button" class="fl-back" data-p2-act="flback" data-v="' + i + '">✓ ' + t('flPutBack') + '</button>') + '</td><td>💬 ' + x.com + '</td></tr>';
+      }).join('') + '</tbody></table><div class="m-foot">' + t('flHNote') + '</div></div>';
+  }
+  function flPhRows() {
+    var c = flData();
+    return c.ph.map(function (x, i) {
+      var n = p2.fl.sent[i] ? 8 : x.n, pill = n === 8 ? '<span class="m-pill g">✓ ' + t('flSentAll', { n: 8 }) + '</span>' : n ? '<span class="m-pill o">' + t('flPart', { n: n }) + '</span>' : '<span class="m-pill r">✕ ' + t('flNone') + '</span>';
+      return '<tr class="' + (p2.fl.sent[i] && p2.fl.hiP === i ? 'add-in' : '') + '"><td><b class="fl-pl">' + x.v.plate + '</b></td><td><b>' + x.v.mk.join(' ') + '</b><small class="blk">' + x.v.src + ', ' + x.v.loc + '</small></td><td><span class="fl-st" style="--c:#1E9E5A"><i></i>' + t('flSt')[0] + '</span></td>' +
+        '<td><b>' + esc(x.drv) + '</b> <span class="fl-pre">' + t('flPre') + '</span></td><td>' + pill + '</td><td>' + (x.dmg >= 0 && n ? '<span class="cn-fl amb">' + t('flDamage')[x.dmg] + '</span>' : '—') + '</td>' +
+        '<td class="r"><button type="button" class="cp-btn fl-vw" data-p2-act="flview" data-v="' + i + '">📷 ' + t('flView') + '</button></td></tr>';
+    }).join('');
+  }
+  function flModal() {
+    var c = flData(), x = c.ph[p2.fl.ph], A = t('flAngles'), n = p2.fl.sent[p2.fl.ph] ? 8 : x.n, order = [0, 1, 2, 3, -1, 4, 5, 6, 7];
+    return '<div class="rc-back"></div><div class="m-panel fl-modal" data-p="flphv"><div class="rc-dh"><div><b>' + t('flModal', { p: x.v.plate }) + '</b><small>' + x.v.mk.join(' ') + '</small></div><span class="cp-btn">🗑 ' + t('flDelAll') + '</span><button type="button" class="cp-x" data-p2-act="flvclose">×</button></div>' +
+      '<div class="fl-mf"><span><small>' + t('flFrom') + '</small><i class="rc-in">dd/mm/yyyy</i></span><span><small>' + t('flTo') + '</small><i class="rc-in">dd/mm/yyyy</i></span><span><small>' + t('mDriver') + '</small><i class="rc-in">' + t('flAllDrv') + ' ▾</i></span><b>' + t('flDays', { n: 3 }) + '</b></div>' +
+      '<div class="fl-mb"><div class="fl-grid">' + order.map(function (k, j) {
+        if (k < 0) return '<div class="fl-top"><svg viewBox="0 0 60 110" width="54"><rect x="10" y="4" width="40" height="102" rx="12" fill="none" stroke="#9AA3B1" stroke-width="3"/><path d="M15 24q15-8 30 0l-3 12H18z" fill="none" stroke="#9AA3B1" stroke-width="3"/><path d="M18 92h24" stroke="#9AA3B1" stroke-width="3"/></svg></div>';
+        var has = k < n || n === 8;
+        return '<div class="fl-tile' + (has ? '' : ' miss') + '" style="--i:' + j + '">' + (has ? vanShot(k) + '<span class="tm">' + hm(x.t0 + Math.floor(k / 3)) + '</span>' : '') + '<span class="lb">' + A[k] + '</span></div>';
+      }).join('') + '</div><div class="fl-day"><b>' + lday(TODAY, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</b><span class="m-pill ' + (n === 8 ? 'g' : 'o') + '">' + t('flOf8', { n: n }) + '</span><span>' + esc(x.drv) + '</span><span class="cp-btn">🗑 ' + t('flDelDay') + '</span></div></div></div>';
+  }
+  function flApp() {
+    var c = flData(), x = c.ph[p2.fl.appRow], A = t('flFromA'), S = t('flAppSteps'), first = x.drv.split(' ')[0];
+    return '<div class="rc-back"></div><div class="fa-wrap" data-p="flapp"><div class="fa-ph"><div class="fa-scr st-home" data-fa>' +
+      '<div class="fa-home"><div class="fa-top"><b>LANU</b><i></i></div><div class="fa-req">↗ <span><b>' + t('flAppT') + '</b><small>LANU App</small></span></div><div class="fa-hi">' + avatar(x.drv, 40) + '<span><small>' + lday(TODAY, { weekday: 'long', day: 'numeric', month: 'long' }) + '</small><b>' + t('flHi', { n: esc(first) }) + '</b></span></div>' +
+      '<div class="fa-score"><small>' + t('flScore', { n: weekInfo(-1).n }) + '</small><b>91.4</b><span>' + t('flRank') + ' #8</span></div><div class="fa-two"><span><small>' + t('flDaysW') + '</small><b>6</b></span><span><small>' + t('flRescue') + '</small><b>12</b></span></div>' +
+      '<div class="fa-veh">' + FL_APPVAN + '<span><small>' + t('flYourVeh') + '</small><b>' + x.v.plate + '</b></span>›<i class="tap"></i></div></div>' +
+      '<div class="fa-my"><div class="fa-top"><b>LANU</b><small>' + t('flMyVeh') + '</small></div><h4>' + t('flMyVeh') + '</h4><small class="fa-as">' + t('flAssigned', { p: x.v.plate }) + '</small>' +
+      '<div class="fa-card">' + FL_APPVAN + '<b>' + x.v.mk.join(' ') + '</b><span class="m-pill g">' + t('flGood') + '</span><small>' + t('flPicked', { t: hm(x.t0 - 20) }) + '</small><u>' + t('flNotYours') + '</u></div>' +
+      '<div class="fa-btn">📷 ' + t('flPhotoBtn') + '<i class="tap"></i></div>' +
+      '<div class="fa-stepc"><div class="fa-view" data-fa-view><img src="' + flPhoto(1) + '" alt=""></div><p data-fa-txt>' + t('flStepN', { n: 1, a: A[1] }) + '</p><div class="fa-sb"><span>' + t('flCancel') + '</span><b>' + t('flTakeBtn') + '<i class="tap"></i></b></div><span class="fa-flash"></span></div></div>' +
+      '<div class="fa-done"><span>✓</span><b>' + t('flSentOk') + '</b><small>' + t('flSentSub') + '</small><div class="fa-th">' + [0, 1, 2, 3, 4, 5, 6, 7].map(function (k) { return '<i style="--i:' + k + '"><img src="' + flPhoto(k) + '" alt=""></i>'; }).join('') + '</div></div>' +
+      '</div></div><div class="fa-cap"><small>' + t('flApp') + '</small><b>' + t('flAppT') + '</b><ol>' + S.map(function (q, k) { return '<li data-fa-li="' + k + '">' + q + '</li>'; }).join('') + '</ol></div></div>';
+  }
+  function renderFp() {
+    var c = flData(), K = t('flPK'), sent = c.ph.filter(function (x, i) { return x.n === 8 || p2.fl.sent[i]; }).length * 4 + 1, part = c.ph.filter(function (x, i) { return x.n > 0 && x.n < 8 && !p2.fl.sent[i]; }).length * 3, none = 58 - sent - part;
+    var h = '<div class="m-panel m-date m-week"><span class="ci">' + ICAL + '</span><div><b>' + t('flPhT') + '</b><span>' + t('flPhSub') + '</span></div><span class="ts-mon"><button type="button" disabled>‹</button><span class="dv">' + t('flToday', { d: lday(TODAY, { day: 'numeric', month: 'long', year: 'numeric' }) }) + ' <span>▾</span></span><button type="button" disabled>›</button></span></div>' +
+      '<div class="ts-kks" data-p="flph">' + [[K[0], 58, ''], [K[1], sent, 'pos'], [K[2], part, 'amb'], [K[3], none, 'neg']].map(function (k, i) { return '<div class="ts-kk' + (i === 0 ? ' on' : '') + '"><small>' + k[0] + '</small><b class="' + k[2] + '" data-count="' + k[1] + '">' + k[1] + '</b></div>'; }).join('') + '</div>' +
+      '<div class="m-panel" data-p="flph"><div class="m-ph"><h4>' + t('flVeh', { n: 86 }) + '</h4><span class="m-ago">' + t('flAgo', { n: 2 }) + '</span></div><div class="m-search">' + t('flSearchP') + '</div><table class="m-t fl-t"><thead><tr>' + t('flPCols').map(function (x, i) { return '<th' + (i === 0 ? ' colspan="2"' : '') + '>' + x + '</th>'; }).join('').replace('<th>' + t('flPCols')[1] + '</th>', '<th>' + t('flPCols')[1] + '</th>') + '</tr></thead><tbody>' + flPhRows() + '</tbody></table></div>';
+    if (p2.fl.ph !== null) h += flModal();
+    if (p2.fl.appOn) h += flApp();
+    p2.fl.hiP = null;
+    return h;
+  }
+  function flRunApp() {
+    var tok = ++p2.tok, scr = mock2.querySelector('[data-fa]'), A = t('flFromA'), ORD = [1, 2, 4, 7, 6, 5, 3, 0], k = 0;
+    if (!scr) return;
+    function li(n) { mock2.querySelectorAll('[data-fa-li]').forEach(function (el) { el.classList.toggle('on', Number(el.dataset.faLi) <= n); }); }
+    function at(ms, fn) { setTimeout(function () { if (tok === p2.tok && p2.fl.appOn) fn(); }, reduce ? 0 : ms); }
+    li(0);
+    at(700, function () { scr.classList.add('tap1'); li(1); });
+    at(1300, function () { scr.className = 'fa-scr st-my'; });
+    at(1900, function () { scr.classList.add('tap2'); li(2); });
+    at(2300, function () { scr.classList.add('steps'); });
+    function shot() {
+      if (tok !== p2.tok || !p2.fl.appOn) return;
+      if (k >= 8) { scr.className = 'fa-scr st-done'; li(3); p2.fl.sent[p2.fl.appRow] = true; p2.fl.hiP = p2.fl.appRow; return; }
+      var v = mock2.querySelector('[data-fa-view]'), tx = mock2.querySelector('[data-fa-txt]'), a = ORD[k];
+      if (v) v.innerHTML = '<img src="' + flPhoto(a) + '" alt="">';
+      if (tx) tx.textContent = t('flStepN', { n: k + 1, a: A[a] });
+      scr.classList.remove('snap'); void scr.offsetWidth; scr.classList.add('snap');
+      k++; setTimeout(shot, reduce ? 0 : 480);
+    }
+    at(2700, shot);
+  }
+  function flPrep(id) {
+    var F = p2.fl, ch = false;
+    if (id !== 'fldet' && F.open !== null) { F.open = null; ch = true; }
+    if (id === 'fldet' && F.open === null) { F.open = 0; ch = true; }
+    if (id !== 'flphv' && F.ph !== null) { F.ph = null; ch = true; }
+    if (id === 'flphv' && F.ph === null) { F.ph = 0; ch = true; }
+    if (id !== 'flapp' && F.appOn) { F.appOn = false; p2.tok++; ch = true; }
+    if (id === 'flapp' && !F.appOn) { F.appOn = true; F.appRow = flData().ph.map(function (x, i) { return x.n === 0 && !F.sent[i]; }).indexOf(true); if (F.appRow < 0) F.appRow = 1; ch = true; }
+    return ch;
+  }
   function p2Nav() {
     return '<div class="hs-nav"><span class="dim">' + t(P2().name) + '</span>' + P2().tabs.map(function (tb, i) {
       return '<button type="button" data-p2-act="tab" data-v="' + tb + '"' + (p2.tab === tb ? ' class="on"' : '') + '>' + t(P2().tabNames)[i] + '</button>';
@@ -1667,7 +1826,7 @@
   }
   function p2Render() {
     if (!mock2) return;
-    var R = { cap: renderCap, wp: renderWp, at: renderAt, wd: renderWd, rs: renderRs, dp: renderDp, ws: renderWs, ap: renderAp, af: renderAf, ks: renderKs };
+    var R = { cap: renderCap, wp: renderWp, at: renderAt, wd: renderWd, rs: renderRs, dp: renderDp, ws: renderWs, ap: renderAp, af: renderAf, ks: renderKs, fv: renderFl, fh: renderFh, fp: renderFp };
     mock2.innerHTML = topBar(t(P2().name)) + p2Nav() + '<div class="m-body">' + R[p2.tab]() + '</div>';
     p2.hi = null;
     document.getElementById('url2').textContent = 'board.lanu.app/' + P2().base + '/' + P2().url[p2.tab];
@@ -1727,6 +1886,7 @@
       });
     }
     if (id === 'tsap' && p2.auto && !quiet) setTimeout(function () { if (p2.active === 'tsap' && p2.auto) p2Action('apedit', '3,4'); }, 1800);
+    if (id === 'flapp' && !quiet) setTimeout(function () { if (p2.active === 'flapp') flRunApp(); }, 200);
     if (id === 'tsks' && p2.auto && !quiet) setTimeout(function () { if (p2.active === 'tsks' && p2.auto) p2Action('sync'); }, 1500);
     if (id === 'atpaste' && p2.auto && p2.at === 'empty' && !quiet) setTimeout(function () { if (p2.active === 'atpaste' && p2.at === 'empty' && p2.auto) p2Process(); }, 1600);
     if (!keep && window.innerWidth <= 980) { var bt = steps2.querySelector('.step.on button'); if (bt) bt.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' }); }
@@ -1757,6 +1917,25 @@
   }
   function p2Action(act, v) {
     if (act === 'tab') { p2Focus(P2().first[v], true); return; }
+    if (act === 'flf') { p2.fl.f = v; p2Render(); p2Focus('flsync', true, true); return; }
+    if (act === 'flkey') { p2.fl.keys[v] = !p2.fl.keys[v]; p2Render(); p2Focus(p2.active, true, true); return; }
+    if (act === 'fladd') {
+      var tk = ++p2.tok, txt = t('flDemoIssue'), j = 0, ix = Number(v);
+      p2.fl.add[ix] = ''; p2.fl.typing = ix; p2.fl.add[ix] = ' '; p2Render(); p2Focus(p2.active === 'fldet' ? 'fldet' : 'flsync', true, true);
+      var el = mock2.querySelector('[data-fliss="' + ix + '"]');
+      var iv = setInterval(function () { if (tk !== p2.tok || !el) { clearInterval(iv); return; } p2.fl.add[ix] = txt.slice(0, ++j); el.textContent = '⚠ ' + p2.fl.add[ix]; if (j >= txt.length) { clearInterval(iv); p2.fl.typing = null; el.classList.remove('typing-cell'); } }, reduce ? 1 : 40);
+      return;
+    }
+    if (act === 'flcom') { p2.fl.open = Number(v); p2.fl.noted = false; p2Render(); p2.active = 'fldet'; p2Focus('fldet', true, true); return; }
+    if (act === 'flclose') { p2.fl.open = null; p2Render(); p2.active = 'flsync'; p2Focus('flsync', true, true); return; }
+    if (act === 'flnote') { p2.fl.noted = true; p2.fl.extra[v] = (p2.fl.extra[v] || 0) + 1; p2Render(); p2Focus('fldet', true, true); return; }
+    if (act === 'flback') {
+      var i2 = Number(v), plate = flData().h[i2].plate; p2.fl.leaving = i2; p2.fl.back[i2] = true; p2Render(); p2Focus('flhist', true, true);
+      setTimeout(function () { p2.fl.leaving = null; p2.fl.toast = t('flBack', { p: plate }); if (p2.tab === 'fh') { p2Render(); p2Focus('flhist', true, true); } }, 350);
+      return;
+    }
+    if (act === 'flview') { p2.fl.ph = Number(v); p2Render(); p2.active = 'flphv'; p2Focus('flphv', true, true); return; }
+    if (act === 'flvclose') { p2.fl.ph = null; p2Render(); p2.active = 'flph'; p2Focus('flph', true, true); return; }
     if (act === 'rssort') { p2.ts.rsSort = !p2.ts.rsSort; p2Render(); p2Focus('tsrs', true, true); return; }
     if (act === 'dpopen') { p2.ts.dpOpen = p2.ts.dpOpen === Number(v) ? null : Number(v); p2Render(); p2.active = 'tsdpd'; p2Focus(p2.ts.dpOpen === null ? 'tsdp' : 'tsdpd', true, true); return; }
     if (act === 'topic') { p2.ts.wsTopic = p2.ts.wsTopic === Number(v) ? -1 : Number(v); p2Render(); p2Focus('tsws', true, true); return; }
