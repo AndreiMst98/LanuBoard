@@ -1978,11 +1978,7 @@
     var tid = P2ALIAS[id] || id;
     mock2.querySelectorAll('[data-p]').forEach(function (el) { el.classList.toggle('on', el.dataset.p === tid); });
     mock2.classList.add('focus');
-    var targets = mock2.querySelectorAll('[data-p="' + tid + '"]'), mr = mock2.getBoundingClientRect(), z0 = p2.cam.z, l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
-    targets.forEach(function (el) {
-      var q = el.getBoundingClientRect();
-      l = Math.min(l, (q.left - mr.left) / z0); tp = Math.min(tp, (q.top - mr.top) / z0); r = Math.max(r, (q.right - mr.left) / z0); b = Math.max(b, (q.bottom - mr.top) / z0);
-    });
+    var targets = mock2.querySelectorAll('[data-p="' + tid + '"]'), bx = boxIn(targets, mock2), l = bx.l, tp = bx.t, r = bx.r, b = bx.b;
     var W = screen2.clientWidth, H = screen2.clientHeight, pw = r - l;
     var z = Math.max(W / 1280, Math.min(1, (W - 32) / pw, Math.max(W / 1280, (H - 32) / (b - tp))));
     var x = Math.max(0, Math.min(1280 * z - W, l * z - (W - pw * z) / 2));
@@ -2104,7 +2100,8 @@
     document.querySelectorAll('[data-page2]').forEach(function (b) { b.addEventListener('click', function () { var pg = P2P[b.dataset.page2]; p2Stop(); p2Focus(pg.first[pg.tabs[0]], true); }); });
     new IntersectionObserver(function (en) { p2.inView = en[0].isIntersecting; if (p2.inView) { p2RenderSteps(); p2Schedule(); } else clearTimeout(p2.timer); }, { threshold: .35 }).observe(document.getElementById('planning'));
     window.addEventListener('resize', function () { p2Ind(); p2Focus(p2.active, true, true); });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(p2Ind);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { p2Ind(); p2Focus(p2.active, true, true); });
+    if ('ResizeObserver' in window) { var scr2Sz = ''; new ResizeObserver(function () { var k = screen2.clientWidth + 'x' + screen2.clientHeight; if (k !== scr2Sz) { var first = !scr2Sz; scr2Sz = k; if (!first) p2Focus(p2.active, true, true); } }).observe(screen2); }
   }
 
   // ------------------------------------------------------------------ Income Overview: owner dashboard that recalculates live (fictional figures)
@@ -2500,6 +2497,18 @@
     focusStep(b.dataset.step);
   });
 
+  // panel box in unscaled mock pixels, from layout offsets: unaffected by the camera transition,
+  // the reveal animation or the 3D tilt that make on-screen rects unreliable mid-move
+  function offs(el) { var x = 0, y = 0; while (el) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; } return { x: x, y: y }; }
+  function boxIn(list, root) {
+    var o = offs(root), l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
+    list.forEach(function (el) {
+      if (!el.offsetWidth && !el.offsetHeight) return;
+      var q = offs(el), x = q.x - o.x, y = q.y - o.y;
+      l = Math.min(l, x); tp = Math.min(tp, y); r = Math.max(r, x + el.offsetWidth); b = Math.max(b, y + el.offsetHeight);
+    });
+    return l === Infinity ? { l: 0, t: 0, r: 1280, b: 400 } : { l: l, t: tp, r: r, b: b };
+  }
   // "camera": zooms the 1280px-wide app screen so the active panel fills the visible window
   var cam = { z: 1, x: 0, y: 0 };
   function layoutMock() {
@@ -2515,13 +2524,7 @@
     panels.forEach(function (p) { p.classList.toggle('on', p.dataset.p === id); });
     mock.classList.add('focus');
     var targets = mock.querySelectorAll('[data-p="' + id + '"]');
-    var mrect = mock.getBoundingClientRect(), z0 = cam.z;
-    var l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
-    targets.forEach(function (el) {
-      var q = el.getBoundingClientRect();
-      l = Math.min(l, (q.left - mrect.left) / z0); tp = Math.min(tp, (q.top - mrect.top) / z0);
-      r = Math.max(r, (q.right - mrect.left) / z0); b = Math.max(b, (q.bottom - mrect.top) / z0);
-    });
+    var bx = boxIn(targets, mock), l = bx.l, tp = bx.t, r = bx.r, b = bx.b;
     var W = screenEl.clientWidth, H = screenEl.clientHeight, pw = r - l;
     var z = Math.min(1, (W - 32) / pw, Math.max(W / 1280, (H - 32) / (b - tp)));
     z = Math.max(z, W / 1280);
@@ -2559,7 +2562,10 @@
     inView = en[0].isIntersecting;
     if (inView) { renderSteps(); schedule(); } else clearTimeout(timer);
   }, { threshold: .35 }).observe(document.getElementById('board'));
-  window.addEventListener('resize', function () { focusStep(active, true); });
+  window.addEventListener('resize', function () { focusStep(active, true, true); });
+  // re-frame once web fonts settle the panel sizes, and whenever the screen itself changes size
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { focusStep(active, true, true); });
+  if ('ResizeObserver' in window) { var scrSz = ''; new ResizeObserver(function () { var k = screenEl.clientWidth + 'x' + screenEl.clientHeight; if (k !== scrSz) { var first = !scrSz; scrSz = k; if (!first) focusStep(active, true, true); } }).observe(screenEl); }
 
   // ------------------------------------------------------------------ live ticking
   setInterval(function () {
