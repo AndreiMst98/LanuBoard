@@ -749,4 +749,25 @@ a.prod:hover{transform:translateY(-4px)}
 .wr-dt td.wrp{white-space:normal}.wr-dt td.fl{min-width:96px;max-width:140px}.wr-dt td:first-child{white-space:normal}.wr-dt .da b{max-width:130px;line-height:1.25}.wr-dt td.sg{max-width:170px}.cn-dnr td.wrp:nth-child(3){max-width:84px}.cn-dnr td.lnk{max-width:120px}.cn-dnr{font-size:11px}.cn-dnr th{font-size:10px}.cn-dnr td.lnk{color:#2F6BFF;font-weight:600}
 .cn-dnr tr.ret td{color:#8A93A6;background:#FAFBFC}.cn-dnr tr.ret td.lnk{color:#8A93A6;text-decoration:line-through}
 
+/* Contact Compliance + POD Quality mock */
+.wr-k3{grid-template-columns:repeat(3,1fr)}
+.wr-k3>div:nth-child(4n){border-right:1px solid #EDF0F5}.wr-k3>div:nth-child(3n){border-right:0}
+.wr-k3>div:nth-child(n+4){border-bottom:0}.wr-k3>div:nth-child(-n+3){border-bottom:1px solid #EDF0F5}
+.wr-k b.pos{color:#146C3E}.wr-k b em{font-style:normal;font-size:26px;color:#56607A}
+.tl-r{display:grid;grid-template-columns:170px 1fr 70px;align-items:center;gap:12px;padding:7px 18px}
+.m-panel.on .tl-r{animation:insIn .45s var(--ease) both;animation-delay:calc(var(--i) * 60ms)}
+.tl-n b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tl-n small{color:#8A93A6;font-size:10px}
+.tl-b{height:11px;background:#EEF0F5}.tl-s{display:flex;height:100%;border-radius:5px;overflow:hidden}.tl-s i{display:block;height:100%}
+.m-panel.on .tl-s{animation:barIn 1s var(--ease) both}
+.cc-r{display:grid;grid-template-columns:30px 150px 1fr 70px;align-items:center;gap:10px;width:100%;padding:8px 18px;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.cc-r:hover,.cc-r.on{background:#F3F7FF}.cc-r.on{box-shadow:inset 3px 0 0 #2F6BFF}
+.cc-code{display:inline-flex;justify-content:center;padding:2px 0;border-radius:6px;color:#fff;font-weight:800;font-size:10.5px}
+.cc-nm{font-size:12.5px}
+.cc-r .wr-bt{height:10px}
+.m-panel.on .cc-r .wr-bt i{animation:barIn 1s var(--ease) both}
+.wr-sc.amb{background:#FEF0C7;color:#93370D}
+.cn-fl.amb{background:#FEF0C7;color:#93370D}
+.wr-ch .stk{transform-box:fill-box;transform-origin:50% 100%}
+.m-panel.on .wr-ch .stk{animation:barUp .8s var(--ease) both;animation-delay:calc(var(--i) * 90ms)}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}[data-reveal]{opacity:1;transform:none}.hero h1 .w{opacity:1;transform:none;filter:none}.ticker-track{flex-wrap:wrap;width:auto}}

@@ -659,8 +659,9 @@
 
 
   // ------------------------------------------------------------------ Weekly Reports page (fictional figures)
-  var WR_TAB = { upload: 'sc', results: 'sc', send: 'sc', kpis: 'iadc', trend: 'iadc', insights: 'iadc', heat: 'iadc', drivers: 'iadc', cnkpis: 'cn', cntrend: 'cn', cnins: 'cn', cncat: 'cn', cndrivers: 'cn', cndnr: 'cn' };
-  var WR_ORDER = ['sc', 'iadc', 'cn'], WR_FIRST = { sc: 'upload', iadc: 'kpis', cn: 'cnkpis' };
+  var WR_TAB = { upload: 'sc', results: 'sc', send: 'sc', kpis: 'iadc', trend: 'iadc', insights: 'iadc', heat: 'iadc', drivers: 'iadc', cnkpis: 'cn', cntrend: 'cn', cnins: 'cn', cncat: 'cn', cndrivers: 'cn', cndnr: 'cn', cckpis: 'ccp', cctrend: 'ccp', cccat: 'ccp', ccdrivers: 'ccp', podkpis: 'pod', podtrend: 'pod', podcat: 'pod', poddrivers: 'pod' };
+  var WR_ORDER = ['sc', 'iadc', 'cn', 'ccp', 'pod'], WR_FIRST = { sc: 'upload', iadc: 'kpis', cn: 'cnkpis', ccp: 'cckpis', pod: 'podkpis' };
+  var ccTier = 'all', ccCat = -1, podTier = 'all', podCat = -1;
   var cnZip = null, cnMode = 'active', cnUnit = 'count', cnTier = 'all';
   var wrTab = 'sc', wrWeek = 0, wrUp = 'done', wrPrev = null, wrCat = -1, wrTier = 'all', wrLetter = 'all';
   function nf(v, d) { return v.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
@@ -731,7 +732,7 @@
     ['IADC', 'Unattended (Customer Safe Place)', 'B', .77], ['IADC', 'Mailbox Recommended', 'B', .19], ['IADC', 'Unattended (Recommended)', 'B', .035], ['IADC', 'Attended (Customer Safe Place)', 'B', .005]];
   var WR_PLACES = ['Household Member', 'Doorstep', 'Safe Location', 'Neighbor', 'Mail Slot', 'Garage', 'Garden', 'Shed', 'Rear Door'];
   function wrSubnav() {
-    return '<div class="hs-nav"><span class="dim">' + t('wrTitle') + '</span>' + [['sc', 'wrSc'], ['iadc', 'wrIadc'], ['cn', 'cnTab']].map(function (x) {
+    return '<div class="hs-nav"><span class="dim">' + t('wrTitle') + '</span>' + [['sc', 'wrSc'], ['iadc', 'wrIadc'], ['cn', 'cnTab'], ['ccp', 'ccTab'], ['pod', 'podTab']].map(function (x) {
       return '<button type="button" data-wr-act="tab" data-v="' + x[0] + '"' + (wrTab === x[0] ? ' class="on"' : '') + '>' + t(x[1]) + '</button>';
     }).join('') + '</div>';
   }
@@ -938,9 +939,181 @@
     h += '<div class="m-panel" data-p="cndrivers" data-wr="cndrv">' + cnDrvInner(w) + '</div><div class="m-panel" data-p="cndnr" data-wr="cndnr">' + cnDnrInner(w) + '</div>';
     return h;
   }
+
+  // ---------- Contact Compliance + POD Quality (fictional)
+  var CC_C = ['#2F6BFF', '#F5A623', '#7C3AED', '#06AED4', '#12B76A'], POD_C = ['#2F6BFF', '#7C3AED', '#E5484D', '#F5A623', '#06AED4', '#98A2B3'];
+  function pctAxis(v) { return nf(v, 1) + '%'; }
+  function comboPct(w, h, labels, bars, line, yMin, yMax, targets) {
+    var L = 58, R = 14, T = 14, B = 26, iw = w - L - R, ih = h - T - B, n = labels.length, bmax = Math.max.apply(null, bars) * 1.04;
+    function X(i) { return L + (i + .5) * iw / n; } function Y(v) { return T + ih - (v - yMin) / (yMax - yMin) * ih; } function YB(v) { return T + ih - v / bmax * ih; }
+    var g = '';
+    for (var k = 0; k <= 4; k++) { var v = yMin + (yMax - yMin) * k / 4; g += '<path d="M' + L + ' ' + Y(v) + 'H' + (w - R) + '" stroke="#EDF0F5"/><text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + pctAxis(v) + '</text>'; }
+    bars.forEach(function (v, i) { g += '<rect class="bar" style="--i:' + i + '" x="' + (X(i) - 18) + '" y="' + YB(v) + '" width="36" height="' + (YB(0) - YB(v)) + '" rx="3" fill="#B794F4"/>'; });
+    (targets || []).forEach(function (tg) { g += '<path d="M' + L + ' ' + Y(tg[0]) + 'H' + (w - R) + '" stroke="' + tg[1] + '" stroke-dasharray="4 4" opacity=".7"/><text class="tg" x="' + (w - R - 4) + '" y="' + (Y(tg[0]) - 6) + '" text-anchor="end" fill="' + tg[1] + '">' + tg[2] + '</text>'; });
+    g += '<path class="ln" d="' + line.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(Math.max(yMin, v)).toFixed(1); }).join('') + '" stroke="#2F6BFF"/>';
+    line.forEach(function (v, i) { g += '<circle class="pt" style="--i:' + i + '" cx="' + X(i).toFixed(1) + '" cy="' + Y(Math.max(yMin, v)).toFixed(1) + '" r="4.5" fill="#2F6BFF"/>'; });
+    labels.forEach(function (lb, i) { g += '<text x="' + X(i) + '" y="' + (h - 6) + '" text-anchor="middle">' + lb + '</text>'; });
+    return '<svg class="wr-ch" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' + g + '</svg>';
+  }
+  function stackBars(w, h, groups, vals, colors) {
+    var L = 40, R = 10, T = 12, B = 26, iw = w - L - R, ih = h - T - B, n = groups.length, tots = vals.map(function (a) { return a.reduce(function (x, y) { return x + y; }, 0); }), mx = Math.max.apply(null, tots) * 1.06;
+    function Y(v) { return T + ih - v / mx * ih; }
+    var g = '', gw = iw / n, bw = Math.min(70, gw * .5);
+    for (var q = 0; q <= 4; q++) { var v = mx * q / 4; g += '<path d="M' + L + ' ' + Y(v) + 'H' + (w - R) + '" stroke="#EDF0F5"/><text x="' + (L - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + Math.round(v) + '</text>'; }
+    groups.forEach(function (gr, i) {
+      var x = L + i * gw + (gw - bw) / 2, acc = 0;
+      g += '<g class="stk" style="--i:' + i + '">' + vals[i].map(function (v, j) { var y1 = Y(acc + v), y0 = Y(acc); acc += v; return v ? '<rect x="' + x.toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (y0 - y1).toFixed(1) + '" fill="' + colors[j] + '"/>' : ''; }).join('') + '</g>';
+      g += '<text x="' + (x + bw / 2) + '" y="' + (h - 6) + '" text-anchor="middle">' + gr + ' · ' + tots[i] + '</text>';
+    });
+    return '<svg class="wr-ch" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' + g + '</svg>';
+  }
+  function topList(rows) {
+    var mx = Math.max.apply(null, rows.map(function (r0) { return r0.v; })) || 1;
+    return rows.map(function (r0, i) {
+      return '<div class="tl-r" style="--i:' + i + '"><span class="tl-n"><b>' + esc(r0.name) + '</b><small>' + r0.sub + '</small></span><span class="wr-bt tl-b"><span class="tl-s" style="width:' + (r0.v / mx * 100) + '%">' +
+        r0.segs.map(function (sg) { return '<i style="flex:' + sg[0] + ';background:' + sg[1] + '"></i>'; }).join('') + '</span></span><span class="wr-bv">' + r0.v + ' <small>/ ' + r0.tot + '</small></span></div>';
+    }).join('');
+  }
+  function reasonList(names, counts, colors, prefix, act, sel) {
+    var tot = counts.reduce(function (a, b) { return a + b; }, 0) || 1, mx = Math.max.apply(null, counts) || 1;
+    return names.map(function (nm, i) {
+      return '<button type="button" class="cc-r' + (sel === i ? ' on' : '') + '" data-wr-act="' + act + '" data-v="' + i + '"><span class="cc-code" style="background:' + colors[i] + '">' + prefix + (i + 1) + '</span><span class="cc-nm">' + nm + '</span><span class="wr-bt"><i style="width:' + Math.max(2, counts[i] / mx * 100) + '%;background:' + colors[i] + '"></i></span><span class="wr-bv">' + counts[i] + ' <small>' + nf(counts[i] / tot * 100) + '%</small></span></button>';
+    }).join('');
+  }
+  function qHeader(sub, upHead, upTag, upNote) {
+    var wi = weekInfo(wrWeek - 1);
+    return '<div class="m-panel m-date m-week"><span class="ci">' + ICAL + '</span><div><b>' + t('wrRepWeek', { y: new Date().getFullYear(), n: wi.n }) + ' <span class="wr-st">· ST01</span></b><span>' + sub + '</span></div><span class="wr-imp">' + t('wrLastImport', { d: ddmm(addD(TODAY, -1)) }) + '</span>' +
+      '<div class="m-dnav"><button type="button" data-wr-act="week" data-v="-1" aria-label="Previous week"' + (wrWeek <= -8 ? ' disabled' : '') + '>‹</button><button type="button" data-wr-act="week" data-v="1" aria-label="Next week"' + (wrWeek >= 0 ? ' disabled' : '') + '>›</button></div></div>' +
+      '<div class="m-panel wr-up2"><div class="wr-drop"><span class="wr-di">' + WR_DOC + '</span><div><b>' + upHead + ' <span class="m-cnt">' + upTag + '</span></b><small>' + upNote + '</small></div><button type="button" class="wr-upbtn" data-wr-act="noop">' + WR_UPI + t('wrUpload') + '</button></div></div>';
+  }
+  function kpi3(items) { return items.map(function (k) { return '<div><span>' + k[0] + '</span><b class="' + (k[3] || '') + '"' + (k[4] !== undefined ? ' data-count="' + k[4] + '"' + (k[5] ? ' data-f="pct"' : '') : '') + '>' + k[1] + '</b>' + (k[2] || '') + '<small>' + k[6] + '</small></div>'; }).join(''); }
+  function sgn(v, f) { return (v > 0 ? '+' : v < 0 ? '−' : '±') + f(Math.abs(v)); }
+  function ccData(off, shallow) {
+    var key = 'cc' + off + (shallow ? 's' : ''); if (cnCache[key]) return cnCache[key];
+    var r = rng(6060 + off * 19), w = {};
+    if (shallow) { w.comp = 98.6 + r() * 1.1; w.addr = 15800 + Math.floor(r() * 2400); w.missed = Math.round((100 - w.comp) / 100 * w.addr); w.ncp = w.missed + 6 + Math.floor(r() * 8); w.crit = 3 + Math.floor(r() * 5); w.under = 22 + Math.floor(r() * 10); w.rep = 7 + Math.floor(r() * 6); return (cnCache[key] = w); }
+    w.drivers = ROSTER.map(function (d) {
+      var x = { name: d.name, id: d.id, addr: r() < .12 ? between(r, 2, 30) : between(r, 60, 480) };
+      x.missed = r() < .55 ? 0 : Math.min(x.addr - 1, 1 + Math.floor(Math.pow(r(), 2.2) * 15)); x.contacts = x.addr - x.missed; x.comp = x.contacts / x.addr * 100;
+      x.tier = x.comp >= 98 ? 'OK' : x.comp >= 95 ? 'WATCH' : 'CRITICAL'; x.ncp = x.missed ? x.missed + Math.floor(r() * 3) : 0;
+      x.cats = [0, 0, 0, 0, 0]; for (var k = 0; k < x.missed; k++) { var c = r() < .86 ? 0 : between(r, 1, 4); x.cats[c]++; }
+      x.flags = []; if (x.missed && x.tier !== 'OK' && r() < .75) x.flags.push(0); if (x.missed && r() < .2) x.flags.push(1); if (x.missed && r() < .2) x.flags.push(2); if (x.missed && r() < .25) x.flags.push(3); if (x.addr < 30) x.flags.push(4);
+      x.score = Math.min(100, Math.round(Math.max(0, 100 - x.comp) * 2.6 + x.missed * 2.4 + x.flags.length * 5));
+      return x;
+    }).sort(function (a, b) { return b.score - a.score; });
+    var D = w.drivers; w.addr = D.reduce(function (a, x) { return a + x.addr; }, 0); w.contacts = D.reduce(function (a, x) { return a + x.contacts; }, 0); w.missed = w.addr - w.contacts; w.comp = w.contacts / w.addr * 100;
+    w.ncp = D.reduce(function (a, x) { return a + x.ncp; }, 0); w.under = D.filter(function (x) { return x.missed; }).length; w.crit = D.filter(function (x) { return x.tier === 'CRITICAL'; }).length;
+    w.watch = D.filter(function (x) { return x.tier === 'WATCH'; }).length; w.ok = D.length - w.crit - w.watch; w.rep = D.filter(function (x) { return x.flags.indexOf(0) >= 0; }).length;
+    w.cats = [0, 1, 2, 3, 4].map(function (k) { return D.reduce(function (a, x) { return a + x.cats[k]; }, 0); });
+    w.prev = ccData(off - 1, true);
+    w.weeks = []; for (var k = -4; k <= 0; k++) { var q = k === 0 ? w : ccData(off + k, true); w.weeks.push({ n: weekInfo(off + k - 1).n, comp: q.comp, missed: q.missed, cats: k === 0 ? w.cats.concat([Math.floor(r() * 2)]).slice(0, 5) : [Math.round(q.missed * .86), between(r, 2, 12), between(r, 0, 9), between(r, 0, 3), between(r, 0, 2)] }); }
+    return (cnCache[key] = w);
+  }
+  function ccDrvInner(w) {
+    var C = t('ccCols'), F = t('ccFlags'), list = w.drivers.filter(function (x) { return (ccTier === 'all' || x.tier === ccTier) && (ccCat < 0 || x.cats[ccCat]); });
+    var tiers = ['all', 'OK', 'WATCH', 'CRITICAL'].map(function (tr) { return '<button type="button" class="hs-f' + (ccTier === tr ? ' on' : '') + '" data-wr-act="cctier" data-v="' + tr + '">' + (tr === 'all' ? t('wrAll') : tr) + '</button>'; }).join('');
+    return '<div class="m-ph"><h4>' + t('wrDrivers') + '</h4><span class="m-cnt">' + t('wrDrvCount', { n: w.drivers.length }) + '</span><span class="cp-btn">' + t('wrExport') + '</span></div>' +
+      '<div class="wr-fil"><span class="m-search">' + t('wrSearchDrv') + '</span>' + tiers + (ccCat >= 0 ? '<button type="button" class="cn-chip" data-wr-act="ccr" data-v="' + ccCat + '">C' + (ccCat + 1) + ' ×</button>' : '') + '</div>' +
+      '<table class="m-t dense wr-dt"><thead><tr><th>' + C[0] + '</th><th>' + C[1] + '</th><th class="r">' + C[2] + '</th><th class="r">' + C[3] + '</th><th class="r">' + C[4] + '</th><th class="r">' + C[5] + '</th><th>' + C[6] + '</th><th class="r">' + C[7] + '</th><th>' + C[8] + '</th><th>' + C[9] + '</th><th class="r">' + C[10] + ' ↓</th></tr></thead><tbody>' +
+      list.slice(0, 10).map(function (x, i) {
+        return '<tr class="row-in" style="--i:' + i + '"><td><span class="da">' + avatar(x.name, 26) + '<b>' + esc(x.name) + '</b></span></td><td class="mono">' + x.id + '</td><td class="r">' + x.addr + '</td><td class="r">' + x.contacts + '</td><td class="r' + (x.missed ? ' red' : '') + '">' + x.missed + '</td><td class="r">' + nf(x.comp, 2) + '%</td>' +
+          '<td><span class="wr-t ' + x.tier.toLowerCase() + '">' + x.tier + '</span></td><td class="r">' + x.ncp + '</td><td>' + x.cats.map(function (c, k) { return c ? '<span class="wr-f" style="background:' + CC_C[k] + '">C' + (k + 1) + ' ' + c + '</span>' : ''; }).join('') + '</td>' +
+          '<td class="wrp fl">' + x.flags.map(function (f) { return '<span class="cn-fl' + (f === 0 || f === 3 ? ' red' : '') + '">' + F[f] + '</span>'; }).join('') + '</td><td class="r"><span class="wr-sc' + (x.score < 50 ? ' amb' : '') + '">' + x.score + '</span></td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function renderCc() {
+    var w = ccData(wrWeek), p = w.prev, K = t('ccK'), KS = t('ccKs');
+    var h = qHeader(t('ccSub', { d: w.drivers.length, a: nf(w.addr), c: nf(w.contacts) }), t('ccUpHead'), t('ccUpTag'), t('ccUpNote'));
+    h += '<div class="m-panel wr-k wr-k3" data-p="cckpis">' + kpi3([
+      [K[0], pctf(w.comp, 2), wrDelta(w.comp - p.comp, pp(w.comp - p.comp), true), w.comp >= 98 ? 'pos' : 'neg', Math.round(w.comp * 100), 1, KS[0].replace('{c}', nf(w.contacts)).replace('{a}', nf(w.addr))],
+      [K[1], w.missed, wrDelta(w.missed - p.missed, sgn(w.missed - p.missed, nf), false), '', w.missed, 0, KS[1]],
+      [K[2], w.ncp, wrDelta(w.ncp - p.ncp, sgn(w.ncp - p.ncp, nf), false), '', w.ncp, 0, KS[2]],
+      [K[3], w.under + ' <em>/ ' + w.drivers.length + '</em>', wrDelta(w.under - p.under, sgn(w.under - p.under, nf), false), '', undefined, 0, KS[3].replace('{n}', w.drivers.length)],
+      [K[4], w.crit, wrDelta(w.crit - p.crit, sgn(w.crit - p.crit, nf), false), 'neg', w.crit, 0, KS[4].replace('{w}', w.watch).replace('{o}', w.ok)],
+      [K[5], w.rep, wrDelta(w.rep - p.rep, sgn(w.rep - p.rep, nf), false), 'amb', w.rep, 0, KS[5]]]) + '</div>';
+    var top = w.drivers.slice().sort(function (a, b) { return b.missed - a.missed; }).slice(0, 10).map(function (x) { return { name: x.name, sub: nf(x.comp, 2) + '%', v: x.missed, tot: x.addr, segs: [[1, '#2F6BFF']] }; });
+    var lo = Math.floor(Math.min.apply(null, w.weeks.map(function (q) { return q.comp; }).concat([94.5])) * 2) / 2;
+    h += '<div class="m-grid2" style="grid-template-columns:1.35fr 1fr;align-items:stretch">' +
+      '<div class="m-panel wr-chp" data-p="cctrend"><div class="m-ph"><h4>' + t('cnTrend') + '</h4><span class="m-cnt">' + t('ccTrendTag') + '</span></div>' +
+      comboPct(680, 270, w.weeks.map(function (q) { return q.n; }), w.weeks.map(function (q) { return q.missed; }), w.weeks.map(function (q) { return q.comp; }), lo, 100, [[98, '#2F6BFF', 'OK 98%'], [95, '#7C3AED', 'CRITICAL 95%']]) +
+      '<div class="wr-leg"><span style="--c:#2F6BFF">' + t('ccLeg')[0] + '</span><span class="sq" style="--c:#B794F4">' + t('ccLeg')[1] + '</span></div></div>' +
+      '<div class="m-panel" data-p="cctrend"><div class="m-ph"><h4>' + t('ccTop') + '</h4><span class="m-cnt">' + new Date().getFullYear() + '-' + weekInfo(wrWeek - 1).n + '</span></div>' + topList(top) + '</div></div>';
+    h += '<div class="m-grid2" style="grid-template-columns:1.35fr 1fr;align-items:stretch">' +
+      '<div class="m-panel wr-chp" data-p="cccat"><div class="m-ph"><h4>' + t('ccCatT') + '</h4><span class="m-cnt">' + t('wrLast5') + '</span></div>' +
+      groupBars(680, 250, w.weeks.map(function (q) { return 'W' + q.n; }), w.weeks.map(function (q) { return q.cats; }), CC_C, function (v) { return nf(v); }) +
+      '<div class="wr-leg wrap">' + t('ccCats').map(function (c, i) { return '<span style="--c:' + CC_C[i] + '"><b>C' + (i + 1) + '</b> ' + c + '</span>'; }).join('') + '</div></div>' +
+      '<div class="m-panel" data-p="cccat"><div class="m-ph"><h4>' + t('ccReasons') + '</h4><span class="m-cnt">' + t('wrClickFilter') + '</span></div>' + reasonList(t('ccReasonNames').slice(0, 4), w.cats.slice(0, 4), CC_C, 'C', 'ccr', ccCat) + '</div></div>';
+    h += '<div class="m-panel" data-p="ccdrivers" data-wr="ccdrv">' + ccDrvInner(w) + '</div>';
+    return h;
+  }
+  function podData(off, shallow) {
+    var key = 'pod' + off + (shallow ? 's' : ''); if (cnCache[key]) return cnCache[key];
+    var r = rng(7070 + off * 23), w = {};
+    if (shallow) { w.req = 16400 + Math.floor(r() * 1600); w.rej = 34 + Math.floor(r() * 28); w.rate = 100 - w.rej / w.req * 100; w.byp = 4 + Math.floor(r() * 8); w.dr = 14 + Math.floor(r() * 7); w.crit = 2 + Math.floor(r() * 3);
+      w.cats = [Math.round(w.rej * .3), Math.round(w.rej * .38), between(r, 1, 6), between(r, 0, 3), between(r, 1, 6), r() < .4 ? between(r, 8, 28) : 0]; return (cnCache[key] = w); }
+    w.drivers = ROSTER.map(function (d) {
+      var x = { name: d.name, id: d.id, opp: between(r, 30, 500) };
+      x.rej = r() < .68 ? 0 : 1 + Math.floor(Math.pow(r(), 2) * 6); x.byp = r() < .93 ? 0 : between(r, 1, 3); x.succ = x.opp - x.rej; x.rr = x.rej / x.opp * 100;
+      x.cats = [0, 0, 0, 0, 0, 0]; for (var k = 0; k < x.rej; k++) { var u = r(); x.cats[u < .4 ? 0 : u < .8 ? 1 : u < .87 ? 2 : u < .9 ? 3 : 4]++; }
+      x.tier = x.rr > 1 || x.rej >= 4 ? 'CRITICAL' : x.rej >= 2 || x.byp ? 'WATCH' : 'OK';
+      x.flags = []; if (x.rej >= 2 || x.byp) x.flags.push(0); if (x.cats[2]) x.flags.push(1); if (Math.max.apply(null, x.cats) >= 2) x.flags.push(2); if (x.rej >= 3 && r() < .4) x.flags.push(3); if (x.byp) x.flags.push(4);
+      x.score = Math.min(100, Math.round(x.rr * 30 + x.rej * 6 + x.byp * 12 + x.flags.length * 4));
+      return x;
+    }).sort(function (a, b) { return b.score - a.score; });
+    var D = w.drivers; w.req = D.reduce(function (a, x) { return a + x.opp; }, 0); w.rej = D.reduce(function (a, x) { return a + x.rej; }, 0); w.rate = 100 - w.rej / w.req * 100;
+    w.byp = D.reduce(function (a, x) { return a + x.byp; }, 0); w.dr = D.filter(function (x) { return x.rej; }).length; w.crit = D.filter(function (x) { return x.tier === 'CRITICAL'; }).length;
+    w.watch = D.filter(function (x) { return x.tier === 'WATCH'; }).length; w.ok = D.length - w.crit - w.watch; w.car = D.filter(function (x) { return x.cats[2]; }).length;
+    w.cats = [0, 1, 2, 3, 4, 5].map(function (k) { return D.reduce(function (a, x) { return a + x.cats[k]; }, 0); });
+    w.prev = podData(off - 1, true);
+    w.weeks = []; for (var k = -4; k <= 0; k++) { var q = k === 0 ? w : podData(off + k, true); w.weeks.push({ n: weekInfo(off + k - 1).n, rate: q.rate, rej: q.rej, cats: q.cats }); }
+    return (cnCache[key] = w);
+  }
+  function podDrvInner(w) {
+    var C = t('podCols'), F = t('podFlags'), list = w.drivers.filter(function (x) { return (podTier === 'all' || x.tier === podTier) && (podCat < 0 || x.cats[podCat]); });
+    var tiers = ['all', 'OK', 'WATCH', 'CRITICAL'].map(function (tr) { return '<button type="button" class="hs-f' + (podTier === tr ? ' on' : '') + '" data-wr-act="podtier" data-v="' + tr + '">' + (tr === 'all' ? t('wrAll') : tr) + '</button>'; }).join('');
+    return '<div class="m-ph"><h4>' + t('wrDrivers') + '</h4><span class="m-cnt">' + t('wrDrvCount', { n: w.drivers.length }) + '</span><span class="cp-btn">' + t('wrExport') + '</span></div>' +
+      '<div class="wr-fil"><span class="m-search">' + t('wrSearchDrv') + '</span>' + tiers + (podCat >= 0 ? '<button type="button" class="cn-chip" data-wr-act="podr" data-v="' + podCat + '">P' + (podCat + 1) + ' ×</button>' : '') + '</div>' +
+      '<table class="m-t dense wr-dt"><thead><tr><th>' + C[0] + '</th><th>' + C[1] + '</th><th class="r">' + C[2] + '</th><th class="r">' + C[3] + '</th><th class="r">' + C[4] + '</th><th class="r">' + C[5] + '</th><th class="r">' + C[6] + '</th><th>' + C[7] + '</th><th>' + C[8] + '</th><th>' + C[9] + '</th><th class="r">' + C[10] + ' ↓</th></tr></thead><tbody>' +
+      list.slice(0, 10).map(function (x, i) {
+        return '<tr class="row-in" style="--i:' + i + '"><td><span class="da">' + avatar(x.name, 26) + '<b>' + esc(x.name) + '</b></span></td><td class="mono">' + x.id + '</td><td class="r">' + x.opp + '</td><td class="r">' + x.succ + '</td><td class="r' + (x.byp ? ' red' : '') + '">' + x.byp + '</td><td class="r' + (x.rej ? ' red' : '') + '">' + x.rej + '</td><td class="r">' + nf(x.rr, 2) + '%</td>' +
+          '<td>' + x.cats.map(function (c, k) { return c ? '<span class="wr-f" style="background:' + POD_C[k] + '">P' + (k + 1) + ' ' + c + '</span>' : ''; }).join('') + '</td><td><span class="wr-t ' + x.tier.toLowerCase() + '">' + x.tier + '</span></td>' +
+          '<td class="wrp fl">' + x.flags.map(function (f) { return '<span class="cn-fl' + (f === 0 || f === 3 ? ' red' : ' amb') + '">' + F[f] + '</span>'; }).join('') + '</td><td class="r"><span class="wr-sc' + (x.score < 50 ? ' amb' : '') + '">' + x.score + '</span></td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function renderPod() {
+    var w = podData(wrWeek), p = w.prev, K = t('podK'), KS = t('podKs'), rr = w.rej / w.req * 100, prr = p.rej / p.req * 100;
+    var h = qHeader(t('podSub', { d: w.drivers.length, p: nf(w.req) }), t('podUpHead'), t('podUpTag'), t('podUpNote'));
+    h += '<div class="m-panel wr-k wr-k3" data-p="podkpis">' + kpi3([
+      [K[0], pctf(w.rate, 2), wrDelta(w.rate - p.rate, pp(w.rate - p.rate), true), 'pos', Math.round(w.rate * 100), 1, KS[0].replace('{a}', nf(w.req - w.rej)).replace('{b}', nf(w.req))],
+      [K[1], w.rej + ' <em>' + pctf(rr, 2) + '</em>', wrDelta(w.rej - p.rej, sgn(w.rej - p.rej, nf), false), 'amb', undefined, 0, KS[1].replace('{d}', pp(rr - prr))],
+      [K[2], w.byp, wrDelta(w.byp - p.byp, sgn(w.byp - p.byp, nf), false), 'neg', w.byp, 0, KS[2]],
+      [K[3], 0, '', '', undefined, 0, KS[3].replace('{p}', pctf(0, 0))],
+      [K[4], w.dr + ' <em>/ ' + w.drivers.length + '</em>', wrDelta(w.dr - p.dr, sgn(w.dr - p.dr, nf), false), '', undefined, 0, KS[4].replace('{n}', w.drivers.length)],
+      [K[5], w.crit, wrDelta(w.crit - p.crit, sgn(w.crit - p.crit, nf), false), 'neg', w.crit, 0, KS[5].replace('{w}', w.watch).replace('{o}', w.ok).replace('{c}', w.car)]]) + '</div>';
+    var top = w.drivers.slice().sort(function (a, b) { return b.rej - a.rej || b.rr - a.rr; }).slice(0, 10).map(function (x) {
+      return { name: x.name, sub: nf(x.rr, 2) + '% · ' + x.cats.map(function (c, k) { return c ? 'P' + (k + 1) + ' ' + c : ''; }).filter(Boolean).join(' '), v: x.rej, tot: x.opp, segs: x.cats.map(function (c, k) { return [c, POD_C[k]]; }).filter(function (sg) { return sg[0]; }) };
+    });
+    var lo = Math.floor(Math.min.apply(null, w.weeks.map(function (q) { return q.rate; })) * 4 - 1) / 4;
+    h += '<div class="m-grid2" style="grid-template-columns:1.35fr 1fr;align-items:stretch">' +
+      '<div class="m-panel wr-chp" data-p="podtrend"><div class="m-ph"><h4>' + t('cnTrend') + '</h4><span class="m-cnt">' + t('podTrendTag') + '</span></div>' +
+      comboPct(680, 270, w.weeks.map(function (q) { return q.n; }), w.weeks.map(function (q) { return q.rej; }), w.weeks.map(function (q) { return q.rate; }), Math.min(99, lo), 100) +
+      '<div class="wr-leg"><span style="--c:#2F6BFF">' + t('podLeg')[0] + '</span><span class="sq" style="--c:#B794F4">' + t('podLeg')[1] + '</span></div></div>' +
+      '<div class="m-panel" data-p="podtrend"><div class="m-ph"><h4>' + t('podTop') + '</h4><span class="m-cnt">' + new Date().getFullYear() + '-' + weekInfo(wrWeek - 1).n + '</span></div>' + topList(top) + '</div></div>';
+    h += '<div class="m-grid2" style="grid-template-columns:1.35fr 1fr;align-items:stretch">' +
+      '<div class="m-panel wr-chp" data-p="podcat"><div class="m-ph"><h4>' + t('podCatT') + '</h4><span class="m-cnt">' + t('wrLast5') + '</span></div>' +
+      stackBars(680, 250, w.weeks.map(function (q) { return 'W' + q.n; }), w.weeks.map(function (q) { return q.cats; }), POD_C) +
+      '<div class="wr-leg wrap">' + t('podCats').map(function (c, i) { return '<span style="--c:' + POD_C[i] + '"><b>P' + (i + 1) + '</b> ' + c + '</span>'; }).join('') + '</div></div>' +
+      '<div class="m-panel" data-p="podcat"><div class="m-ph"><h4>' + t('podReasons') + '</h4><span class="m-cnt">' + t('wrClickFilter') + '</span></div>' + reasonList(t('podCats').slice(0, 5), w.cats.slice(0, 5), POD_C, 'P', 'podr', podCat) + '</div></div>';
+    h += '<div class="m-panel" data-p="poddrivers" data-wr="poddrv">' + podDrvInner(w) + '</div>';
+    return h;
+  }
   function renderWr() {
     var html = topBar(t('pageWr')) + wrSubnav() + '<div class="m-body">', wi = weekInfo(wrWeek - 1);
-    if (wrTab === 'cn') {
+    if (wrTab === 'ccp') {
+      html += renderCc();
+    } else if (wrTab === 'pod') {
+      html += renderPod();
+    } else if (wrTab === 'cn') {
       html += renderCn();
     } else if (wrTab === 'sc') {
       var rows = wrScore(wrWeek);
@@ -1023,6 +1196,10 @@
     if (act === 'cnzipx') { cnZip = null; wrSet('cndnr', cnDnrInner(cnData(wrWeek))); focusStep('cndnr', true, true); return; }
     if (act === 'cnunit') { cnUnit = v; wrSet('cncats', cnCatsInner(cnData(wrWeek))); focusStep('cncat', true, true); return; }
     if (act === 'cntier') { cnTier = v; wrSet('cndrv', cnDrvInner(cnData(wrWeek))); focusStep('cndrivers', true, true); return; }
+    if (act === 'cctier') { ccTier = v; wrSet('ccdrv', ccDrvInner(ccData(wrWeek))); focusStep('ccdrivers', true, true); return; }
+    if (act === 'podtier') { podTier = v; wrSet('poddrv', podDrvInner(podData(wrWeek))); focusStep('poddrivers', true, true); return; }
+    if (act === 'ccr') { ccCat = ccCat === Number(v) ? -1 : Number(v); renderMock(); focusStep(ccCat < 0 ? 'cccat' : 'ccdrivers', true); return; }
+    if (act === 'podr') { podCat = podCat === Number(v) ? -1 : Number(v); renderMock(); focusStep(podCat < 0 ? 'podcat' : 'poddrivers', true); return; }
     if (act === 'tier' || act === 'letter') { if (act === 'tier') wrTier = v; else wrLetter = v; wrSet('drivers', wrDriversInner(wrIadcData(wrWeek))); focusStep('drivers', true, true); }
   }
 
@@ -1226,7 +1403,7 @@
         '<span class="n">' + n + '</span><span><span class="t">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + '</span></span><span class="prog" style="--dur:' + DUR + 'ms"></span></button></li>';
     }
     if (page === 'wr') { // Weekly Reports: one group per sub-page, numbered across all of them
-      var all = t(PAGES.wr.steps), html = '', n = 0, li = 0, names = { sc: 'wrSc', iadc: 'wrIadc', cn: 'cnTab' };
+      var all = t(PAGES.wr.steps), html = '', n = 0, li = 0, names = { sc: 'wrSc', iadc: 'wrIadc', cn: 'cnTab', ccp: 'ccTab', pod: 'podTab' };
       WR_ORDER.forEach(function (tab) {
         var grp = all.filter(function (x) { return WR_TAB[x[0]] === tab; }), from = n + 1, open = tab === wrTab;
         n += grp.length;
