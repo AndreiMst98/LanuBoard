@@ -32,6 +32,7 @@
     document.querySelectorAll('[data-i18n-aria]').forEach(function (el) { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
     heroWords('hero-title', t('heroTitle'), t('heroHl'));
     heroWords('hero-title2', t('hs2Title'), t('hs2Hl'));
+    heroWords('hero-title3', t('hs3Title'), t('hs3Hl'));
     document.querySelectorAll('[data-i18n-idx]').forEach(function (el) { el.textContent = t(el.dataset.i18nIdx)[Number(el.dataset.k)]; });
     document.querySelectorAll('[data-i18n-tpl]').forEach(function (el) { el.textContent = t(el.dataset.i18nTpl, { n: el.dataset.n }); });
     document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
@@ -42,7 +43,7 @@
     b.addEventListener('click', function () {
       lang = b.dataset.lang;
       try { localStorage.setItem('lanu-lang', lang); } catch (e) {}
-      applyCopy(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true); if (owZ) { owRender(); owSteps(); } p2Render(); p2Focus(p2.active, true, true);
+      applyCopy(); haBuild(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true); if (owZ) { owRender(); owSteps(); } p2Render(); p2Focus(p2.active, true, true);
     });
   });
 
@@ -2695,7 +2696,7 @@
     var mn = Math.min.apply(null, SPK), mx = Math.max.apply(null, SPK) || 1, pts = SPK.map(function (q, i) { return (i / (SPK.length - 1) * 200).toFixed(1) + ',' + (36 - (q - mn) / Math.max(1, mx - mn) * 30).toFixed(1); });
     pl.setAttribute('points', pts.join(' ')); ar.setAttribute('d', 'M0,40 L' + pts.join(' L') + ' L200,40 Z');
   }
-  var HS = { i: 0, timer: null, dur: 9000, inView: true, busy: false }, hsEl = document.querySelectorAll('.hero-slide'), hsNav = document.getElementById('hs-nav');
+  var HS = { i: 0, timer: null, dur: 9000, durs: [9000, 9000, 14000], inView: true, busy: false }, hsEl = document.querySelectorAll('.hero-slide'), hsNav = document.getElementById('hs-nav');
   function hsMoney() {
     var arc = document.getElementById('hv2-arc'), left = document.getElementById('hv2-left'), pct = document.getElementById('hv2-pct'), bars = document.getElementById('hv2-bars'), eurEl = document.getElementById('hv2-eur');
     if (!arc) return;
@@ -2712,6 +2713,93 @@
     bars.innerHTML = html;
     if (eurEl && !reduce) { var e2 = ''; for (var q = 0; q < 12; q++) e2 += '<i style="--x:' + Math.floor(Math.random() * 100) + '%;--d:' + (Math.random() * 6).toFixed(2) + 's;--s:' + (0.7 + Math.random() * .8).toFixed(2) + '">€</i>'; eurEl.innerHTML = e2; }
   }
+
+  // ---------- hero slide 3: LANU App, driver phone and office phone (fictional people, drawn avatars, real van photos)
+  var HA = { tm: [], drv: 'Mihai Stan', off: 'Laura Kern', top: ['Elena Marin', 'Lukas Weber', 'Radu Ionescu', 'Jonas Becker', 'Ioana Dinu'] };
+  function ha(k, v) { var s = t('ha')[k]; if (v) Object.keys(v).forEach(function (q) { s = s.replace('{' + q + '}', v[q]); }); return s; }
+  var HA_IC = {
+    cal: '<rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/><circle cx="12" cy="15" r="1.4" fill="currentColor" stroke="none"/>',
+    coin: '<ellipse cx="10" cy="7" rx="6" ry="2.6"/><path d="M4 7v4.5c0 1.4 2.7 2.6 6 2.6M4 11.5V16c0 1.4 2.7 2.6 6 2.6"/><circle cx="16.5" cy="15.5" r="4"/><path d="M16.5 13.8v3.4"/>',
+    slip: '<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9.5 8h5M9.5 11.5h5M9.5 15h3"/>',
+    chat: '<path d="M4.5 5h15a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17H4.5A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01"/>',
+    doc: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 15.5h5"/>',
+    bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    home: '<path d="M4 11 12 4l8 7v9h-5.5v-5.5h-5V20H4z"/>', task: '<rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4.5h6M9 12l2 2 4-4"/>', user: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-4 4-5.6 7.5-5.6s6.3 1.6 7.5 5.6"/>',
+    chev: '<path d="M10 7l5 5-5 5"/>', up: '<path d="M5 16l5-5 3 3 6-6M14 8h5v5"/>', ok: '<path d="M5 12.5l4.5 4.5L19 7.5"/>'
+  };
+  function haIc(k, c) { return '<svg viewBox="0 0 24 24" class="ha-ic' + (c ? ' ' + c : '') + '" aria-hidden="true">' + HA_IC[k] + '</svg>'; }
+  function haTop(name, admin) {
+    var d = new Date(), loc = lang === 'de' ? 'de-DE' : 'en-GB';
+    return '<div class="ha-top"><span class="ha-logo"><svg viewBox="0 0 24 24"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M12 2.5V12l8.5-5M12 12 3.5 7M12 12v9.5"/></svg>LANU</span>' + haIc('bell', 'ha-bell') + '<b class="ha-bdg"></b></div>' +
+      '<div class="ha-hi">' + avatar(name, 40) + '<div><small>' + esc(d.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><b>' + esc(ha('hi', { n: name.split(' ')[0] })) + '</b>' + (admin ? '<em>' + ha('admin') + '</em>' : '') + '</div></div>';
+  }
+  function haBuild() {
+    var el = document.getElementById('hv3'); if (!el) return;
+    var wk = weekInfo(-1), acts = ha('acts'), IC4 = ['cal', 'coin', 'slip', 'chat'], i;
+    var d = '<div class="ha-feed">' + haTop(HA.drv) +
+      '<div class="ha-sc"><div class="ha-sc-h"><span>' + esc(ha('score', { w: wk.n, r: wk.range })) + '</span><i>' + haIc('chev') + '</i></div>' +
+        '<div class="ha-sc-m"><div><b class="ha-scn" id="ha-score">84.6</b><span class="ha-of">/100</span><em class="ha-great">' + ha('great') + '</em></div>' +
+        '<div class="ha-rank"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="33" class="tr"/><circle cx="40" cy="40" r="33" class="val" id="ha-ring"/></svg><span><small>' + ha('rank') + '</small><b>#12</b></span></div></div>' +
+        '<div class="ha-sc-f"><i>' + haIc('up') + '</i><span>' + esc(ha('up', { n: 9 })) + '</span><b>+9</b></div></div>' +
+      '<div class="ha-g2"><div class="ha-c"><small>' + ha('days') + '</small><b>4</b><span class="ha-dots"><i></i><i></i><i></i><i></i></span><small>' + ha('month') + '</small></div>' +
+        '<div class="ha-c"><small>' + ha('rescue') + '</small><b>2</b><img src="assets/img/app/rescue.png" alt="" class="ha-resc"><small>' + ha('month') + '</small></div></div>' +
+      '<div class="ha-c ha-veh"><img src="assets/img/app/veh.png" alt=""><div><small>' + ha('vehicle') + '</small><b>LNU 4821</b></div>' + haIc('chev') + '</div>' +
+      '<h5>' + ha('quick') + '</h5><div class="ha-acts">';
+    for (i = 0; i < 4; i++) d += '<div class="ha-act' + (i === 0 ? ' ha-to' : '') + '"><span class="k' + i + '">' + haIc(IC4[i]) + (i === 2 ? '<b></b>' : '') + '</span>' + esc(acts[i]) + '</div>';
+    d += '</div><h5>' + esc(ha('top', { w: wk.n })) + '</h5><div class="ha-c ha-list">';
+    HA.top.forEach(function (n, k) { d += '<div><i class="m' + k + '">' + (k + 1) + '</i><span>' + esc(n) + '</span><b>100</b></div>'; });
+    d += '</div></div><div class="ha-toast g" id="ha-dt"><i>' + haIc('ok') + '</i><div><b>' + ha('okTitle') + '</b><small>' + esc(ha('okTxt', { n: HA.off.split(' ')[0] })) + '</small></div></div>';
+    var tiles = ha('tiles'), TI = ['chat', 'coin', 'slip'], res = ha('res'), RI = ['chat', 'coin', 'doc', 'cal'], RV = [4, 1, 2, 1], pend = ha('pend'), nav = ha('nav'), NI = ['home', 'task', 'bell', 'user'];
+    var o = '<div class="ha-feed">' + haTop(HA.off, true) +
+      '<div class="ha-sc ha-ops"><div class="ha-sc-h"><span>' + ha('ops') + '</span><em class="ha-live"><i></i>' + ha('live') + '</em></div>' +
+        '<div class="ha-need"><b id="ha-need">2</b><span>' + ha('need') + '</span></div><div class="ha-bar"><i></i></div><div class="ha-g3">';
+    for (i = 0; i < 3; i++) o += '<div class="k' + i + '"><span>' + haIc(TI[i]) + '</span><b' + (i === 0 ? ' id="ha-req"' : '') + '>' + (i === 0 ? 2 : 0) + '</b><small>' + esc(tiles[i]) + '</small></div>';
+    o += '</div></div><h5>' + ha('resolved') + '<small>' + esc(new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long' })) + '</small></h5><div class="ha-c ha-res">';
+    for (i = 0; i < 4; i++) o += '<div><span class="r' + i + '">' + haIc(RI[i]) + '</span><b' + (i === 3 ? ' id="ha-vapp"' : '') + '>' + RV[i] + '</b><small>' + esc(res[i]) + '</small></div>';
+    o += '</div><h5>' + ha('pending') + '</h5><div class="ha-pend">';
+    for (i = 0; i < 6; i++) o += '<div' + (i === 0 ? ' id="ha-vac"' : '') + '><b' + (i === 0 ? ' id="ha-vacn"' : '') + '>' + (i === 1 ? 2 : 0) + '</b><small>' + esc(pend[i]) + '</small>' + (i === 1 ? '<em>2</em>' : i === 0 ? '<em class="nw">1</em>' : '') + '</div>';
+    o += '</div><h5>' + ha('fleet') + '</h5><div class="ha-fl"><div class="dk"><img src="assets/img/app/pickup.png" alt=""><b>' + ha('pickup') + '</b><i>→</i></div><div><img src="assets/img/app/return.png" alt=""><b>' + ha('ret') + '</b><i>←</i></div></div>' +
+      '<h5>' + ha('tasks') + '<small>' + esc(ha('open', { n: 1 })) + '</small></h5><div class="ha-c ha-task"><i></i><span>' + esc(ha('task')) + '</span>' + avatar('Radu Ionescu', 24) + '</div></div>' +
+      '<div class="ha-toast" id="ha-ot"><i>' + haIc('cal') + '</i><div><b>' + ha('newReq') + '</b><small>' + esc(ha('newTxt', { n: HA.drv })) + '</small></div><button type="button" tabindex="-1">' + ha('approve') + '</button></div>' +
+      '<nav class="ha-nav">';
+    for (i = 0; i < 4; i++) o += '<span' + (i === 0 ? ' class="on"' : '') + '>' + haIc(NI[i]) + (i === 1 ? '<b>1</b>' : '') + esc(nav[i]) + '</span>';
+    o += '</nav>';
+    el.innerHTML = '<svg class="ha-link" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M30 64 C46 64,52 34,70 30"/></svg>' +
+      '<div class="ha-ph ha-d"><span class="ha-lbl"><i></i>' + ha('drv') + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr">' + d + '</div></div></div>' +
+      '<div class="ha-ph ha-o"><span class="ha-lbl"><i></i>' + esc(ha('off')) + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr">' + o + '</div></div></div>' +
+      '<div class="ha-fly" id="ha-fly">' + haIc('cal') + '<span>' + esc(ha('sent')) + '</span></div>';
+    if (HS.i === 2) haPlay();
+  }
+  function haStop() { HA.tm.forEach(clearTimeout); HA.tm = []; }
+  function haPlay() {
+    haStop();
+    var el = document.getElementById('hv3'); if (!el) return;
+    var $ = function (id) { return document.getElementById(id); }, at = function (ms, f) { HA.tm.push(setTimeout(f, reduce ? 0 : ms)); };
+    var set = function (id, v) { var e = $(id); if (e && e.textContent !== String(v)) { e.textContent = v; e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); } };
+    el.className = 'hero-visual hv3'; el.querySelectorAll('.ha-feed').forEach(function (f) { f.style.transform = ''; });
+    $('ha-ot').querySelector('button').textContent = ha('approve'); $('ha-need').textContent = 2; $('ha-req').textContent = 2; $('ha-vacn').textContent = 0; $('ha-vapp').textContent = 1;
+    var ring = $('ha-ring'), L = 2 * Math.PI * 33;
+    ring.style.strokeDasharray = L; ring.style.transition = 'none'; ring.style.strokeDashoffset = L; void ring.getBoundingClientRect();
+    ring.style.transition = reduce ? 'none' : 'stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1) .3s'; ring.style.strokeDashoffset = L * (1 - .82);
+    var sc = $('ha-score'), t0 = performance.now();
+    if (reduce) sc.textContent = nf(84.6, 1);
+    else (function st(now) { var k = Math.max(0, Math.min(1, (now - t0 - 300) / 1500)), e = 1 - Math.pow(1 - k, 3); sc.textContent = nf(84.6 * e, 1); if (k < 1 && HS.i === 2) requestAnimationFrame(st); })(t0);
+    if (reduce) return;
+    at(1700, function () { el.classList.add('s-tap'); });
+    var fly = $('ha-fly'), pt = function (q, fx, fy) { var r = el.getBoundingClientRect(), b = q.getBoundingClientRect(); return [b.left - r.left + b.width * fx, b.top - r.top + b.height * fy]; };
+    var go = function (a, b) { fly.style.setProperty('--x0', a[0] + 'px'); fly.style.setProperty('--y0', a[1] + 'px'); fly.style.setProperty('--x1', b[0] + 'px'); fly.style.setProperty('--y1', b[1] + 'px'); };
+    at(2200, function () { go(pt(el.querySelector('.ha-to span'), .5, .5), pt(el.querySelector('.ha-o .ha-scr'), .5, .02)); el.classList.add('s-fly'); });
+    at(3100, function () { el.classList.add('s-new'); set('ha-need', 3); set('ha-req', 3); set('ha-vacn', 1); });
+    at(4700, function () { el.classList.add('s-ok'); });
+    at(5300, function () { el.classList.add('s-done'); set('ha-need', 2); set('ha-req', 2); set('ha-vacn', 0); set('ha-vapp', 2); $('ha-ot').querySelector('button').textContent = ha('approved'); });
+    at(5600, function () { go(pt(el.querySelector('.ha-o .ha-scr'), .5, .06), pt(el.querySelector('.ha-d .ha-scr'), .5, .04)); el.classList.add('s-back'); });
+    at(6300, function () { el.classList.add('s-ohide'); });
+    at(6500, function () { el.classList.add('s-recv'); });
+    at(8300, function () { el.classList.add('s-dhide'); });
+    at(8600, function () { el.querySelectorAll('.ha-scr').forEach(function (s) { var f = s.querySelector('.ha-feed'), nv = s.querySelector('.ha-nav'); f.style.transform = 'translateY(' + (-Math.max(0, f.scrollHeight - s.clientHeight + (nv ? nv.offsetHeight : 0))) + 'px)'; }); });
+    at(12400, function () { el.querySelectorAll('.ha-feed').forEach(function (f) { f.style.transform = ''; }); });
+  }
+  haBuild();
   function hsGo(i, user) {
     i = (i + hsEl.length) % hsEl.length;
     if (i === HS.i && !user) return;
@@ -2719,16 +2807,18 @@
     HS.i = i;
     window.LANU_CITY_THEME = i;
     document.querySelector('.hero').classList.toggle('money', i === 1);
+    document.querySelector('.hero').classList.toggle('app', i === 2);
     if (prev !== next) { prev.classList.remove('on'); prev.classList.add('leave'); prev.setAttribute('aria-hidden', 'true'); setTimeout(function () { prev.classList.remove('leave'); }, 700); }
     next.classList.add('on'); next.removeAttribute('aria-hidden');
     var h = next.querySelector('h1,h2'); if (h) { var html = h.innerHTML; h.innerHTML = ''; void h.offsetWidth; h.innerHTML = html; }
     var sc = document.getElementById('hero-scan'); if (sc && !reduce) { sc.classList.remove('run'); void sc.offsetWidth; sc.classList.add('run'); }
     if (i === 1) hsMoney();
+    if (i === 2) haPlay(); else haStop();
     hsNav.querySelectorAll('.hs-tab').forEach(function (b, k) { b.classList.toggle('on', k === i); b.classList.remove('run'); });
-    void hsNav.offsetWidth; var on = hsNav.querySelector('.hs-tab.on'); if (on && !reduce) on.classList.add('run');
+    hsNav.style.setProperty('--hs-dur', HS.durs[i] + 'ms'); void hsNav.offsetWidth; var on = hsNav.querySelector('.hs-tab.on'); if (on && !reduce) on.classList.add('run');
     hsSched();
   }
-  function hsSched() { clearTimeout(HS.timer); if (reduce || !HS.inView) return; HS.timer = setTimeout(function () { hsGo(HS.i + 1); }, HS.dur); }
+  function hsSched() { clearTimeout(HS.timer); if (reduce || !HS.inView) return; HS.timer = setTimeout(function () { hsGo(HS.i + 1); }, HS.durs[HS.i] || HS.dur); }
   if (hsNav) {
     hsNav.style.setProperty('--hs-dur', HS.dur + 'ms');
     hsNav.addEventListener('click', function (e) { var b = e.target.closest('[data-hs-to],[data-hs-go]'); if (!b) return; hsGo(b.dataset.hsTo !== undefined ? Number(b.dataset.hsTo) : HS.i + Number(b.dataset.hsGo), true); });
@@ -2761,7 +2851,7 @@
     }
     function pos(i, j) { return [cx + (i - j) * w / 2, cy + (i + j - (N - 1)) * a / 2]; }
     function mix(c1, c2, k) { return 'rgb(' + Math.round(c1[0] + (c2[0] - c1[0]) * k) + ',' + Math.round(c1[1] + (c2[1] - c1[1]) * k) + ',' + Math.round(c1[2] + (c2[2] - c1[2]) * k) + ')'; }
-    var TOP0 = [19, 40, 74], TOP1 = [30, 60, 104], LEFT = [14, 31, 58], RIGHT = [10, 24, 46], HOT = [59, 155, 255], HOT_B = [59, 155, 255], HOT_E = [16, 205, 140], themeK = 0;
+    var TOP0 = [19, 40, 74], TOP1 = [30, 60, 104], LEFT = [14, 31, 58], RIGHT = [10, 24, 46], HOT = [59, 155, 255], HOT_B = [59, 155, 255], HOT_E = [16, 205, 140], HOT_V = [150, 110, 255], themeK = 0, themeV = 0;
     function height(i, j, tm) {
       var p = pos(i, j), dx = p[0] - mouse.x, dy = p[1] - mouse.y;
       var boost = Math.exp(-(dx * dx + dy * dy) / (2 * 110 * 110));
@@ -2774,7 +2864,7 @@
     }
     function draw(tm) {
       ctx.clearRect(0, 0, W, H);
-      themeK += ((window.LANU_CITY_THEME || 0) - themeK) * .05; HOT = mix2(HOT_B, HOT_E, themeK);
+      var th = window.LANU_CITY_THEME || 0; themeK += ((th === 1 ? 1 : 0) - themeK) * .05; themeV += ((th === 2 ? 1 : 0) - themeV) * .05; HOT = mix2(mix2(HOT_B, HOT_E, themeK), HOT_V, themeV);
       mouse.x += (mouse.tx - mouse.x) * .08; mouse.y += (mouse.ty - mouse.y) * .08;
       if (tm - mouse.last > 3500) { // idle: a slow "virtual cursor" keeps the city alive (also on touch screens)
         mouse.tx = cx + Math.sin(tm * .00035) * w * 5; mouse.ty = cy + Math.cos(tm * .00027) * a * 4 - a * 2;
@@ -2793,7 +2883,7 @@
         ctx.beginPath(); ctx.moveTo(x, y - a / 2); ctx.lineTo(x + w / 2, y); ctx.lineTo(x, y + a / 2); ctx.lineTo(x - w / 2, y); ctx.closePath();
         ctx.fillStyle = heat > 0 ? mix(mix2(TOP0, TOP1, (h - 3) / 30), HOT, heat * .85) : mix(TOP0, TOP1, Math.max(0, Math.min(1, (h - 3) / 30)));
         ctx.fill();
-        ctx.strokeStyle = themeK > .5 ? 'rgba(120,230,190,' + (.1 + heat * .5) + ')' : 'rgba(140,190,255,' + (.1 + heat * .5) + ')'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = themeK > .5 ? 'rgba(120,230,190,' + (.1 + heat * .5) + ')' : themeV > .5 ? 'rgba(180,160,255,' + (.1 + heat * .5) + ')' : 'rgba(140,190,255,' + (.1 + heat * .5) + ')'; ctx.lineWidth = 1; ctx.stroke();
         if (L > 0) lit[idx] = Math.max(0, L - .012);
       }
       // delivery lights travelling along the streets
@@ -2806,7 +2896,7 @@
         var hh = hs[i0 * N + j0] * (1 - fr) + hs[i1 * N + j1] * fr;
         var pp = pos(ii, jj), gx = pp[0], gy = pp[1] - hh;
         var gr = ctx.createRadialGradient(gx, gy, 0, gx, gy, a * .9);
-        var c1 = mix2([160, 225, 255], [170, 255, 215], themeK), c2 = mix2([92, 200, 255], [52, 225, 160], themeK);
+        var c1 = mix2(mix2([160, 225, 255], [170, 255, 215], themeK), [205, 190, 255], themeV), c2 = mix2(mix2([92, 200, 255], [52, 225, 160], themeK), [150, 110, 255], themeV);
         gr.addColorStop(0, 'rgba(' + c1.map(Math.round) + ',.95)'); gr.addColorStop(.25, 'rgba(' + c2.map(Math.round) + ',.5)'); gr.addColorStop(1, 'rgba(' + c2.map(Math.round) + ',0)');
         ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(gx, gy, a * .9, 0, 6.2832); ctx.fill();
         if (P.p >= 1) { var ei = P.horiz ? P.e : P.k, ej = P.horiz ? P.k : P.e; lit[ei * N + ej] = 1; parts.splice(q, 1); }
