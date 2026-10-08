@@ -2280,7 +2280,7 @@
   var EQ_ITEMS = [
     { key: 'jacket', code: 'ANDERA-U-000012', tx: 160, ty: 96 },
     { key: 'shoes', code: 'ANDERA-I-000009', tx: 150, ty: 168 },
-    { key: 'phone', code: 'ANDERA-T-000001', tx: 76, ty: 150 }
+    { key: 'phone', code: 'ANDERA-T-000001', tx: 110, ty: 168 }
   ];
   var eqStage = document.getElementById('eq-stage'), eqWrap = document.getElementById('eq-wrap'), eqSteps = document.getElementById('eq-steps');
   function qrSvg(seed) {
@@ -2295,9 +2295,7 @@
   var EQ_ART = {
     jacket: '<img class="it-img" src="assets/img/app/jacket.webp" alt="">',
     shoes: '<img class="it-img" src="assets/img/app/shoes.webp" alt="">',
-    phone: '<svg viewBox="0 0 280 340"><rect x="70" y="20" width="140" height="290" rx="22" fill="#1B2029"/><rect x="78" y="28" width="124" height="274" rx="16" fill="#252B35"/>' +
-      '<rect x="92" y="44" width="40" height="40" rx="12" fill="#14181F"/><circle cx="104" cy="56" r="7" fill="#0B0D11" stroke="#3A4250" stroke-width="2"/><circle cx="120" cy="72" r="5" fill="#0B0D11" stroke="#3A4250" stroke-width="2"/>' +
-      '<rect x="62" y="96" width="8" height="40" rx="3" fill="#F5A623"/><text x="140" y="280" text-anchor="middle" font-size="11" font-weight="800" fill="#4B5565" font-family="sans-serif">ANDERA</text></svg>'
+    phone: '<img class="it-img" src="assets/img/app/phone.webp" alt="">'
   };
   var EQ_ICO = {
     jacket: '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M8 3l4 3 4-3 5 3-2 6-2-1v10H7V11l-2 1-2-6z"/></svg>',
