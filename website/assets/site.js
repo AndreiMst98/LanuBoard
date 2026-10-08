@@ -39,7 +39,7 @@
     b.addEventListener('click', function () {
       lang = b.dataset.lang;
       try { localStorage.setItem('lanu-lang', lang); } catch (e) {}
-      applyCopy(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true); p2Render(); p2Focus(p2.active, true, true);
+      applyCopy(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true); if (owZ) { owRender(); owSteps(); } p2Render(); p2Focus(p2.active, true, true);
     });
   });
 
@@ -2104,6 +2104,176 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(p2Ind);
   }
 
+  // ------------------------------------------------------------------ Income Overview: owner dashboard that recalculates live (fictional figures)
+  var OW = { per: 1, mode: 'money', contr: true, vat: false, rates: [28, 32, 28, 28, 75, 15.7, 30, 19], veh: [], exp: [], topic: -1, step: 0, auto: !reduce, inView: false, timer: null, prev: {}, hover: -1, tok: 0 };
+  var OW_STEP = [1, 1, 1, 0.5, 5, 0.1, 1, 1], OW_FLEET = 50;
+  var OW_VEH = [[0, 26, 520], [1, 14, 790], [2, 50, 80], [3, 0, 1450], [4, 0, 1800], [5, 0, 620]], OW_EXP = [1800, 450, 900, 640, 380];
+  var owDaysC;
+  function owDays() {
+    if (owDaysC) return owDaysC;
+    var r = rng(5151), y = TODAY.getFullYear(), m = TODAY.getMonth() - 1, n = dAt(y, m + 1, 0).getDate(), out = [];
+    for (var d = 1; d <= n; d++) {
+      var dt = dAt(y, m, d), sun = dt.getDay() === 0, sat = dt.getDay() === 6;
+      out.push({ dt: dt, sun: sun, N: sun ? 0 : between(r, sat ? 220 : 268, sat ? 250 : 300), S: sun ? 0 : between(r, 46, 62), RA: sun ? 0 : between(r, 0, 9), T: sun ? 0 : between(r, 0, 8), cN: sun ? 0 : between(r, 0, 12), cS: sun ? 0 : between(r, 0, 20), resc: sun ? 0 : between(r, 5, 12), nd: sun ? 0 : between(r, 4, 10) });
+    }
+    return (owDaysC = out);
+  }
+  function owCalc(days, months) {
+    var R = OW.rates, cf = OW.contr ? 1 + R[6] / 100 : 1, vf = OW.vat ? 1 + R[7] / 100 : 1, nAll = owDays().length;
+    var vehMonth = OW.veh.reduce(function (a, v) { return a + v.amount; }, 0), expMonth = OW.exp.reduce(function (a, v) { return a + v.amount; }, 0), dispMonth = 6 * 3120;
+    var per = function (x) { return x / nAll * (months ? nAll : 1); };
+    var rows = days.map(function (d) {
+      var rev = (d.N * R[0] + d.S * R[1] + d.RA * R[2] + d.T * R[3] + (d.cN * R[0] + d.cS * R[1]) * R[4] / 100) * vf;
+      var hw = (d.N + d.S + d.RA + d.T) * 1.02, drv = (hw + d.resc + d.nd) * R[5], fixed = per(dispMonth) * cf + per(vehMonth) * vf + per(expMonth) * vf;
+      var cost = drv * cf + fixed;
+      return { d: d, rev: rev, cost: cost, left: rev - cost, hp: d.N + d.S + d.RA + d.T, hw: hw };
+    });
+    var M = months || 1, S = function (k) { return rows.reduce(function (a, x) { return a + x[k]; }, 0) * M; }, sumD = function (k) { return days.reduce(function (a, x) { return a + x[k]; }, 0) * M; };
+    var f = days.length / nAll * (months || 1);
+    var t = { rows: rows, rev: S('rev'), hp: S('hp'), hw: S('hw'), N: sumD('N'), Sd: sumD('S'), RA: sumD('RA'), T: sumD('T'), cN: sumD('cN'), cS: sumD('cS'), resc: sumD('resc'), nd: sumD('nd') };
+    t.drvRoute = t.hw * R[5]; t.drvResc = t.resc * R[5]; t.drvNew = t.nd * R[5]; t.drvEst = 0; t.drv = t.drvRoute + t.drvResc + t.drvNew;
+    t.disp = dispMonth * f; t.contr = OW.contr ? (t.drv + t.disp) * R[6] / 100 : 0; t.pay = t.drv + t.disp + t.contr;
+    t.veh = vehMonth * f * vf; t.exp = expMonth * f * vf; t.left1 = t.rev - t.pay; t.left2 = t.left1 - t.veh - t.exp;
+    return t;
+  }
+  function owPeriod() {
+    var all = owDays();
+    if (OW.per === 0) { var i = all.length - 1; while (all[i].dt.getDay() !== 6) i--; return { days: all.slice(i - 6, i + 1), label: ddmm(all[i - 6].dt).slice(0, 5) + ' – ' + ddmm(all[i].dt).slice(0, 5), title: t('plWeek', { n: weekInfo(-1).n - 1 }) }; }
+    if (OW.per === 1) return { days: all, label: ddmm(all[0].dt).slice(0, 5) + ' – ' + ddmm(all[all.length - 1].dt).slice(0, 5), title: monthName(-1) };
+    return { days: all, months: TODAY.getMonth(), label: '01.01 – ' + ddmm(all[all.length - 1].dt).slice(0, 5), title: String(TODAY.getFullYear()) };
+  }
+  function owNum(key, v, f) { var p = OW.prev[key]; OW.prev[key] = v; return '<b data-ow="' + key + '" data-from="' + (p === undefined ? v : p) + '" data-to="' + v + '" data-fmt="' + f + '">' + (f === 'h' ? nf(v, 1) + ' h' : eurc(v)) + '</b>'; }
+  function owChart(T, per) {
+    var W = 1100, H = 300, L = 54, top = 130, bot = 96, mid = 20 + top, rows = T.rows, n = rows.length;
+    if (per.months) { var fac = [0.88, 0.9, 0.97, 0.95, 1.02, 0.99, 1.04, 0.96, 1.0, 1.03, 1, 1].slice(0, per.months); rows = fac.map(function (q, i) { return { m: i, rev: T.rev / per.months * q, cost: (T.rev - T.left2) / per.months * (0.97 + (i % 3) * .015) }; }); rows.forEach(function (x) { x.left = x.rev - x.cost; }); n = rows.length; }
+    var mx = Math.max.apply(null, rows.map(function (x) { return Math.max(x.rev, x.cost); })), ml = Math.max.apply(null, rows.map(function (x) { return Math.abs(x.left); })) || 1, bw = (W - L - 10) / n;
+    var g = '<line x1="' + L + '" x2="' + W + '" y1="' + mid + '" y2="' + mid + '" stroke="#C3CBDA"/><line x1="' + L + '" x2="' + W + '" y1="' + (mid + 6 + bot / 2) + '" y2="' + (mid + 6 + bot / 2) + '" stroke="#C3CBDA"/>' +
+      '<text x="' + (L - 6) + '" y="24" text-anchor="end">' + nf(mx / 1000, 1) + 'k</text><text x="' + (L - 6) + '" y="' + (mid + 14) + '" text-anchor="end">' + nf(ml / 1000, 1) + 'k</text>';
+    rows.forEach(function (x, i) {
+      var x0 = L + i * bw, w = Math.max(3, bw * .34), hr = x.rev / mx * top, hc = x.cost / mx * top, hl = Math.abs(x.left) / ml * (bot / 2 - 4), base = mid + 6 + bot / 2;
+      g += '<g class="ow-bar" data-i="' + i + '" style="--i:' + i + '"><rect class="hit" x="' + x0 + '" y="0" width="' + bw + '" height="' + (H - 20) + '" fill="transparent"/><rect x="' + (x0 + bw * .1) + '" y="' + (mid - hr) + '" width="' + w + '" height="' + hr + '" fill="#2F6BFF" rx="2"/><rect x="' + (x0 + bw * .1 + w + 2) + '" y="' + (mid - hc) + '" width="' + w + '" height="' + hc + '" fill="#EEF0F5" stroke="#8A93A6" rx="2"/>' +
+        '<rect x="' + (x0 + bw * .14) + '" y="' + (x.left >= 0 ? base - hl : base) + '" width="' + (bw * .72) + '" height="' + hl + '" fill="' + (x.left >= 0 ? '#1E9E5A' : '#E5484D') + '" rx="2"/>' +
+        '<text x="' + (x0 + bw / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + (per.months ? monthName(x.m - TODAY.getMonth()).slice(0, 3) : pad(x.d.dt.getDate())) + '</text></g>';
+    });
+    return '<svg class="ow-ch" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + g + '</svg>';
+  }
+  function owHtml() {
+    var per = owPeriod(), T = owCalc(per.days, per.months), R = OW.rates, K = t('owK'), RT = t('owRates'), money = OW.mode === 'money';
+    var vehAll = OW.veh.length, missing = vehAll ? 0 : OW_FLEET;
+    var h = topBar(t('owT')) + '<div class="m-body">';
+    h += '<div class="m-panel ow-hd"><div class="ow-hd1"><span class="ci">€</span><div><b>' + t('owT') + '</b><span>' + t('owTSub') + '</span></div>' +
+      '<span class="ow-seg"><button type="button" data-ow-act="mode" data-v="hours"' + (money ? '' : ' class="on"') + '>' + t('owHours') + '</button><button type="button" data-ow-act="mode" data-v="money"' + (money ? ' class="on"' : '') + '>' + t('owMoney') + '</button></span>' +
+      '<span class="ow-seg">' + t('owPer').map(function (p, i) { return '<button type="button" data-ow-act="per" data-v="' + i + '"' + (OW.per === i ? ' class="on"' : '') + '>' + p + '</button>'; }).join('') + '</span>' +
+      '<span class="ow-pd"><b>' + per.title + '</b> ' + per.label + '</span></div>' +
+      '<div class="ow-hd2">' + t('owClosed', { a: '<b>' + per.days.length + '</b>', b: per.days.length }) + '<span>' + t('owProv', { n: 0 }) + '</span><span>' + t('owNoData') + '</span><span>' + t('owFrom', { d: '<b>' + ddmm(TODAY) + '</b>' }) + '</span></div></div>';
+    h += '<div class="m-panel ow-how"><h4>' + t('owHow') + '</h4><div class="ts-topics">' + t('owTopics').map(function (x, i) { return '<button type="button" class="hs-f' + (OW.topic === i ? ' on' : '') + '" data-ow-act="topic" data-v="' + i + '">› ' + x[0] + '</button>'; }).join('') + '</div>' + (OW.topic >= 0 ? '<p class="rc-hint ts-topic">' + t('owTopics')[OW.topic][1] + '</p>' : '') + '</div>';
+    h += '<div class="ow-chk"><button type="button" data-ow-act="contr" class="' + (OW.contr ? 'on' : '') + '"><i></i>' + t('owWithC') + '</button><button type="button" data-ow-act="vat" class="' + (OW.vat ? 'on' : '') + '"><i></i>' + t('owWithV') + '</button><span>' + t('owVatNote') + '</span></div>';
+    h += missing ? '<div class="ow-ban" data-ows="costs"><b>' + t('owBanner', { n: missing }) + '</b><button type="button" class="wr-upbtn" data-ow-act="addcosts">+ ' + t('owAddCosts') + '</button></div>' : '<div class="ow-ban ok" data-ows="costs"><b>✓ ' + t('owCostsOk', { n: OW_FLEET }) + '</b></div>';
+    var pct = T.rev ? T.left1 / T.rev * 100 : 0;
+    h += '<div class="m-panel ow-k" data-ows="kpi">' + (money ? [
+      '<div><small>' + K[0] + '</small>' + owNum('rev', T.rev, 'e') + '</div>',
+      '<div><small>' + K[1] + '</small>' + owNum('pay', T.pay, 'e') + '<span>' + t('owDrv') + ': <b>' + eurc(T.drv) + '</b></span><span>' + t('owDisp') + ': <b>' + eurc(T.disp) + '</b></span><span>' + t('owContr') + ': <b>' + eurc(T.contr) + '</b></span></div>',
+      '<div class="g"><small>' + K[2] + '</small>' + owNum('l1', T.left1, 'e') + '<span>' + t('owOfRev', { p: '<b>' + pctf(pct, 1) + '</b>' }) + '</span></div>'
+    ] : [
+      '<div><small>' + t('owKh')[0] + '</small>' + owNum('hp', T.hp, 'h') + '</div>', '<div><small>' + t('owKh')[1] + '</small>' + owNum('hw', T.hw, 'h') + '</div>', '<div><small>' + t('owKh')[2] + '</small>' + owNum('hd', T.hw - T.hp, 'h') + '</div>'
+    ]).join('') + '</div>';
+    h += '<div class="m-panel ow-k" data-ows="kpi">' +
+      '<div><small>' + K[3] + '</small>' + owNum('veh', T.veh, 'e') + '<span>' + t('owMonthly') + ': <b>' + eurc(T.veh * .9) + '</b></span><span>' + t('owRepairs') + ': <b>' + eurc(T.veh * .1) + '</b></span></div>' +
+      '<div><small>' + K[4] + '</small>' + owNum('exp', T.exp, 'e') + '</div>' +
+      '<div class="' + (T.left2 >= 0 ? 'g' : 'r') + '"><small>' + K[5] + '</small>' + owNum('l2', T.left2, 'e') + '<span>' + (T.veh + T.exp ? t('owAfterAll') : t('owNoCost')) + '</span></div></div>' +
+      '<p class="ow-note">' + t('owLeftNote') + '</p>';
+    var C = t('owCats'), cv = [[T.N, R[0]], [T.Sd, R[1]], [T.RA, R[2]], [T.T, R[3]]], vf = OW.vat ? 1 + R[7] / 100 : 1, canc = (T.cN * R[0] + T.cS * R[1]) * R[4] / 100 * vf, mul = 1;
+    h += '<div class="m-panel ow-tb" data-ows="rev"><h4>' + t('owRevT') + '</h4><table><thead><tr><th></th>' + t('owCols').map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      cv.map(function (x, i) { return '<tr><td>' + C[i] + '</td><td>' + nf(x[0] * mul, 1) + ' h</td><td>' + eurc(x[1]) + '</td><td><b>' + eurc(x[0] * x[1] * vf * mul) + '</b></td></tr>'; }).join('') +
+      '<tr><td>' + C[4] + '</td><td>' + nf((T.cN + T.cS) * mul, 1) + ' h</td><td>× ' + nf(R[4], 2) + ' %</td><td><b>' + eurc(canc * mul) + '</b></td></tr><tr class="tot"><td>' + t('owTotRev') + '</td><td></td><td></td><td>' + eurc(T.rev) + '</td></tr></tbody></table></div>';
+    var P = t('owPays');
+    h += '<div class="ow-two" data-ows="pay"><div class="m-panel ow-tb"><h4>' + t('owPayT') + '</h4><table><thead><tr><th></th>' + t('owCols').map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      [[P[0], T.hw, T.drvRoute], [P[1], T.resc, T.drvResc], [P[2], T.nd, T.drvNew]].map(function (x) { return '<tr><td>' + x[0] + '</td><td>' + nf(x[1] * mul, 1) + ' h</td><td>' + eurc(R[5]) + '</td><td><b>' + eurc(x[2] * mul) + '</b></td></tr>'; }).join('') +
+      '<tr class="tot"><td>' + t('owTotDrv') + '</td><td></td><td></td><td>' + eurc(T.drv) + '</td></tr><tr><td>' + t('owContr') + '</td><td></td><td></td><td><b>' + eurc(OW.contr ? T.drv * R[6] / 100 : 0) + '</b></td></tr></tbody></table></div>' +
+      '<div class="m-panel ow-tb"><h4>' + t('owDispT') + '</h4><table><tbody><tr><td>' + t('owDispN') + '</td><td><b>6</b></td></tr><tr><td>' + t('owSal') + '</td><td><b>' + eurc(T.disp) + '</b></td></tr><tr><td>' + t('owContr') + '</td><td><b>' + eurc(OW.contr ? T.disp * R[6] / 100 : 0) + '</b></td></tr></tbody></table></div></div>';
+    h += '<div class="m-panel ow-rates" data-ows="rates"><h4>' + t('owRatesT') + '</h4><div class="ow-rg">' + RT.map(function (n, i) {
+      var pc = i === 4 || i === 6 || i === 7, v = pc ? nf(R[i], 0) + ' %' : eurc(R[i]);
+      return '<div class="ow-r' + (i === 7 && !OW.vat ? ' off' : '') + '"><small>' + n + '</small><span><button type="button" data-ow-act="rate" data-v="' + i + ',-1" aria-label="−">−</button><b data-ow-rate="' + i + '">' + v + '</b><button type="button" data-ow-act="rate" data-v="' + i + ',1" aria-label="+">+</button></span></div>';
+    }).join('') + '</div></div>';
+    var V = t('owVeh'), EX = t('owExp');
+    h += '<div class="ow-two" data-ows="costs"><div class="m-panel ow-tb"><h4>' + t('owVehT') + '<span class="ow-btns"><button type="button" class="wr-upbtn" data-ow-act="addcosts">' + t('owMonthly') + '</button></span></h4>' +
+      (OW.veh.length ? '<table><tbody>' + OW.veh.map(function (v, i) { return '<tr class="' + (v.isNew ? 'add-in' : '') + '"><td>' + V[v.k] + '<small class="blk">' + (v.n ? t('owVehN', { n: v.n }) : t('owRows', { n: v.rows })) + '</small></td><td><b>' + eurc(v.amount * (per.months || (per.days.length / owDays().length))) + '</b></td></tr>'; }).join('') + '<tr class="tot"><td>' + t('owTotVeh') + '<small class="blk">' + t('owNoFuel') + '</small></td><td>' + eurc(T.veh) + '</td></tr></tbody></table>' : '<p class="cp-empty at-wait">' + t('owNoVeh') + '</p>') + '</div>' +
+      '<div class="m-panel ow-tb"><h4>' + t('owExpT') + '<span class="ow-btns"><button type="button" class="wr-upbtn" data-ow-act="addexp">+ ' + t('owAddExp') + '</button></span></h4>' +
+      (OW.exp.length ? '<table><tbody>' + OW.exp.map(function (v) { return '<tr class="' + (v.isNew ? 'add-in' : '') + '"><td>' + EX[v.k] + '</td><td><b>' + eurc(v.amount * (per.months || (per.days.length / owDays().length))) + '</b></td></tr>'; }).join('') + '</tbody></table>' : '<p class="cp-empty at-wait">' + t('owNoExp') + '</p>') + '</div></div>';
+    h += '<div class="m-panel ow-chp" data-ows="days"><h4>' + t('owChartT') + '</h4>' + owChart(T, per) + '<p class="ow-tip" data-ow-tip>' + t('owHoverHint') + '</p><div class="wr-leg"><span style="--c:#2F6BFF">' + t('owLeg')[0] + '</span><span class="sq" style="--c:#C3CBDA">' + t('owLeg')[1] + '</span><span class="sq" style="--c:#1E9E5A">' + t('owLeg')[2] + '</span></div></div>';
+    if (!per.months) h += '<div class="m-panel ow-tb ow-days" data-ows="days"><h4>' + t('owDaysT') + ' <span class="m-cnt">' + per.days.length + '</span></h4><table><thead><tr>' + t('owDayCols').map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      T.rows.slice().reverse().slice(0, 10).map(function (x) { return '<tr class="' + (x.d.sun ? 'sunr' : '') + '"><td><b>' + lday(x.d.dt, { weekday: 'long' }) + '</b><small class="blk">' + ddmm(x.d.dt) + '</small></td><td>' + eurc(x.rev) + '</td><td>' + eurc(x.cost) + '</td><td class="' + (x.left >= 0 ? 'pos' : 'neg') + '">' + (x.left < 0 ? '−' : '') + eurc(Math.abs(x.left)) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    OW.rowsCache = per.months ? null : T.rows; OW.monthsCache = per.months ? true : null;
+    return h + '</div>';
+  }
+  var owZ = document.getElementById('ow-z'), owScroll = document.getElementById('ow-scroll'), owStepsEl = document.getElementById('ow-steps');
+  function owTween(el) {
+    var a = Number(el.dataset.from), b = Number(el.dataset.to), f = el.dataset.fmt;
+    if (a === b || reduce) return;
+    var t0 = performance.now();
+    el.classList.add('chg');
+    (function st(now) { var k = Math.min(1, (now - t0) / 700), e = 1 - Math.pow(1 - k, 3), v = a + (b - a) * e; el.textContent = f === 'h' ? nf(v, 1) + ' h' : eurc(v); if (k < 1) requestAnimationFrame(st); else setTimeout(function () { el.classList.remove('chg'); }, 400); })(t0);
+  }
+  function owRender() {
+    if (!owZ) return;
+    var keep = owScroll.scrollTop;
+    owZ.innerHTML = '<div class="m ow-m">' + owHtml() + '</div>';
+    owScroll.scrollTop = keep;
+    owZ.querySelectorAll('[data-ow]').forEach(owTween);
+    owMark();
+    OW.veh.forEach(function (v) { v.isNew = false; }); OW.exp.forEach(function (v) { v.isNew = false; });
+  }
+  function owMark() { var id = t('owSteps')[OW.step][0]; owZ.querySelectorAll('[data-ows]').forEach(function (el) { el.classList.toggle('ow-on', el.dataset.ows === id); }); }
+  function owFit() { if (owZ) owZ.style.zoom = Math.max(.56, Math.min(1, owScroll.clientWidth / 1180)); } // phones keep a readable size and scroll sideways
+  function owSteps() {
+    var S = t('owSteps');
+    owStepsEl.innerHTML = S.map(function (x, i) { return '<li class="' + (i === OW.step ? 'on' + (OW.auto ? ' auto' : '') : '') + '"><button type="button" data-ows-i="' + i + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(x[1]) + '</span><span class="prog" style="--dur:' + DUR + 'ms"></span></button></li>'; }).join('') +
+      '<li class="ow-desc">' + esc(S[OW.step][2]) + '</li>';
+  }
+  function owGo(i, user) {
+    OW.step = i; owSteps(); owMark();
+    var el = owZ.querySelector('[data-ows="' + t('owSteps')[i][0] + '"]');
+    if (el) { var top = el.getBoundingClientRect().top - owScroll.getBoundingClientRect().top + owScroll.scrollTop - 14; owScroll.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' }); }
+    if (!user && OW.auto) {
+      var id = t('owSteps')[i][0], tok = ++OW.tok;
+      if (id === 'rates') setTimeout(function () { if (tok === OW.tok && OW.auto) owAct('rate', '0,1'); }, 2200);
+      if (id === 'costs' && !OW.veh.length) setTimeout(function () { if (tok === OW.tok && OW.auto) owAct('addcosts'); }, 1800);
+    }
+    if (user && window.innerWidth <= 980) { var b = owStepsEl.querySelector('.on button'); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); }
+    owSched();
+  }
+  function owSched() { clearTimeout(OW.timer); if (!OW.auto || !OW.inView) return; OW.timer = setTimeout(function () { owGo((OW.step + 1) % t('owSteps').length); }, DUR); }
+  function owStop() { OW.auto = false; clearTimeout(OW.timer); OW.tok++; var a = owStepsEl.querySelector('.auto'); if (a) a.classList.remove('auto'); }
+  function owAct(act, v) {
+    if (act === 'mode') OW.mode = v;
+    else if (act === 'per') OW.per = Number(v);
+    else if (act === 'contr') OW.contr = !OW.contr;
+    else if (act === 'vat') OW.vat = !OW.vat;
+    else if (act === 'topic') OW.topic = OW.topic === Number(v) ? -1 : Number(v);
+    else if (act === 'rate') { var q = v.split(','), i = Number(q[0]); OW.rates[i] = Math.max(0, Math.round((OW.rates[i] + OW_STEP[i] * Number(q[1])) * 100) / 100); if (i === 7 && !OW.vat) OW.vat = true; }
+    else if (act === 'addcosts') {
+      if (OW.veh.length) return;
+      var k = 0, tok = ++OW.tok;
+      (function next() { if (tok !== OW.tok && OW.auto === false && k === 0) return; if (k >= OW_VEH.length) return; var c = OW_VEH[k++]; OW.veh.push({ k: c[0], n: c[1], rows: c[1] ? 0 : 2 + k, amount: c[1] ? c[1] * c[2] : c[2], isNew: true }); owRender(); setTimeout(next, reduce ? 0 : 420); })();
+      setTimeout(function () { if (!OW.exp.length) owAct('addexp'); }, reduce ? 0 : 2800);
+      return;
+    }
+    else if (act === 'addexp') { if (OW.exp.length >= OW_EXP.length) return; var j = OW.exp.length; OW.exp.push({ k: j, amount: OW_EXP[j], isNew: true }); if (j === 0) { owRender(); setTimeout(function () { owAct('addexp'); }, reduce ? 0 : 380); return; } if (j < 3) setTimeout(function () { owAct('addexp'); }, reduce ? 0 : 380); }
+    owRender();
+  }
+  if (owZ) {
+    owZ.addEventListener('click', function (e) { var b = e.target.closest('[data-ow-act]'); if (!b) return; owStop(); owAct(b.dataset.owAct, b.dataset.v); });
+    owZ.addEventListener('mouseover', function (e) {
+      var g = e.target.closest('.ow-bar'), tip = owZ.querySelector('[data-ow-tip]'); if (!g || !tip) return;
+      owZ.querySelectorAll('.ow-bar.hv').forEach(function (x) { x.classList.remove('hv'); }); g.classList.add('hv');
+      var x = OW.rowsCache && OW.rowsCache[Number(g.dataset.i)], L = t('owLeg');
+      if (x) tip.innerHTML = '<b>' + ddmm(x.d.dt) + '</b> · ' + L[0] + ': <b>' + eurc(x.rev) + '</b> · ' + L[1] + ': <b>' + eurc(x.cost) + '</b> · ' + L[2] + ': <b class="' + (x.left >= 0 ? 'pos' : 'neg') + '">' + (x.left < 0 ? '−' : '') + eurc(Math.abs(x.left)) + '</b>';
+    });
+    owStepsEl.addEventListener('click', function (e) { var b = e.target.closest('[data-ows-i]'); if (!b) return; owStop(); owGo(Number(b.dataset.owsI), true); });
+    new IntersectionObserver(function (en) { OW.inView = en[0].isIntersecting; if (OW.inView) { owSteps(); owSched(); } else clearTimeout(OW.timer); }, { threshold: .3 }).observe(document.getElementById('owners'));
+    if ('ResizeObserver' in window) new ResizeObserver(owFit).observe(owScroll); else window.addEventListener('resize', owFit);
+  }
+
   // ------------------------------------------------------------------ Equipment: animated story (print → stick → scan → driver → sign → Board → found)
   var eq = { s: 0, item: 0, loop: 0, auto: !reduce, inView: false, timer: null, DUR: [4200, 3800, 4800, 4000, 5400, 5800, 6200] };
   var EQ_ITEMS = [
@@ -2615,6 +2785,7 @@
   eqBuild();
   eqGo(0, true);
   if (mock2) { p2Render(); p2Focus('capweeks', true, true); p2Ind(); }
+  if (owZ) { owRender(); owFit(); owSteps(); }
   if (!reduce) {
     countUp(document.getElementById('hv-count'), liveDelivered === undefined ? 8412 : liveDelivered, fmt, 1600);
     countUp(document.querySelector('.hv-num'), 64, String, 1400);
