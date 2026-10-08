@@ -1,6 +1,6 @@
-# LANU presentation website
+# Andera presentation website
 
-Static website (HTML + CSS + JS, no build step) presenting LANU Board, LANU App and LANU MDM to companies that may buy them.
+Static website (HTML + CSS + JS, no build step) presenting Andera Board, Andera App and Andera MDM to companies that may buy them.
 Languages: English and German (switch top right; first visit follows the browser language, choice is remembered).
 
 ## Run locally
@@ -23,8 +23,8 @@ No real driver data and no screenshots of the real app are used.
 - [ ] Contact details (email, phone) in `index.html` — currently placeholders in [brackets]
 - [ ] Connect the contact form (e.g. Formspree, or the host's form service). Right now it only validates and shows a thank-you message.
 - [ ] Imprint (Impressum) and Privacy (Datenschutz) pages — required in Germany
-- [ ] LANU App and LANU MDM descriptions and sections
-- [ ] Domain shown in the browser frame (`board.lanu.app`) — replace with the real one or remove
+- [ ] Andera App and Andera MDM descriptions and sections
+- [ ] Domain shown in the browser frame (`board.andera.app`) — replace with the real one or remove
 
 ## Hosting
 Any static host works (Netlify, Vercel, Cloudflare Pages, GitHub Pages, or a classic web host via FTP): upload the contents of this folder.

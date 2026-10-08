@@ -1,4 +1,4 @@
-/* LANU presentation website — dark, futuristic */
+/* Andera presentation website — dark, futuristic */
 :root{
   --bg:#060D1B; --bg-2:#0A1426; --navy:#0C1B35; --surface:#0E1B33; --surface-2:#122343;
   --line:rgba(160,190,255,.12); --line-2:rgba(160,190,255,.2);
@@ -344,7 +344,7 @@ a.prod:hover{transform:translateY(-4px)}
 .van{position:absolute;left:340px;top:0;width:420px;height:520px;opacity:0;transition:opacity .7s;border-left:12px solid #263147;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 2px,transparent 2px 46px) 0 340px/100% 180px no-repeat,linear-gradient(180deg,#1A2335 0%,#111A2B 62%,#0B111D 100%)}
 .s7 .van{opacity:1}
 .van-chip{position:absolute;top:18px;right:20px;padding:6px 14px;border-radius:999px;background:#FEF0C7;color:#93370D;font-weight:700;font-size:12px}
-/* phone with the LANU App */
+/* phone with the Andera App */
 .ph{position:absolute;left:40px;top:14px;z-index:5;width:252px;height:492px;padding:10px;border-radius:42px;background:#0E1116;box-shadow:0 40px 80px rgba(0,0,0,.55),inset 0 0 0 2px #2A303A;transform:translateX(-380px);opacity:0;transition:transform .8s var(--ease),opacity .5s}
 .s3 .ph,.s4 .ph,.s5 .ph{transform:none;opacity:1}
 .s7 .ph{transform:none;opacity:1;transition-delay:.7s}
@@ -1152,7 +1152,7 @@ a.prod:hover{transform:translateY(-4px)}
 .fl-v.flip svg{transform:scaleX(-1)}
 .fl-v.ang-l{transform:rotateY(32deg) scale(.92)}.fl-v.ang-r{transform:rotateY(-32deg) scale(.92)}.fl-v.ang-r2{transform:rotateY(38deg) scale(.88)}.fl-v.ang-l2{transform:rotateY(-38deg) scale(.88)}
 .fl-day{display:flex;flex-direction:column;align-items:flex-start;gap:8px}.fl-day b{font-size:14px}.fl-day>span:nth-child(3){color:#3A4459;font-size:12px}
-/* LANU App overlay: driver takes the vehicle photos */
+/* Andera App overlay: driver takes the vehicle photos */
 .fa-wrap{position:absolute;top:24px;left:50%;width:820px;margin-left:-410px;display:flex;align-items:center;gap:40px;animation:fadeBack .4s both}
 .fa-ph{flex:none;width:280px;height:560px;padding:10px;border-radius:42px;background:#0E1116;box-shadow:0 40px 80px rgba(0,0,0,.5),inset 0 0 0 2px #2A303A}
 .fa-scr{position:relative;width:100%;height:100%;border-radius:32px;overflow:hidden;background:#F4F6FA;font-size:11px}
@@ -1221,7 +1221,7 @@ a.prod:hover{transform:translateY(-4px)}
 
 @media (prefers-reduced-motion:reduce){.hero-slide{transform:none!important;filter:none!important}*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}[data-reveal]{opacity:1;transform:none}.hero .h1 .w,.hero h1 .w{opacity:1;transform:none;filter:none}.ticker-track{flex-wrap:wrap;width:auto}}
 
-/* hero slide 3: LANU App — driver phone and office phone (violet accent) */
+/* hero slide 3: Andera App — driver phone and office phone (violet accent) */
 .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(900px 520px at 72% 42%,rgba(139,92,246,.2),transparent 60%);opacity:0;transition:opacity 1s ease;pointer-events:none}
 .hero.app::after{opacity:1}
 .hs-app .h1 .hl{background-image:linear-gradient(100deg,#fff 0%,#DDD6FE 30%,#8B5CF6 50%,#fff 62%,#DDD6FE 80%,#8B5CF6 100%)}
@@ -1249,7 +1249,7 @@ a.prod:hover{transform:translateY(-4px)}
 .ha-ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .ha-top{position:relative;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .ha-logo{display:flex;align-items:center;gap:6px;font:800 13px var(--display);letter-spacing:.06em}
-.ha-logo svg{width:22px;height:22px;padding:3px;border-radius:6px;background:#0B1B34;fill:none;stroke:#fff;stroke-width:1.6;stroke-linejoin:round}
+.ha-logo img{width:24px;height:auto}
 .ha-bell{width:18px;height:18px}
 .ha-bdg{position:absolute;right:-2px;top:-3px;width:9px;height:9px;border-radius:50%;background:#E5484D;border:2px solid #F2F4F8;transform:scale(0);transition:transform .3s var(--ease)}
 .ha-hi{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -1353,7 +1353,7 @@ a.prod:hover{transform:translateY(-4px)}
 @keyframes haGo2{0%{left:var(--x0);top:var(--y0);opacity:0;transform:translate(-50%,-50%) scale(.5)}15%{opacity:1;transform:translate(-50%,-50%) scale(1)}50%{top:calc(var(--y0) - 50px)}85%{opacity:1}100%{left:var(--x1);top:var(--y1);opacity:0;transform:translate(-50%,-50%) scale(.7)}}
 @media (max-width:520px){.hv3{--s:.4;--bs:.5;--ov:2px;height:410px}.ha-d{top:150px}.ha-o{top:134px}.ha-lbl{font-size:24px;top:-28px}.hb .ha-lbl{font-size:20px}.ha-fly{font-size:11px}}
 
-/* LANU Board "App admin" window behind the phones: receives what the app sends and sends things back */
+/* Andera Board "App admin" window behind the phones: receives what the app sends and sends things back */
 .hb{position:absolute;top:10px;left:calc(50% - var(--bw) / 2);width:680px;transform-origin:0 0;transform:scale(var(--bs));z-index:0}
 .hb .ha-lbl{top:-17px}.hb .ha-lbl i{background:#5CC8FF;box-shadow:0 0 10px #5CC8FF}
 .hb-scr{height:400px;border-radius:14px;overflow:hidden;background:#F3F5F9;color:#0B1B34;font-family:var(--body);box-shadow:0 0 0 1.5px rgba(92,200,255,.35),0 30px 70px rgba(0,0,0,.5),0 0 60px rgba(59,155,255,.18);transition:box-shadow .5s}

@@ -1,4 +1,4 @@
-/* LANU presentation website — language, hero, interactive Operations tour, contact form. No dependencies. */
+/* Andera presentation website — language, hero, interactive Operations tour, contact form. No dependencies. */
 (function () {
   'use strict';
   var T = window.LANU_I18N;
@@ -36,8 +36,8 @@
     document.querySelectorAll('[data-i18n-idx]').forEach(function (el) { el.textContent = t(el.dataset.i18nIdx)[Number(el.dataset.k)]; });
     document.querySelectorAll('[data-i18n-tpl]').forEach(function (el) { el.textContent = t(el.dataset.i18nTpl, { n: el.dataset.n }); });
     document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
-    document.getElementById('tour-kicker').textContent = 'LANU Board · ' + t(PAGES[page].name);
-    document.title = lang === 'de' ? 'LANU Board – Ihr ganzer Liefertag auf einem Bildschirm' : 'LANU Board — your whole delivery day on one screen';
+    document.getElementById('tour-kicker').textContent = 'Andera Board · ' + t(PAGES[page].name);
+    document.title = lang === 'de' ? 'Andera Board – Ihr ganzer Liefertag auf einem Bildschirm' : 'Andera Board — your whole delivery day on one screen';
   }
   document.querySelectorAll('.lang button').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -760,7 +760,7 @@
   function wrSendInner(rows) {
     var wi = weekInfo(wrWeek - 1), f = wrPrev === 'img' ? 'scorecard-' + wi.n + '.png' : 'scorecard-' + wi.n + '.pdf';
     var prev = '';
-    if (wrPrev === 'img') prev = '<div class="wr-prev img"><div class="wr-pi"><b>LANU · ' + t('daWeek', { n: wi.n }) + '</b>' + rows.slice(0, 5).map(function (x, i) { return '<span><i>' + (i + 1) + '</i>' + esc(x.name) + '<em>' + nf(x.total, 2) + '%</em></span>'; }).join('') + '<small>Fantastic Plus · Fantastic · Great · Fair</small></div><span class="wr-saved">✓ ' + t('wrSaved', { f: f }) + '</span></div>';
+    if (wrPrev === 'img') prev = '<div class="wr-prev img"><div class="wr-pi"><b>ANDERA · ' + t('daWeek', { n: wi.n }) + '</b>' + rows.slice(0, 5).map(function (x, i) { return '<span><i>' + (i + 1) + '</i>' + esc(x.name) + '<em>' + nf(x.total, 2) + '%</em></span>'; }).join('') + '<small>Fantastic Plus · Fantastic · Great · Fair</small></div><span class="wr-saved">✓ ' + t('wrSaved', { f: f }) + '</span></div>';
     if (wrPrev === 'pdf') prev = '<div class="wr-prev pdf"><div class="wr-pages"><span></span><span></span><span></span></div><span class="wr-saved">✓ ' + t('wrSaved', { f: f }) + ' · ' + t('wrPages', { n: rows.length + 1 }) + '</span></div>';
     return '<div class="m-ph"><h4>' + t('wrSend') + '</h4></div>' +
       '<button type="button" class="wr-dl' + (wrPrev === 'img' ? ' on' : '') + '" data-wr-act="img"><span class="wr-di">' + WR_IMG + '</span><span><b>' + t('wrImg') + '</b><small>' + t('wrImgNote') + '</small></span></button>' +
@@ -1694,10 +1694,10 @@
   function flApp() {
     var c = flData(), x = c.ph[p2.fl.appRow], A = t('flFromA'), S = t('flAppSteps'), first = x.drv.split(' ')[0];
     return '<div class="rc-back"></div><div class="fa-wrap" data-p="flapp"><div class="fa-ph"><div class="fa-scr st-home" data-fa>' +
-      '<div class="fa-home"><div class="fa-top"><b>LANU</b><i></i></div><div class="fa-req">↗ <span><b>' + t('flAppT') + '</b><small>LANU App</small></span></div><div class="fa-hi">' + avatar(x.drv, 40) + '<span><small>' + lday(TODAY, { weekday: 'long', day: 'numeric', month: 'long' }) + '</small><b>' + t('flHi', { n: esc(first) }) + '</b></span></div>' +
+      '<div class="fa-home"><div class="fa-top"><b>ANDERA</b><i></i></div><div class="fa-req">↗ <span><b>' + t('flAppT') + '</b><small>Andera App</small></span></div><div class="fa-hi">' + avatar(x.drv, 40) + '<span><small>' + lday(TODAY, { weekday: 'long', day: 'numeric', month: 'long' }) + '</small><b>' + t('flHi', { n: esc(first) }) + '</b></span></div>' +
       '<div class="fa-score"><small>' + t('flScore', { n: weekInfo(-1).n }) + '</small><b>91.4</b><span>' + t('flRank') + ' #8</span></div><div class="fa-two"><span><small>' + t('flDaysW') + '</small><b>6</b></span><span><small>' + t('flRescue') + '</small><b>12</b></span></div>' +
       '<div class="fa-veh">' + FL_APPVAN + '<span><small>' + t('flYourVeh') + '</small><b>' + x.v.plate + '</b></span>›<i class="tap"></i></div></div>' +
-      '<div class="fa-my"><div class="fa-top"><b>LANU</b><small>' + t('flMyVeh') + '</small></div><h4>' + t('flMyVeh') + '</h4><small class="fa-as">' + t('flAssigned', { p: x.v.plate }) + '</small>' +
+      '<div class="fa-my"><div class="fa-top"><b>ANDERA</b><small>' + t('flMyVeh') + '</small></div><h4>' + t('flMyVeh') + '</h4><small class="fa-as">' + t('flAssigned', { p: x.v.plate }) + '</small>' +
       '<div class="fa-card">' + FL_APPVAN + '<b>' + x.v.mk.join(' ') + '</b><span class="m-pill g">' + t('flGood') + '</span><small>' + t('flPicked', { t: hm(x.t0 - 20) }) + '</small><u>' + t('flNotYours') + '</u></div>' +
       '<div class="fa-btn">📷 ' + t('flPhotoBtn') + '<i class="tap"></i></div>' +
       '<div class="fa-stepc"><div class="fa-view" data-fa-view><img src="' + flPhoto(1) + '" alt=""></div><p data-fa-txt>' + t('flStepN', { n: 1, a: A[1] }) + '</p><div class="fa-sb"><span>' + t('flCancel') + '</span><b>' + t('flTakeBtn') + '<i class="tap"></i></b></div><span class="fa-flash"></span></div></div>' +
@@ -1939,7 +1939,7 @@
     mock2.innerHTML = topBar(t(P2().name)) + p2Nav() + '<div class="m-body">' + R[p2.tab]() + '</div>';
     p2.hi = null;
     if (p2.tab === 'gp') { gpDraw(p2.gps.anim); p2.gps.anim = false; }
-    document.getElementById('url2').textContent = 'board.lanu.app/' + P2().base + '/' + P2().url[p2.tab];
+    document.getElementById('url2').textContent = 'board.andera.app/' + P2().base + '/' + P2().url[p2.tab];
     p2Layout();
   }
   function p2Layout() { mock2.style.transform = 'translate(' + (-p2.cam.x) + 'px,' + (-p2.cam.y) + 'px) scale(' + p2.cam.z + ')'; }
@@ -2278,9 +2278,9 @@
   // ------------------------------------------------------------------ Equipment: animated story (print → stick → scan → driver → sign → Board → found)
   var eq = { s: 0, item: 0, loop: 0, auto: !reduce, inView: false, timer: null, DUR: [4200, 3800, 4800, 4000, 5400, 5800, 6200] };
   var EQ_ITEMS = [
-    { key: 'jacket', code: 'LANU-U-000012', tx: 104, ty: 92 },
-    { key: 'shoes', code: 'LANU-I-000009', tx: 46, ty: 180 },
-    { key: 'phone', code: 'LANU-T-000001', tx: 76, ty: 150 }
+    { key: 'jacket', code: 'ANDERA-U-000012', tx: 104, ty: 92 },
+    { key: 'shoes', code: 'ANDERA-I-000009', tx: 46, ty: 180 },
+    { key: 'phone', code: 'ANDERA-T-000001', tx: 76, ty: 150 }
   ];
   var eqStage = document.getElementById('eq-stage'), eqWrap = document.getElementById('eq-wrap'), eqSteps = document.getElementById('eq-steps');
   function qrSvg(seed) {
@@ -2295,11 +2295,11 @@
   var EQ_ART = {
     jacket: '<svg viewBox="0 0 280 340"><path d="M92 40l28-12q20 16 40 0l28 12 62 40 12 120-34 6-6-86v200H58V120l-6 86-34-6 12-120z" fill="#163057"/><path d="M58 120h164v8H58z" fill="#0F2443"/>' +
       '<path d="M120 28q20 34 40 0l-8-4q-12 14-24 0z" fill="#0C1B35"/><path d="M140 46v274" stroke="#0C1B35" stroke-width="3"/><path d="M58 236h164v12H58zM58 262h164v12H58z" fill="#D7E1F0" opacity=".85"/>' +
-      '<path d="M24 170l32 4-2 12-32-4zM256 170l-32 4 2 12 32-4z" fill="#D7E1F0" opacity=".85"/><rect x="70" y="76" width="44" height="12" rx="3" fill="#2F6BFF"/><text x="92" y="86" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" font-family="sans-serif">LANU</text></svg>',
+      '<path d="M24 170l32 4-2 12-32-4zM256 170l-32 4 2 12 32-4z" fill="#D7E1F0" opacity=".85"/><rect x="70" y="76" width="44" height="12" rx="3" fill="#2F6BFF"/><text x="92" y="85.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#fff" font-family="sans-serif">ANDERA</text></svg>',
     shoes: '<svg viewBox="0 0 280 340"><defs><linearGradient id="shU" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A515C"/><stop offset="1" stop-color="#262A31"/></linearGradient><linearGradient id="shT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#444B56"/><stop offset="1" stop-color="#1C1F25"/></linearGradient><linearGradient id="shM" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9EDF2"/><stop offset="1" stop-color="#B9C1CC"/></linearGradient></defs><ellipse cx="142" cy="286" rx="130" ry="9" fill="#000" opacity=".4"/><path d="M24 246C16 222 18 190 30 162c3-4 5-6 8-6 18-8 36-6 52 6l8 2c4-14 10-26 20-34 8-8 22-8 26 2l48 52c22 8 48 16 64 30 10 10 10 24 6 32z" fill="url(#shU)"/><path d="M24 246C16 222 18 196 26 176c14 4 28 20 34 44l2 26z" fill="#2B3038"/><path d="M38 156c18-8 36-6 52 6l8 2-2 10c-10-2-22-10-38-12-10 0-18 4-26 10l-2-10c3-4 5-6 8-6z" fill="#626A76"/><path d="M36 166c8-5 15-7 22-7 15 1 26 8 38 11" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="1.3" stroke-dasharray="3 3"/><path d="M98 164c4-14 10-26 20-34 8-8 22-8 26 2l-8 10-32 26z" fill="#555D69"/><path d="M118 146l18-14 62 48-10 12z" fill="#1E2228"/><g stroke="#D3D9E2" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M134.1 135.4L125.9 146.6M149.1 146.4L140.9 157.6M164.1 157.4L155.9 168.6M179.1 168.4L170.9 179.6M194.1 179.4L185.9 190.6"/></g><g fill="#8D96A4"><circle cx="134.1" cy="135.4" r="1.8"/><circle cx="125.9" cy="146.6" r="1.8"/><circle cx="149.1" cy="146.4" r="1.8"/><circle cx="140.9" cy="157.6" r="1.8"/><circle cx="164.1" cy="157.4" r="1.8"/><circle cx="155.9" cy="168.6" r="1.8"/><circle cx="179.1" cy="168.4" r="1.8"/><circle cx="170.9" cy="179.6" r="1.8"/><circle cx="194.1" cy="179.4" r="1.8"/><circle cx="185.9" cy="190.6" r="1.8"/></g><path d="M262 246c4-8 4-22-6-32-12-12-30-18-44-22-8 14-12 34-8 54z" fill="url(#shT)"/><path d="M216 200c16 4 30 12 38 24" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="5" stroke-linecap="round"/><path d="M204 246c-4-20 0-40 8-54" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="1.3" stroke-dasharray="3 3"/><path d="M21 234h243v12H23z" fill="#1A1D22"/><path d="M21 233h242" stroke="#F5A623" stroke-width="2.5"/><rect x="29" y="146" width="9" height="20" rx="3" fill="#F5A623" transform="rotate(-12 33 156)"/><path d="M18 246h244c6-1 8 2 7 6-1 4-3 6-5 6H18c-4-3-4-9 0-12z" fill="url(#shM)"/><path d="M18 258h248c3 5 0 12-8 13H28c-10-1-13-8-10-13z" fill="#15171B"/><path d="M34 262v8M46 262v8M58 262v8M70 262v8M82 262v8M94 262v8M106 262v8M118 262v8M130 262v8M142 262v8M154 262v8M166 262v8M178 262v8M190 262v8M202 262v8M214 262v8M226 262v8M238 262v8M250 262v8" stroke="#2E3239" stroke-width="4" stroke-linecap="round"/><path d="M22 271h236" stroke="#0B0C0E" stroke-width="2"/></svg>',
     phone: '<svg viewBox="0 0 280 340"><rect x="70" y="20" width="140" height="290" rx="22" fill="#1B2029"/><rect x="78" y="28" width="124" height="274" rx="16" fill="#252B35"/>' +
       '<rect x="92" y="44" width="40" height="40" rx="12" fill="#14181F"/><circle cx="104" cy="56" r="7" fill="#0B0D11" stroke="#3A4250" stroke-width="2"/><circle cx="120" cy="72" r="5" fill="#0B0D11" stroke="#3A4250" stroke-width="2"/>' +
-      '<rect x="62" y="96" width="8" height="40" rx="3" fill="#F5A623"/><text x="140" y="280" text-anchor="middle" font-size="11" font-weight="800" fill="#4B5565" font-family="sans-serif">LANU</text></svg>'
+      '<rect x="62" y="96" width="8" height="40" rx="3" fill="#F5A623"/><text x="140" y="280" text-anchor="middle" font-size="11" font-weight="800" fill="#4B5565" font-family="sans-serif">ANDERA</text></svg>'
   };
   var EQ_ICO = {
     jacket: '<svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M8 3l4 3 4-3 5 3-2 6-2-1v10H7V11l-2 1-2-6z"/></svg>',
@@ -2308,7 +2308,7 @@
   };
   var SIG = 'M14 64c14-34 30 22 44-6s22-36 30-10 8 40 26 8 30-34 40-6 12 22 30 4 22-14 34-4';
   function eqLabel(it, name) {
-    return '<div class="lbl"><span class="lbl-qr">' + qrSvg(hashStr(it.code)) + '</span><span class="lbl-t"><b>LANU</b><code>' + it.code + '</code><small>' + esc(name) + '</small></span></div>';
+    return '<div class="lbl"><span class="lbl-qr">' + qrSvg(hashStr(it.code)) + '</span><span class="lbl-t"><b>ANDERA</b><code>' + it.code + '</code><small>' + esc(name) + '</small></span></div>';
   }
   function eqBuild() {
     if (!eqStage) return;
@@ -2318,7 +2318,7 @@
     var lbl = eqLabel(it, name), ico = '<span class="ap-ico">' + EQ_ICO[it.key] + '</span>';
     eqStage.style.setProperty('--tx', it.tx + 'px'); eqStage.style.setProperty('--ty', it.ty + 'px');
     function head(title, ti) {
-      return '<div class="ap-h"><span>‹</span><div><small>LANU</small><b>' + title + '</b></div><i></i></div>' + (ti === undefined ? '' :
+      return '<div class="ap-h"><span>‹</span><div><small>ANDERA</small><b>' + title + '</b></div><i></i></div>' + (ti === undefined ? '' :
         '<div class="ap-tabs">' + tabs.map(function (x, k) { return '<span' + (k === ti ? ' class="on"' : '') + '>' + x + (k === 0 ? ' <em>1</em>' : '') + '</span>'; }).join('') + '</div>');
     }
     var itemCard = '<div class="ap-card">' + ico + '<div><b>' + esc(name) + '</b><small>' + it.code + '</small></div></div>';
@@ -2333,11 +2333,11 @@
       '<div class="pr"><svg class="pr-back" viewBox="0 0 230 230"><rect x="10" y="0" width="206" height="226" rx="30" fill="#1C2027"/><rect x="24" y="8" width="178" height="40" rx="18" fill="#272C35"/><rect x="208" y="96" width="20" height="44" rx="7" fill="#F5A623" transform="rotate(-8 218 118)"/></svg>' +
       '<div class="lb-fly">' + lbl + '</div>' +
       '<svg class="pr-front" viewBox="0 0 230 230"><path d="M10 58h206v138a30 30 0 0 1-30 30H40a30 30 0 0 1-30-30z" fill="#262B34"/><rect x="34" y="52" width="158" height="9" rx="4.5" fill="#0B0D11"/>' +
-      '<rect x="44" y="128" width="138" height="66" rx="10" fill="#14171C"/><text x="113" y="148" text-anchor="middle" font-size="12" font-weight="800" letter-spacing="2" fill="#E9EFF9" font-family="sans-serif">LANU</text>' +
+      '<rect x="44" y="128" width="138" height="66" rx="10" fill="#14171C"/><text x="113" y="148" text-anchor="middle" font-size="12" font-weight="800" letter-spacing="2" fill="#E9EFF9" font-family="sans-serif">ANDERA</text>' +
       '<circle cx="72" cy="172" r="8" fill="none" stroke="#C8D0DC" stroke-width="2"/><rect class="pr-led" x="100" y="169" width="26" height="6" rx="3"/><rect x="146" y="164" width="16" height="16" rx="3" fill="none" stroke="#C8D0DC" stroke-width="2"/></svg></div>' +
       '<div class="it" style="--tx:' + it.tx + 'px;--ty:' + it.ty + 'px">' + EQ_ART[it.key] + '<div class="lb-on">' + lbl + '</div><span class="pop"></span></div>' +
       '<div class="ow">' + avatar(drv, 30) + '<span><small>' + t('eqOwner') + '</small><b>' + esc(drv) + '</b></span></div>' +
-      '<div class="bd"><div class="bd-bar"><i></i><i></i><i></i><span>board.lanu.app/equipment</span></div><div class="bd-in">' +
+      '<div class="bd"><div class="bd-bar"><i></i><i></i><i></i><span>board.andera.app/equipment</span></div><div class="bd-in">' +
       '<div class="bd-t"><b>' + t('eqEquipment') + '</b><span class="m-livepill"><i></i>' + t('mLive') + '</span></div>' +
       '<div class="bd-k"><div><small>' + t('eqInStock') + '</small><b><s>12</s><span>11</span></b></div><div><small>' + t('eqWith') + '</small><b><s>4</s><span>5</span></b></div><div><small>' + t('eqToCheck') + '</small><b>0</b></div></div>' +
       '<div class="bd-doc"><span class="bd-di"><svg class="ic" width="18" height="18" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></span><div><b>' + doc + ' · ' + t('eqHandover') + '</b><small>' + t('eqSigned', { name: esc(drv) }) + ' · ' + t('eqJustNow') + '</small></div>' +
@@ -2425,7 +2425,7 @@
     typeUrl(PAGES[p].url);
     function swap() {
       page = p; active = PAGES[p].first;
-      document.getElementById('tour-kicker').textContent = 'LANU Board · ' + t(PAGES[p].name);
+      document.getElementById('tour-kicker').textContent = 'Andera Board · ' + t(PAGES[p].name);
       mock.classList.add('nocam');
       renderMock();
       stepsEl.classList.remove('leave'); stepsEl.classList.add('enter');
@@ -2460,12 +2460,12 @@
   }
   var stepsEl = document.getElementById('steps'), nowEl = document.getElementById('step-now');
   var PAGES = {
-    ops: { name: 'pageOps', steps: 'steps', first: 'overview', url: 'board.lanu.app/operations' },
-    da: { name: 'pageDa', steps: 'stepsDa', first: 'kpis', url: 'board.lanu.app/associates' },
-    cp: { name: 'pageCp', steps: 'stepsCp', first: 'kpis', url: 'board.lanu.app/phones' },
-    hs: { name: 'pageHs', steps: 'stepsHs', first: 'kpis', url: 'board.lanu.app/housing' },
-    wr: { name: 'pageWr', steps: 'stepsWr', first: 'upload', url: 'board.lanu.app/reports' },
-    rc: { name: 'pageRc', steps: 'stepsRc', first: 'rckpis', url: 'board.lanu.app/recruiting' }
+    ops: { name: 'pageOps', steps: 'steps', first: 'overview', url: 'board.andera.app/operations' },
+    da: { name: 'pageDa', steps: 'stepsDa', first: 'kpis', url: 'board.andera.app/associates' },
+    cp: { name: 'pageCp', steps: 'stepsCp', first: 'kpis', url: 'board.andera.app/phones' },
+    hs: { name: 'pageHs', steps: 'stepsHs', first: 'kpis', url: 'board.andera.app/housing' },
+    wr: { name: 'pageWr', steps: 'stepsWr', first: 'upload', url: 'board.andera.app/reports' },
+    rc: { name: 'pageRc', steps: 'stepsRc', first: 'rckpis', url: 'board.andera.app/recruiting' }
   };
   var ORDER = ['ops', 'da', 'cp', 'hs', 'wr', 'rc'];
   var page = 'ops';
@@ -2716,7 +2716,7 @@
     if (eurEl && !reduce) { var e2 = ''; for (var q = 0; q < 12; q++) e2 += '<i style="--x:' + Math.floor(Math.random() * 100) + '%;--d:' + (Math.random() * 6).toFixed(2) + 's;--s:' + (0.7 + Math.random() * .8).toFixed(2) + '">€</i>'; eurEl.innerHTML = e2; }
   }
 
-  // ---------- hero slide 3: LANU App, driver phone and office phone (fictional people, drawn avatars, real van photos)
+  // ---------- hero slide 3: Andera App, driver phone and office phone (fictional people, drawn avatars, real van photos)
   var HA = { tm: [], drv: 'Mihai Stan', off: 'Laura Kern', top: ['Elena Marin', 'Lukas Weber', 'Radu Ionescu', 'Jonas Becker', 'Ioana Dinu'] };
   function ha(k, v) { var s = t('ha')[k]; if (v) Object.keys(v).forEach(function (q) { s = s.replace('{' + q + '}', v[q]); }); return s; }
   var HA_IC = {
@@ -2739,7 +2739,7 @@
   function haIc(k, c) { return '<svg viewBox="0 0 24 24" class="ha-ic' + (c ? ' ' + c : '') + '" aria-hidden="true">' + HA_IC[k] + '</svg>'; }
   function haTop(name, admin) {
     var d = new Date(), loc = lang === 'de' ? 'de-DE' : 'en-GB';
-    return '<div class="ha-top"><span class="ha-logo"><svg viewBox="0 0 24 24"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M12 2.5V12l8.5-5M12 12 3.5 7M12 12v9.5"/></svg>LANU</span>' + haIc('bell', 'ha-bell') + '<b class="ha-bdg"></b></div>' +
+    return '<div class="ha-top"><span class="ha-logo"><img src="assets/img/andera-mark.png" alt="">ANDERA</span>' + haIc('bell', 'ha-bell') + '<b class="ha-bdg"></b></div>' +
       '<div class="ha-hi">' + avatar(name, 40) + '<div><small>' + esc(d.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><b>' + esc(ha('hi', { n: name.split(' ')[0] })) + '</b>' + (admin ? '<em>' + ha('admin') + '</em>' : '') + '</div></div>';
   }
   function haBuild() {
@@ -2787,7 +2787,7 @@
     for (i = 0; i < 4; i++) o += '<span' + (i === 0 ? ' class="on"' : '') + '>' + haIc(NI[i]) + (i === 1 ? '<b id="ha-tb">1</b>' : '') + esc(nav[i]) + '</span>';
     o += '</nav>';
     var bt = ha('bTabs'), pmn = new Date(); pmn.setDate(1); pmn.setMonth(pmn.getMonth() - 1); pmn = pmn.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long' });
-    var bd = '<div class="hb-bar"><i></i><i></i><i></i><span>board.lanu.app/app-admin</span></div><div class="hb-in">' +
+    var bd = '<div class="hb-bar"><i></i><i></i><i></i><span>board.andera.app/app-admin</span></div><div class="hb-in">' +
       '<div class="hb-h"><div><b>' + ha('bTitle') + '</b><small>' + esc(new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '</small></div><span class="hb-sync"><i></i>' + ha('bSync') + '</span></div>' +
       '<div class="hb-tabs">' + bt.map(function (x, k) { return '<span' + (k === 0 ? ' class="on"' : '') + '>' + esc(x) + (k === 4 ? '<em id="hb-tbd">2</em>' : '') + '</span>'; }).join('') + '</div>' +
       '<div class="hb-warn">' + haIc('warn') + '<b id="hb-need">' + esc(ha('bNeed', { n: 2 })) + '</b><span>' + ha('bOld') + '</span></div>' +
@@ -2798,7 +2798,7 @@
       '<div class="hb-card"><h6>' + esc(ha('bPay', { m: pmn })) + '</h6><div class="hb-pay"><b id="hb-pn">61</b><span>' + esc(ha('bOf', { n: 75 })) + '</span><i id="hb-pp">81%</i></div><div class="hb-pbar"><i id="hb-pbar" style="width:81%"></i></div>' +
         '<small class="hb-miss">' + ha('bMiss') + '</small><div class="hb-chips"><span id="hb-chip">' + avatar(HA.drv, 14) + esc(HA.drv) + '</span><span>' + avatar('Victor Ene', 14) + 'Victor Ene</span><span>+13</span></div>' +
         '<span class="hb-up" id="hb-up">' + haIc('up') + ha('bUpload') + '</span></div></div></div>';
-    el.innerHTML = '<div class="hb"><span class="ha-lbl"><i></i>LANU Board · ' + ha('bTitle') + '</span><div class="hb-scr">' + bd + '</div></div>' +
+    el.innerHTML = '<div class="hb"><span class="ha-lbl"><i></i>Andera Board · ' + ha('bTitle') + '</span><div class="hb-scr">' + bd + '</div></div>' +
       '<div class="ha-ph ha-d"><span class="ha-lbl"><i></i>' + ha('drv') + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr">' + d + '</div></div></div>' +
       '<div class="ha-ph ha-o"><span class="ha-lbl"><i></i>' + esc(ha('off')) + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr">' + o + '</div></div></div>' +
       '<div class="ha-fly" id="ha-fly">' + haIc('cal') + '<span>' + esc(ha('sent')) + '</span></div>';
