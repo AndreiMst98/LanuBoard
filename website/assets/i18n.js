@@ -2,7 +2,7 @@
 window.LANU_I18N = {
   en: {
     skip: 'Skip to content',
-    navBoard: 'LANU Board', navApp: 'LANU App', navMdm: 'LANU MDM', navContact: 'Contact',
+    navHome: 'Home', navContact: 'Contact',
     ctaDemo: 'Book a demo', ctaSee: 'See it in action',
     heroTitle: 'Your whole delivery day on one screen.',
     hsTabs: ['Your delivery day', 'Every euro, counted', 'One app, two sides'],
@@ -457,7 +457,7 @@ window.LANU_I18N = {
   },
   de: {
     skip: 'Zum Inhalt springen',
-    navBoard: 'LANU Board', navApp: 'LANU App', navMdm: 'LANU MDM', navContact: 'Kontakt',
+    navHome: 'Startseite', navContact: 'Kontakt',
     ctaDemo: 'Demo anfragen', ctaSee: 'Live ansehen',
     heroTitle: 'Ihr ganzer Liefertag auf einem Bildschirm.',
     hsTabs: ['Ihr Liefertag', 'Jeder Euro gezählt', 'Eine App, zwei Seiten'],
