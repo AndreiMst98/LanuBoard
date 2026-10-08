@@ -3252,8 +3252,7 @@
     if (!cv || !cv.getContext) return;
     var ctx = cv.getContext('2d'), W = 0, H = 0, dpr = 1, a = 22, w = 0, N = 22, cx = 0, cy = 0;
     var mouse = { x: -9999, y: -9999, tx: -9999, ty: -9999, last: -1e9 }, running = false, visible = true, raf = 0;
-    var lit = new Float32Array(N * N), cubes = [], parts = [], dust = [], arcs = [], beams = [], rings = [], lastT = 0;
-    var aur = document.getElementById('hero-aur'), actx = aur && aur.getContext('2d'), aurT = -1e9; // aurora: a 96×60 canvas the browser stretches over the hero, redrawn ~8×/s
+    var lit = new Float32Array(N * N), cubes = [], parts = [], dust = [], lastT = 0;
     for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) cubes.push([i, j]);
     cubes.sort(function (p, q) { return (p[0] + p[1]) - (q[0] + q[1]); });
 
@@ -3291,13 +3290,6 @@
       var dt = lastT ? Math.min(50, tm - lastT) : 16; lastT = tm;
       var C1 = mix2(mix2([160, 225, 255], [170, 255, 215], themeK), [205, 190, 255], themeV), C2 = mix2(mix2([92, 200, 255], [52, 225, 160], themeK), [150, 110, 255], themeV);
       var rgb = function (c, al) { return 'rgba(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ',' + al + ')'; };
-      // slow aurora: two soft glows drifting behind the city
-      if (actx && tm - aurT > 120) { aurT = tm; actx.clearRect(0, 0, 96, 60);
-      for (var au = 0; au < 2; au++) {
-        var ax = 96 * (au ? .2 : .78) + Math.sin(tm * .00011 + au * 2.1) * 14, ay = 60 * (au ? .32 : .18) + Math.cos(tm * .00009 + au) * 8, ar = au ? 40 : 48;
-        var ag = actx.createRadialGradient(ax, ay, 0, ax, ay, ar); ag.addColorStop(0, rgb(au ? C2 : HOT, au ? .16 : .2)); ag.addColorStop(1, rgb(au ? C2 : HOT, 0));
-        actx.fillStyle = ag; actx.fillRect(0, 0, 96, 60);
-      } }
       ctx.globalCompositeOperation = 'lighter';
       // drifting light dust with a little parallax
       var mx = (mouse.x - W / 2) / W, my = (mouse.y - H / 2) / H;
@@ -3338,45 +3330,10 @@
         var c1 = mix2(mix2([160, 225, 255], [170, 255, 215], themeK), [205, 190, 255], themeV), c2 = mix2(mix2([92, 200, 255], [52, 225, 160], themeK), [150, 110, 255], themeV);
         gr.addColorStop(0, 'rgba(' + c1.map(Math.round) + ',.95)'); gr.addColorStop(.25, 'rgba(' + c2.map(Math.round) + ',.5)'); gr.addColorStop(1, 'rgba(' + c2.map(Math.round) + ',0)');
         ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(gx, gy, a * .9, 0, 6.2832); ctx.fill();
-        if (P.p >= 1) { var ei = P.horiz ? P.e : P.k, ej = P.horiz ? P.k : P.e; lit[ei * N + ej] = 1; rings.push({ i: ei, j: ej, t: 0 }); parts.splice(q, 1); }
-      }
-      var top = function (i, j) { var pp = pos(i, j); return [pp[0], pp[1] - hs[i * N + j]]; };
-      // light beams rising from a cube now and then
-      for (var bi = beams.length - 1; bi >= 0; bi--) {
-        var B = beams[bi]; B.t += dt / 2600; if (B.t >= 1) { beams.splice(bi, 1); continue; }
-        var bt = top(B.i, B.j), bal = Math.sin(B.t * Math.PI), bh = B.h * (.4 + .6 * Math.min(1, B.t * 2));
-        var bg2 = ctx.createLinearGradient(0, bt[1], 0, bt[1] - bh); bg2.addColorStop(0, rgb(C1, (.55 * bal).toFixed(3))); bg2.addColorStop(1, rgb(C2, 0));
-        ctx.fillStyle = bg2; ctx.fillRect(bt[0] - w * .16, bt[1] - bh, w * .32, bh);
-        ctx.fillStyle = rgb(C1, (.9 * bal).toFixed(3)); ctx.fillRect(bt[0] - .75, bt[1] - bh * .9, 1.5, bh * .9);
-      }
-      // route arcs between buildings: a light flies over the city and lands with a pulse
-      for (var ri = arcs.length - 1; ri >= 0; ri--) {
-        var R = arcs[ri]; R.t += dt / R.d;
-        var A0 = top(R.a[0], R.a[1]), B0 = top(R.b[0], R.b[1]), mxp = (A0[0] + B0[0]) / 2, myp = Math.min(A0[1], B0[1]) - R.lift;
-        var bez = function (k) { var u = 1 - k; return [u * u * A0[0] + 2 * u * k * mxp + k * k * B0[0], u * u * A0[1] + 2 * u * k * myp + k * k * B0[1]]; };
-        var head = Math.min(1, R.t), tail = Math.max(0, head - .35), fade = R.t > 1 ? Math.max(0, 1 - (R.t - 1) * 3) : 1;
-        if (fade <= 0) { arcs.splice(ri, 1); continue; }
-        ctx.setLineDash([2, 6]); ctx.strokeStyle = rgb(C2, (.22 * fade).toFixed(3)); ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(A0[0], A0[1]); ctx.quadraticCurveTo(mxp, myp, B0[0], B0[1]); ctx.stroke(); ctx.setLineDash([]);
-        ctx.beginPath(); for (var sk = 0; sk <= 14; sk++) { var pk = bez(tail + (head - tail) * sk / 14); if (sk) ctx.lineTo(pk[0], pk[1]); else ctx.moveTo(pk[0], pk[1]); }
-        var hp = bez(head), lg = ctx.createLinearGradient(bez(tail)[0], bez(tail)[1], hp[0], hp[1]); lg.addColorStop(0, rgb(C2, 0)); lg.addColorStop(1, rgb(C1, (.9 * fade).toFixed(3)));
-        ctx.strokeStyle = lg; ctx.lineWidth = 2; ctx.stroke();
-        if (R.t < 1) { var hg = ctx.createRadialGradient(hp[0], hp[1], 0, hp[0], hp[1], 10); hg.addColorStop(0, rgb(C1, .95)); hg.addColorStop(1, rgb(C2, 0)); ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hp[0], hp[1], 10, 0, 6.2832); ctx.fill(); }
-        else if (!R.done) { R.done = true; rings.push({ i: R.b[0], j: R.b[1], t: 0 }); lit[R.b[0] * N + R.b[1]] = 1; }
-      }
-      // "delivered" pulses on the roof where a light arrives
-      for (var gi = rings.length - 1; gi >= 0; gi--) {
-        var G = rings[gi]; G.t += dt / 1400; if (G.t >= 1) { rings.splice(gi, 1); continue; }
-        var gt = top(G.i, G.j), rr = a * (.4 + 1.6 * G.t);
-        ctx.strokeStyle = rgb(C1, (.8 * (1 - G.t)).toFixed(3)); ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.ellipse(gt[0], gt[1], rr * .866 * 1.0, rr * .5, 0, 0, 6.2832); ctx.stroke();
-        if (G.t < .7) { ctx.fillStyle = rgb(C1, (1 - G.t / .7).toFixed(3)); ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('✓', gt[0], gt[1] - 10 - G.t * 26); }
+        if (P.p >= 1) { var ei = P.horiz ? P.e : P.k, ej = P.horiz ? P.k : P.e; lit[ei * N + ej] = 1; parts.splice(q, 1); }
       }
       ctx.globalCompositeOperation = 'source-over';
-      var vis = function () { for (var t = 0; t < 12; t++) { var ci = 3 + Math.floor(Math.random() * (N - 6)), cj = 3 + Math.floor(Math.random() * (N - 6)), pp = pos(ci, cj); if (pp[0] > 20 && pp[0] < W - 20 && pp[1] > 40 && pp[1] < H - 10) return [ci, cj]; } return null; };
       if (parts.length < (W < 960 ? 4 : 7) && Math.random() < .04) spawn();
-      if (arcs.length < (W < 960 ? 1 : 2) && Math.random() < .012) { var va = vis(), vb = vis(); if (va && vb && Math.abs(va[0] - vb[0]) + Math.abs(va[1] - vb[1]) > 7) arcs.push({ a: va, b: vb, t: 0, d: 1500 + Math.random() * 900, lift: 60 + Math.random() * 70 }); }
-      if (beams.length < 3 && Math.random() < .015) { var vc = vis(); if (vc) beams.push({ i: vc[0], j: vc[1], t: 0, h: 90 + Math.random() * 120 }); }
     }
     function mix2(c1, c2, k) { k = Math.max(0, Math.min(1, k)); return [c1[0] + (c2[0] - c1[0]) * k, c1[1] + (c2[1] - c1[1]) * k, c1[2] + (c2[2] - c1[2]) * k]; }
     function loop(tm) { draw(tm); raf = requestAnimationFrame(loop); }
