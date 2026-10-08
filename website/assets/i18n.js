@@ -344,6 +344,18 @@ window.LANU_I18N = {
     flAngles: ['Front-left angle', 'Front', 'Front-right angle', 'Left side', 'Right side', 'Rear-left angle', 'Back', 'Rear-right angle'],
     flApp: 'LANU App · the driver’s phone', flAppT: 'Photos in under a minute', flAppSteps: ['The van is known from the QR code at the pre-trip', 'Tap “Your vehicle today”', 'Take the 8 photos, guided angle by angle', 'Sent — they appear in the Board'],
     flHi: 'Hi, {n}', flScore: 'Your score · week {n}', flRank: 'Rank', flDaysW: 'Days worked', flRescue: 'Rescue stops', flThisM: 'This month', flYourVeh: 'Your vehicle today', flTake: 'Take photo {n} of 8', flSentOk: '8 of 8 photos sent', flSentSub: 'They are in the Board now.',
+    pageGp: 'GPS', gpTabs: ['GPS tracker'],
+    gpSteps: [
+      ['gpmap', 'Every scanner on one map', 'The company scanners send their position through the LANU App. Green = signal under 1 h, orange = 1–4 h, red = over 4 h. Click a card to filter.'],
+      ['gplive', 'Live, minute by minute', 'A moving scanner sends its position every minute; one standing still, every 5 minutes. The list shows when each one last checked in.'],
+      ['gptrace', 'Where has a scanner been?', 'Open a driver’s day: the whole route is drawn with the first and last point, the time range and the distance. Click any driver in the list.'],
+      ['gpmulti', 'Several routes at once', 'Show the routes of several drivers together, each in its own colour — click drivers in the list to add or remove them.']
+    ],
+    gpK: ['All phones', 'Up to date', 'Needs attention', 'Old position'], gpKs: ['with a position on the map', 'signal under 1 h', 'no signal for 1–4 h', 'no signal for over 4 h'],
+    gpPhones: 'Phones', gpDev: '{n} devices', gpSearch: 'Search driver or phone', gpAgo: '{t} ago', gpNow: 'just now', gpLegend: ['Up to date, under 1 h', 'Needs attention, 1–4 h', 'Old position, over 4 h'],
+    gpRefit: 'Refit', gpRoute: 'Day’s route', gpRouteSub: 'One day’s route, last 30 days', gpHide: 'Hide the track', gpPts: 'Points', gpRange: 'Time range', gpDist: 'Distance', gpFirst: 'First point', gpLast: 'Last point',
+    gpMoving: 'moving · every 1 min', gpStanding: 'standing · every 5 min', gpTraces: '{n} routes on the map', gpClear: 'Clear', gpSt: ['Up to date', 'Needs attention', 'Old position'],
+    gpPlaces: ['North depot', 'Station', 'Market square', 'Riverside', 'Industrial park', 'Old town', 'Park'],
     stepsDa: [
       ['kpis', 'Weekly results', 'Packages delivered this week, the RTS rate, parcels returned to the station and the company’s total DNR — compared with last week.'],
       ['top', 'Top performers', 'Your best drivers of the week, ranked by deliveries.'],
@@ -736,6 +748,18 @@ window.LANU_I18N = {
     flAngles: ['Vorne links', 'Vorne', 'Vorne rechts', 'Linke Seite', 'Rechte Seite', 'Hinten links', 'Hinten', 'Hinten rechts'],
     flApp: 'LANU App · das Handy des Fahrers', flAppT: 'Fotos in unter einer Minute', flAppSteps: ['Der Transporter ist über den QR-Code beim Pre-Trip bekannt', 'Auf „Dein Fahrzeug heute“ tippen', 'Die 8 Fotos machen, Winkel für Winkel geführt', 'Gesendet – sie erscheinen im Board'],
     flHi: 'Hallo, {n}', flScore: 'Dein Score · KW {n}', flRank: 'Rang', flDaysW: 'Arbeitstage', flRescue: 'Rescue-Stopps', flThisM: 'Diesen Monat', flYourVeh: 'Dein Fahrzeug heute', flTake: 'Foto {n} von 8', flSentOk: '8 von 8 Fotos gesendet', flSentSub: 'Sie sind jetzt im Board.',
+    pageGp: 'GPS', gpTabs: ['GPS-Tracker'],
+    gpSteps: [
+      ['gpmap', 'Jeder Scanner auf einer Karte', 'Die Firmenscanner senden ihre Position über die LANU App. Grün = Signal unter 1 h, orange = 1–4 h, rot = über 4 h. Klicken Sie auf eine Karte zum Filtern.'],
+      ['gplive', 'Live, Minute für Minute', 'Ein fahrender Scanner sendet seine Position jede Minute, ein stehender alle 5 Minuten. Die Liste zeigt, wann sich jeder zuletzt gemeldet hat.'],
+      ['gptrace', 'Wo war ein Scanner?', 'Öffnen Sie den Tag eines Fahrers: Die ganze Strecke wird gezeichnet, mit erstem und letztem Punkt, Zeitraum und Distanz. Klicken Sie auf einen Fahrer in der Liste.'],
+      ['gpmulti', 'Mehrere Strecken gleichzeitig', 'Zeigen Sie die Strecken mehrerer Fahrer zusammen, jede in ihrer Farbe – Fahrer in der Liste anklicken, um sie hinzuzufügen oder zu entfernen.']
+    ],
+    gpK: ['Alle Handys', 'Aktuell', 'Prüfen', 'Alte Position'], gpKs: ['mit Position auf der Karte', 'Signal unter 1 h', 'kein Signal seit 1–4 h', 'kein Signal seit über 4 h'],
+    gpPhones: 'Handys', gpDev: '{n} Geräte', gpSearch: 'Fahrer oder Handy suchen', gpAgo: 'vor {t}', gpNow: 'gerade eben', gpLegend: ['Aktuell, unter 1 h', 'Prüfen, 1–4 h', 'Alte Position, über 4 h'],
+    gpRefit: 'Einpassen', gpRoute: 'Tagesstrecke', gpRouteSub: 'Strecke eines Tages, letzte 30 Tage', gpHide: 'Strecke ausblenden', gpPts: 'Punkte', gpRange: 'Zeitraum', gpDist: 'Distanz', gpFirst: 'Erster Punkt', gpLast: 'Letzter Punkt',
+    gpMoving: 'fährt · jede Minute', gpStanding: 'steht · alle 5 Min.', gpTraces: '{n} Strecken auf der Karte', gpClear: 'Leeren', gpSt: ['Aktuell', 'Prüfen', 'Alte Position'],
+    gpPlaces: ['Nord-Depot', 'Bahnhof', 'Marktplatz', 'Flussufer', 'Gewerbegebiet', 'Altstadt', 'Park'],
     stepsDa: [
       ['kpis', 'Ergebnisse der Woche', 'Zugestellte Pakete dieser Woche, die RTS-Quote, an die Station zurückgebrachte Pakete und der DNR-Gesamtwert der Firma – im Vergleich zur Vorwoche.'],
       ['top', 'Top-Performer', 'Ihre besten Fahrer der Woche, sortiert nach Zustellungen.'],

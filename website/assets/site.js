@@ -1343,11 +1343,12 @@
       url: { wd: 'working-days', rs: 'rescue', dp: 'daily-protocol', ws: 'work-summary', ap: 'accommodation-problems', af: 'average-food', ks: 'kenjo-sync' },
       of: { tswd: 'wd', tsrs: 'rs', tsdp: 'dp', tsdpd: 'dp', tsws: 'ws', tswsd: 'ws', tsap: 'ap', tsaf: 'af', tsks: 'ks', tsksx: 'ks' } },
     fl: { name: 'pageFl', steps: 'flSteps', tabNames: 'flTabs', base: 'fleet', tabs: ['fv', 'fh', 'fp'], first: { fv: 'flsync', fh: 'flhist', fp: 'flph' },
-      url: { fv: 'vehicles', fh: 'history', fp: 'vehicle-photos' }, of: { flsync: 'fv', fldet: 'fv', flhist: 'fh', flph: 'fp', flapp: 'fp', flphv: 'fp' } }
+      url: { fv: 'vehicles', fh: 'history', fp: 'vehicle-photos' }, of: { flsync: 'fv', fldet: 'fv', flhist: 'fh', flph: 'fp', flapp: 'fp', flphv: 'fp' } },
+    gp: { name: 'pageGp', steps: 'gpSteps', tabNames: 'gpTabs', base: 'gps', tabs: ['gp'], first: { gp: 'gpmap' }, url: { gp: 'tracker' }, of: { gpmap: 'gp', gplive: 'gp', gptrace: 'gp', gpmulti: 'gp' } }
   };
-  var P2ORDER = ['pl', 'ts', 'fl'], P2ALIAS = { tsdpd: 'tsdp', tsksx: 'tsks' };
+  var P2ORDER = ['pl', 'ts', 'fl', 'gp'], P2ALIAS = { tsdpd: 'tsdp', tsksx: 'tsks', gptrace: 'gpmap', gpmulti: 'gpmap' };
   function P2() { return P2P[p2.page]; }
-  var p2 = { page: 'pl', fl: { f: 'all', keys: {}, add: {}, extra: {}, open: null, back: {}, leaving: null, toast: null, sent: {}, ph: null, appOn: false, appRow: 1, typing: null, hi: null, hiP: null, noted: false }, ts: { rsSort: false, dpOpen: null, wsTab: 0, wsTopic: -1, ap: {}, apHi: null, ksF: 'all', ks: 'done', ksN: 0 }, tab: 'cap', active: 'capweeks', auto: !reduce, inView: false, timer: null, cam: { z: 1, x: 0, y: 0 }, colors: [0, 1, 2], sb: [], at: 'empty', copied: false, saved: null, edits: {}, hi: null, tok: 0 };
+  var p2 = { page: 'pl', gps: { sel: [], f: 'all', anim: false }, fl: { f: 'all', keys: {}, add: {}, extra: {}, open: null, back: {}, leaving: null, toast: null, sent: {}, ph: null, appOn: false, appRow: 1, typing: null, hi: null, hiP: null, noted: false }, ts: { rsSort: false, dpOpen: null, wsTab: 0, wsTopic: -1, ap: {}, apHi: null, ksF: 'all', ks: 'done', ksN: 0 }, tab: 'cap', active: 'capweeks', auto: !reduce, inView: false, timer: null, cam: { z: 1, x: 0, y: 0 }, colors: [0, 1, 2], sb: [], at: 'empty', copied: false, saved: null, edits: {}, hi: null, tok: 0 };
   var mock2 = document.getElementById('mock2'), screen2 = document.getElementById('screen2'), steps2 = document.getElementById('steps2'), now2 = document.getElementById('step-now2');
   var WP_PAL = ['#FFF56B', '#64B5F6', '#FFB74D', '#81C784', '#F48FB1', '#B39DDB', '#4DD0E1'], WP_T = ['10:00', '10:50', '11:15'], SD_T = ['06:55', '14:15', '17:55'];
   function lday(d, o) { return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', o || { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }); }
@@ -1574,6 +1575,7 @@
       '<div class="m-panel" data-p="tsks"><div class="m-ph"><h4>' + t('tsKsRes', { d: day }) + '</h4><span class="ts-sm">' + t('tsKsUpd', { d: ddmm(TODAY).slice(0, 5) }) + '</span></div><div class="m-search">' + t('tsSearch') + '</div><div data-ts="ks">' + ksRows() + '</div></div>';
   }
   function p2Prep(id) { // state a step needs before the camera moves; true when the screen must be redrawn
+    if (gpPrep(id)) return true;
     if (flPrep(id)) return true;
     var T = p2.ts;
     if (id === 'tsdpd' && T.dpOpen === null) { T.dpOpen = tsData().dp.map(function (d) { return d.flag; }).indexOf(true); return true; }
@@ -1739,6 +1741,109 @@
     if (id === 'flapp' && !F.appOn) { F.appOn = true; F.appRow = flData().ph.map(function (x, i) { return x.n === 0 && !F.sent[i]; }).indexOf(true); if (F.appRow < 0) F.appRow = 1; ch = true; }
     return ch;
   }
+  // ---------- GPS tracker (fictional town, fictional drivers; positions simulated)
+  var GP_W = 880, GP_H = 600, GP_COLS = 14, GP_ROWS = 10, GP_C = ['#1E9E5A', '#F5A623', '#E5484D'], GP_TR = ['#2F6BFF', '#E5484D', '#7C3AED', '#0E9384', '#F5A623', '#DB2777'];
+  function gpNode(c, r) { return [40 + c * 61, 34 + r * 59]; }
+  var gpC;
+  function gpData() {
+    if (gpC) return gpC;
+    var r = rng(9393), g = { r: r, phones: [] }, names = shuffle(CPR.map(function (d) { return d.name; }), r);
+    function walk(c, rr, n) {
+      var path = [[c, rr]], pd = null;
+      for (var k = 0; k < n; k++) {
+        var opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(function (d) { var nc = c + d[0], nr = rr + d[1]; return nc >= 0 && nc < GP_COLS && nr >= 0 && nr < GP_ROWS && !(pd && d[0] === -pd[0] && d[1] === -pd[1]); });
+        var d = opts[Math.floor(r() * opts.length)]; if (pd && r() < .55 && opts.some(function (o) { return o[0] === pd[0] && o[1] === pd[1]; })) d = pd;
+        c += d[0]; rr += d[1]; pd = d; path.push([c, rr]);
+      }
+      return path;
+    }
+    var ST = [0, 0, 0, 0, 0, 0, 0, 1, 1, 2];
+    ST.forEach(function (st, i) {
+      var start = [between(r, 2, 11), between(r, 2, 7)], route = walk(start[0], start[1], st ? between(r, 14, 22) : between(r, 22, 34));
+      g.phones.push({ name: names[i], st: st, route: route, pos: st ? route.length - 1 : route.length - 1 - between(r, 3, 6), moving: !st && i % 3 !== 2, ago: st === 0 ? between(r, 0, 4) : st === 1 ? between(r, 70, 200) : between(r, 300, 1500), t0: hm(between(r, 410, 480)), sim: '+49 1' + between(r, 51, 79) + ' •••• ' + ('000' + between(r, 0, 9999)).slice(-4) });
+    });
+    return (gpC = g);
+  }
+  function gpPos(ph) { var a = Math.floor(ph.pos), f = ph.pos - a, n0 = gpNode(ph.route[a][0], ph.route[a][1]), b = ph.route[Math.min(a + 1, ph.route.length - 1)], n1 = gpNode(b[0], b[1]); return [n0[0] + (n1[0] - n0[0]) * f, n0[1] + (n1[1] - n0[1]) * f]; }
+  function gpTracePts(ph) { var pts = []; for (var k = 0; k <= Math.floor(ph.pos); k++) pts.push(gpNode(ph.route[k][0], ph.route[k][1])); pts.push(gpPos(ph)); return pts.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' '); }
+  function gpAgo(m) { return m < 1 ? t('gpNow') : t('gpAgo', { t: m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm' }); }
+  function gpMapSvg() {
+    var g = gpData(), r = rng(4141), P = t('gpPlaces'), h = '<svg class="gp-map" viewBox="0 0 ' + GP_W + ' ' + GP_H + '" width="' + GP_W + '" height="' + GP_H + '"><rect width="' + GP_W + '" height="' + GP_H + '" fill="#EEF0E6"/>';
+    for (var c = 0; c < GP_COLS - 1; c++) for (var rr = 0; rr < GP_ROWS - 1; rr++) {
+      var a = gpNode(c, rr), u = r(), fill = u < .1 ? '#CFE6C3' : u < .16 ? '#F1DCDC' : u < .22 ? '#E4E0F0' : '#E8E1D6';
+      h += '<rect x="' + (a[0] + 7) + '" y="' + (a[1] + 7) + '" width="47" height="45" rx="3" fill="' + fill + '"/>';
+      if (fill === '#E8E1D6' && u > .5) h += '<rect x="' + (a[0] + 13) + '" y="' + (a[1] + 13) + '" width="' + between(r, 12, 20) + '" height="' + between(r, 12, 18) + '" fill="#D8CFC2"/><rect x="' + (a[0] + 32) + '" y="' + (a[1] + 26) + '" width="' + between(r, 10, 16) + '" height="' + between(r, 10, 18) + '" fill="#D8CFC2"/>';
+    }
+    h += '<path d="M-10 470 C120 430 200 520 330 480 S560 380 640 430 S800 520 900 470" fill="none" stroke="#A9D3F0" stroke-width="22"/>';
+    for (var k = 0; k < GP_COLS; k++) { var x = gpNode(k, 0)[0], main = k % 5 === 2; h += '<path d="M' + x + ' 0V' + GP_H + '" stroke="' + (main ? '#F6CBA0' : '#fff') + '" stroke-width="' + (main ? 7 : 5) + '"/>'; }
+    for (var q = 0; q < GP_ROWS; q++) { var y = gpNode(0, q)[1], mainr = q % 4 === 1; h += '<path d="M0 ' + y + 'H' + GP_W + '" stroke="' + (mainr ? '#F6CBA0' : '#fff') + '" stroke-width="' + (mainr ? 7 : 5) + '"/>'; }
+    h += '<path d="M0 90 L' + GP_W + ' 560" stroke="#F2A8B4" stroke-width="8" opacity=".85"/><path d="M0 590 L380 0" stroke="#9AA3B1" stroke-width="3" stroke-dasharray="10 6"/>';
+    [[1, 1], [6, 3], [9, 1], [3, 7], [11, 6], [7, 8], [12, 2]].forEach(function (pp, i) { var n = gpNode(pp[0], pp[1]); h += '<text x="' + (n[0] + 30) + '" y="' + (n[1] + 33) + '" text-anchor="middle" class="gp-pl">' + P[i] + '</text>'; });
+    h += '<g data-gp-tr></g><g data-gp-mk></g></svg>';
+    return h;
+  }
+  function gpVisible(ph) { var f = p2.gps.f; return f === 'all' || GP_C[ph.st] === GP_C[{ ok: 0, att: 1, old: 2 }[f]]; }
+  function gpDraw(anim) {
+    var g = gpData(), tr = mock2.querySelector('[data-gp-tr]'), mk = mock2.querySelector('[data-gp-mk]');
+    if (!tr || !mk) return;
+    tr.innerHTML = p2.gps.sel.map(function (i, k) {
+      var ph = g.phones[i], col = GP_TR[k % GP_TR.length], f = gpNode(ph.route[0][0], ph.route[0][1]);
+      return '<polyline class="gp-line' + (anim ? ' draw' : '') + '" points="' + gpTracePts(ph) + '" stroke="' + col + '"/><circle cx="' + f[0] + '" cy="' + f[1] + '" r="6" fill="#fff" stroke="#1E9E5A" stroke-width="3"/>';
+    }).join('');
+    mk.innerHTML = g.phones.map(function (ph, i) {
+      if (!gpVisible(ph)) return '';
+      var q = gpPos(ph), on = p2.gps.sel.indexOf(i), col = GP_C[ph.st];
+      return '<g class="gp-m' + (on >= 0 ? ' on' : '') + '" data-p2-act="gpsel" data-v="' + i + '" transform="translate(' + q[0].toFixed(1) + ' ' + q[1].toFixed(1) + ')">' + (ph.moving && !ph.st ? '<circle r="9" class="gp-pulse" fill="' + col + '"/>' : '') +
+        (on >= 0 ? '<circle r="13" fill="none" stroke="' + GP_TR[on % GP_TR.length] + '" stroke-width="4"/>' : '') + '<circle r="8" fill="' + col + '" stroke="#fff" stroke-width="3"/>' +
+        (on >= 0 || (p2.active === 'gpmap' && i === 7) ? '<g class="gp-tag"><rect x="-58" y="-40" width="116" height="24" rx="6" fill="#fff"/><text y="-24" text-anchor="middle">' + esc(ph.name) + '</text></g>' : '') + '</g>';
+    }).join('');
+  }
+  function gpListHtml() {
+    var g = gpData();
+    return g.phones.map(function (ph, i) {
+      if (!gpVisible(ph)) return '';
+      var on = p2.gps.sel.indexOf(i), st = ['g', 'o', 'r'][ph.st];
+      return '<button type="button" class="gp-row' + (on >= 0 ? ' on' : '') + '" data-p2-act="gpsel" data-v="' + i + '" style="' + (on >= 0 ? '--tc:' + GP_TR[on % GP_TR.length] : '') + '"><span class="gp-av">' + avatar(ph.name, 32) + '<i style="background:' + GP_C[ph.st] + '"></i></span>' +
+        '<span class="gp-nm"><b>' + esc(ph.name) + '</b><small class="' + st + '" data-gp-ago="' + i + '">' + gpAgo(ph.ago) + '</small><small class="gp-mv">' + (ph.st ? ph.sim : t(ph.moving ? 'gpMoving' : 'gpStanding')) + '</small></span>' +
+        '<span class="m-pill ' + st + '">' + t('gpSt')[ph.st] + '</span></button>';
+    }).join('');
+  }
+  function gpCard() {
+    var g = gpData(), sel = p2.gps.sel;
+    if (!sel.length) return '';
+    if (sel.length > 1) return '<div class="gp-card"><b>' + t('gpTraces', { n: sel.length }) + '</b><div class="gp-chips">' + sel.map(function (i, k) { return '<span style="--tc:' + GP_TR[k % GP_TR.length] + '"><i></i>' + esc(g.phones[i].name) + '</span>'; }).join('') + '</div><button type="button" class="hs-f" data-p2-act="gpclear">' + t('gpClear') + '</button></div>';
+    var ph = g.phones[sel[0]], n = Math.floor(ph.pos) + 1, pts = n * 4 + 2;
+    return '<div class="gp-card"><div class="rc-dh">' + avatar(ph.name, 34) + '<div><b>' + esc(ph.name) + '</b><small>' + t('gpRouteSub') + '</small></div><button type="button" class="cp-x" data-p2-act="gpclear">×</button></div>' +
+      '<div class="gp-date"><span>‹</span><b>' + ddmm(TODAY) + '</b><span>›</span></div><button type="button" class="wr-upbtn gp-hide" data-p2-act="gpclear">' + t('gpHide') + '</button>' +
+      '<div class="gp-st"><span><small>' + t('gpPts') + '</small><b data-gp-pts>' + pts + '</b></span><span><small>' + t('gpRange') + '</small><b>' + ph.t0 + ' – ' + nowStr().slice(0, 5) + '</b></span><span><small>' + t('gpDist') + '</small><b data-gp-km>≈ ' + nf(n * .9, 1) + ' km</b></span></div>' +
+      '<div class="gp-lg"><span><i class="f"></i>' + t('gpFirst') + '</span><span><i class="l"></i>' + t('gpLast') + '</span></div></div>';
+  }
+  function renderGp() {
+    var g = gpData(), K = t('gpK'), KS = t('gpKs'), cnt = [g.phones.length, 0, 0, 0], F = ['all', 'ok', 'att', 'old'];
+    g.phones.forEach(function (ph) { cnt[ph.st + 1]++; });
+    return '<div class="gp-k" data-p="gpmap">' + K.map(function (k, i) { return '<button type="button" class="ts-kk' + (p2.gps.f === F[i] ? ' on' : '') + '" data-p2-act="gpf" data-v="' + F[i] + '"><small><i style="background:' + (i ? GP_C[i - 1] : '#98A2B3') + '"></i>' + k + '<em>' + KS[i] + '</em></small><b class="' + ['', 'pos', 'amb', 'neg'][i] + '">' + cnt[i] + '</b></button>'; }).join('') + '</div>' +
+      '<div class="gp-grid"><div class="m-panel gp-mapw" data-p="gpmap" data-p2b="gptrace">' + gpMapSvg() + '<span class="gp-refit">⤢ ' + t('gpRefit') + '</span><span class="gp-zoom"><i>+</i><i>−</i></span>' +
+      '<div class="gp-leg">' + t('gpLegend').map(function (l, i) { return '<span><i style="background:' + GP_C[i] + '"></i>' + l + '</span>'; }).join('') + '</div><div data-gp-card>' + gpCard() + '</div></div>' +
+      '<div class="m-panel gp-list" data-p="gplive"><div class="m-ph"><h4>' + t('gpPhones') + '</h4><span class="ts-sm">' + t('gpDev', { n: g.phones.length }) + '</span><span class="m-livepill sm"><i></i>' + t('mLive') + '</span></div><div class="m-search">' + t('gpSearch') + '</div><div data-gp-list>' + gpListHtml() + '</div></div></div>';
+  }
+  function gpRefresh(anim) { gpDraw(anim); var l = mock2.querySelector('[data-gp-list]'); if (l) l.innerHTML = gpListHtml(); var c = mock2.querySelector('[data-gp-card]'); if (c) c.innerHTML = gpCard(); }
+  function gpPrep(id) {
+    var want = id === 'gptrace' ? [2] : id === 'gpmulti' ? [0, 3, 5] : id === 'gpmap' || id === 'gplive' ? [] : null;
+    if (!want || p2.page !== 'gp' && !P2P.gp.of[id]) return false;
+    if (want.join() === p2.gps.sel.join()) return false;
+    p2.gps.sel = want; p2.gps.anim = true; return true;
+  }
+  setInterval(function () { // simulated live positions: moving scanners advance along the streets
+    if (!gpC || p2.page !== 'gp' || !mock2 || !mock2.querySelector('[data-gp-mk]')) return;
+    var g = gpC, km = 0;
+    g.phones.forEach(function (ph) {
+      if (!ph.moving || ph.st) return;
+      ph.pos += reduce ? 0 : .06;
+      if (ph.pos >= ph.route.length - 1) { var last = ph.route[ph.route.length - 1], d = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(g.r() * 4)]; ph.route.push([Math.max(0, Math.min(GP_COLS - 1, last[0] + d[0])), Math.max(0, Math.min(GP_ROWS - 1, last[1] + d[1]))]); ph.ago = 0; }
+    });
+    gpDraw(false);
+    if (p2.gps.sel.length === 1) { var ph = g.phones[p2.gps.sel[0]], n = Math.floor(ph.pos) + 1, a = mock2.querySelector('[data-gp-pts]'), b = mock2.querySelector('[data-gp-km]'); if (a) a.textContent = n * 4 + 2; if (b) b.textContent = '≈ ' + nf(n * .9, 1) + ' km'; }
+  }, 250);
   function p2Nav() {
     return '<div class="hs-nav"><span class="dim">' + t(P2().name) + '</span>' + P2().tabs.map(function (tb, i) {
       return '<button type="button" data-p2-act="tab" data-v="' + tb + '"' + (p2.tab === tb ? ' class="on"' : '') + '>' + t(P2().tabNames)[i] + '</button>';
@@ -1826,9 +1931,10 @@
   }
   function p2Render() {
     if (!mock2) return;
-    var R = { cap: renderCap, wp: renderWp, at: renderAt, wd: renderWd, rs: renderRs, dp: renderDp, ws: renderWs, ap: renderAp, af: renderAf, ks: renderKs, fv: renderFl, fh: renderFh, fp: renderFp };
+    var R = { cap: renderCap, wp: renderWp, at: renderAt, wd: renderWd, rs: renderRs, dp: renderDp, ws: renderWs, ap: renderAp, af: renderAf, ks: renderKs, fv: renderFl, fh: renderFh, fp: renderFp, gp: renderGp };
     mock2.innerHTML = topBar(t(P2().name)) + p2Nav() + '<div class="m-body">' + R[p2.tab]() + '</div>';
     p2.hi = null;
+    if (p2.tab === 'gp') { gpDraw(p2.gps.anim); p2.gps.anim = false; }
     document.getElementById('url2').textContent = 'board.lanu.app/' + P2().base + '/' + P2().url[p2.tab];
     p2Layout();
   }
@@ -1917,6 +2023,9 @@
   }
   function p2Action(act, v) {
     if (act === 'tab') { p2Focus(P2().first[v], true); return; }
+    if (act === 'gpsel') { var gi = Number(v), at = p2.gps.sel.indexOf(gi); if (at >= 0) p2.gps.sel.splice(at, 1); else p2.gps.sel.push(gi); gpRefresh(true); p2.active = p2.gps.sel.length > 1 ? 'gpmulti' : p2.gps.sel.length ? 'gptrace' : 'gplive'; p2RenderSteps(); p2Schedule(); return; }
+    if (act === 'gpclear') { p2.gps.sel = []; gpRefresh(false); return; }
+    if (act === 'gpf') { p2.gps.f = v; p2.gps.sel = p2.gps.sel.filter(function (i) { return gpVisible(gpData().phones[i]); }); p2Render(); p2Focus('gpmap', true, true); return; }
     if (act === 'flf') { p2.fl.f = v; p2Render(); p2Focus('flsync', true, true); return; }
     if (act === 'flkey') { p2.fl.keys[v] = !p2.fl.keys[v]; p2Render(); p2Focus(p2.active, true, true); return; }
     if (act === 'fladd') {
