@@ -34,6 +34,8 @@
 <section class="hero">
   <canvas class="city" id="city" aria-hidden="true"></canvas>
   <div class="wrap hero-in">
+   <div class="hero-slides">
+    <div class="hero-slide on" data-hs="0">
     <div class="hero-copy">
       <p class="eyebrow"><span>LANU Board</span><span>LANU App</span><span>LANU MDM</span></p>
       <h1 id="hero-title">Your whole delivery day on one screen.</h1>
@@ -44,10 +46,12 @@
       </div>
     </div>
     <div class="hero-visual" id="hero-visual" aria-hidden="true">
+      <svg class="hv-links" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M46 22 C62 30,70 44,80 52"/><path d="M24 26 C18 44,14 58,12 72"/><path d="M58 64 C46 70,34 72,22 76"/></svg>
       <div class="hv-card hv-delivered">
         <div class="hv-row"><span class="hv-label" data-i18n="mDelivered">Delivered packages</span><span class="hv-live"><i></i><b id="hv-clock">--:--:--</b></span></div>
         <div class="hv-big"><span id="hv-count">8,412</span><small data-i18n-tpl="mOf" data-n="8,530">of 8,530</small></div>
         <div class="hv-bar"><span id="hv-bar" style="width:98.6%"></span></div>
+        <svg class="hv-spark" viewBox="0 0 200 40" preserveAspectRatio="none"><path id="hv-spark-a" d=""/><polyline id="hv-spark" points=""/></svg>
       </div>
       <div class="hv-card hv-tours">
         <div class="hv-row"><span class="hv-label" data-i18n="mToursToday">Tours today</span><b class="hv-num">64</b></div>
@@ -56,11 +60,42 @@
       </div>
       <div class="hv-card hv-risk">
         <span class="hv-label" data-i18n="mRisk">Working-hours risk</span>
-        <b class="hv-risknum">2</b>
+        <b class="hv-risknum">2</b><i class="hv-ring"></i>
         <span class="hv-small" data-i18n="hvRiskNote">Flagged before it’s too late</span>
       </div>
     </div>
+      </div>
+    <div class="hero-slide hs-money" data-hs="1" aria-hidden="true">
+    <div class="hero-copy">
+      <p class="eyebrow"><span data-i18n-idx="hs2E" data-k="0">Income Overview</span><span data-i18n-idx="hs2E" data-k="1">For owners</span></p>
+      <h2 id="hero-title2" class="h1">Every euro counted. Every single day.</h2>
+      <p class="hero-sub" data-i18n="hs2Sub"></p>
+      <div class="hero-ctas">
+        <a href="#owners" class="btn btn-primary btn-emer"><span data-i18n="hs2Cta">See the numbers</span> <svg class="ic" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+        <a href="#contact" class="btn btn-ghost-light" data-i18n="ctaDemo">Book a demo</a>
+      </div>
+    </div>
+    <div class="hero-visual hv2" aria-hidden="true">
+      <svg class="hv2-flow" viewBox="0 0 520 440"><path d="M110 70 C200 80,230 150,262 190"/><path d="M430 90 C360 110,320 150,290 190"/><path d="M90 330 C170 320,220 290,258 250"/><path d="M440 330 C370 320,320 290,292 252"/></svg>
+      <div class="hv2-gauge"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="84" class="tr"/><circle cx="100" cy="100" r="84" class="val" id="hv2-arc"/><circle cx="100" cy="100" r="66" class="in"/></svg>
+        <div class="hv2-c"><small data-i18n="hv2Left">Left after all costs</small><b id="hv2-left">+0 €</b><span><i id="hv2-pct">0</i>% <em data-i18n="hv2Margin">margin</em></span></div></div>
+      <div class="hv2-chip c1"><small data-i18n="hv2Rev">Revenue</small><b data-hv2="265279" data-sg="+">265.279 €</b></div>
+      <div class="hv2-chip c2"><small data-i18n="hv2Pay">Pay</small><b data-hv2="218331" data-sg="−">218.331 €</b></div>
+      <div class="hv2-chip c3"><small data-i18n="hv2Veh">Vehicles</small><b data-hv2="32450" data-sg="−">32.450 €</b></div>
+      <div class="hv2-chip c4"><small data-i18n="hv2Exp">Expenses</small><b data-hv2="3790" data-sg="−">3.790 €</b></div>
+      <div class="hv2-days"><small data-i18n="hv2Days">Last 14 days</small><div id="hv2-bars"></div></div>
+      <div class="hv2-eur" id="hv2-eur"></div>
+    </div>
+    </div>
+   </div>
+   <div class="hsl-nav" id="hs-nav">
+     <button type="button" class="hs-arr" data-hs-go="-1" data-i18n-aria="hsPrev" aria-label="Previous slide">‹</button>
+     <button type="button" class="hs-tab on" data-hs-to="0"><b>01</b><span data-i18n-idx="hsTabs" data-k="0">Your delivery day</span><i></i></button>
+     <button type="button" class="hs-tab" data-hs-to="1"><b>02</b><span data-i18n-idx="hsTabs" data-k="1">Every euro, counted</span><i></i></button>
+     <button type="button" class="hs-arr" data-hs-go="1" data-i18n-aria="hsNext" aria-label="Next slide">›</button>
+   </div>
   </div>
+  <div class="hero-scan" id="hero-scan" aria-hidden="true"></div>
   <a href="#owners" class="hero-hint" aria-hidden="true" tabindex="-1"><i></i><span data-i18n="scroll">Scroll</span></a>
 </section>
 

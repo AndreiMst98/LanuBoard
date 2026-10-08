@@ -22,14 +22,17 @@
   function hm(min) { return pad(Math.floor(min / 60) % 24) + ':' + pad(min % 60); }
 
   // ------------------------------------------------------------------ static copy
+  function heroWords(id, text, hl) {
+    var el = document.getElementById(id), words = text.split(' ');
+    if (el) el.innerHTML = words.map(function (w, i) { return '<span class="w' + (i >= words.length - hl ? ' hl' : '') + '" style="--i:' + i + '">' + esc(w) + '</span>'; }).join(' ');
+  }
   function applyCopy() {
     document.documentElement.lang = lang;
     document.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(function (el) { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
-    var words = t('heroTitle').split(' '), hl = t('heroHl');
-    document.getElementById('hero-title').innerHTML = words.map(function (w, i) {
-      return '<span class="w' + (i >= words.length - hl ? ' hl' : '') + '" style="--i:' + i + '">' + esc(w) + '</span>';
-    }).join(' ');
+    heroWords('hero-title', t('heroTitle'), t('heroHl'));
+    heroWords('hero-title2', t('hs2Title'), t('hs2Hl'));
+    document.querySelectorAll('[data-i18n-idx]').forEach(function (el) { el.textContent = t(el.dataset.i18nIdx)[Number(el.dataset.k)]; });
     document.querySelectorAll('[data-i18n-tpl]').forEach(function (el) { el.textContent = t(el.dataset.i18nTpl, { n: el.dataset.n }); });
     document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
     document.getElementById('tour-kicker').textContent = 'LANU Board · ' + t(PAGES[page].name);
@@ -2578,6 +2581,7 @@
     var p = mock.querySelector('[data-pct]'); if (p) p.textContent = Math.floor(pct) + '%';
     var so = mock.querySelector('[data-stillout]'); if (so) so.textContent = t('mStillOut', { n: fmt(data.totalPk - liveDelivered) });
     var hv = document.getElementById('hv-count'); if (hv) hv.textContent = fmt(liveDelivered);
+    heroSpark(liveDelivered);
     var hb = document.getElementById('hv-bar'); if (hb) hb.style.width = pct + '%';
   }, 4000);
   setInterval(function () {
@@ -2675,6 +2679,60 @@
     screenCol.addEventListener('pointerleave', function () { browser.style.setProperty('--rx', '0deg'); browser.style.setProperty('--ry', '0deg'); });
   });
 
+
+  // ------------------------------------------------------------------ hero slider: delivery day / every euro counted
+  var SPK = [];
+  function heroSpark(v) {
+    var pl = document.getElementById('hv-spark'), ar = document.getElementById('hv-spark-a'); if (!pl) return;
+    if (!SPK.length) { var r = rng(31); for (var k = 0; k < 18; k++) SPK.push(8300 + k * 6 + Math.floor(r() * 18)); }
+    if (v) SPK.push(v); if (SPK.length > 18) SPK.shift();
+    var mn = Math.min.apply(null, SPK), mx = Math.max.apply(null, SPK) || 1, pts = SPK.map(function (q, i) { return (i / (SPK.length - 1) * 200).toFixed(1) + ',' + (36 - (q - mn) / Math.max(1, mx - mn) * 30).toFixed(1); });
+    pl.setAttribute('points', pts.join(' ')); ar.setAttribute('d', 'M0,40 L' + pts.join(' L') + ' L200,40 Z');
+  }
+  var HS = { i: 0, timer: null, dur: 9000, inView: true, busy: false }, hsEl = document.querySelectorAll('.hero-slide'), hsNav = document.getElementById('hs-nav');
+  function hsMoney() {
+    var arc = document.getElementById('hv2-arc'), left = document.getElementById('hv2-left'), pct = document.getElementById('hv2-pct'), bars = document.getElementById('hv2-bars'), eurEl = document.getElementById('hv2-eur');
+    if (!arc) return;
+    var L = 2 * Math.PI * 84, target = 10708, m = 4.04;
+    arc.style.strokeDasharray = L; arc.style.transition = 'none'; arc.style.strokeDashoffset = L; void arc.getBoundingClientRect();
+    arc.style.transition = reduce ? 'none' : 'stroke-dashoffset 1.8s cubic-bezier(.2,.8,.2,1) .4s'; arc.style.strokeDashoffset = L * (1 - .72);
+    var t0 = performance.now(), d = reduce ? 1 : 1900;
+    (function st(now) { var k = Math.min(1, (now - t0 - (reduce ? 0 : 400)) / d); k = Math.max(0, k); var e = 1 - Math.pow(1 - k, 3);
+      left.textContent = '+' + eurc(target * e).replace(/,\d\d /, ' '); pct.textContent = nf(m * e, 1); if (k < 1) requestAnimationFrame(st); })(t0);
+    document.querySelectorAll('[data-hv2]').forEach(function (b, i) { var v = Number(b.dataset.hv2), sg = b.dataset.sg, t1 = performance.now();
+      (function st(now) { var k = Math.min(1, (now - t1 - i * 160) / 1200); k = Math.max(0, k); var e = 1 - Math.pow(1 - k, 3); b.textContent = sg + ' ' + eurc(v * e).replace(/,\d\d /, ' '); if (k < 1) requestAnimationFrame(st); })(t1); });
+    var r = rng(Math.floor(Math.random() * 999)), html = '';
+    for (var k = 0; k < 14; k++) { var neg = k % 7 === 6, hgt = neg ? 18 + r() * 10 : 30 + r() * 60; html += '<i class="' + (neg ? 'n' : 'p') + '" style="--h:' + hgt.toFixed(0) + '%;--i:' + k + '"></i>'; }
+    bars.innerHTML = html;
+    if (eurEl && !reduce) { var e2 = ''; for (var q = 0; q < 12; q++) e2 += '<i style="--x:' + Math.floor(Math.random() * 100) + '%;--d:' + (Math.random() * 6).toFixed(2) + 's;--s:' + (0.7 + Math.random() * .8).toFixed(2) + '">€</i>'; eurEl.innerHTML = e2; }
+  }
+  function hsGo(i, user) {
+    i = (i + hsEl.length) % hsEl.length;
+    if (i === HS.i && !user) return;
+    var prev = hsEl[HS.i], next = hsEl[i];
+    HS.i = i;
+    window.LANU_CITY_THEME = i;
+    document.querySelector('.hero').classList.toggle('money', i === 1);
+    if (prev !== next) { prev.classList.remove('on'); prev.classList.add('leave'); prev.setAttribute('aria-hidden', 'true'); setTimeout(function () { prev.classList.remove('leave'); }, 700); }
+    next.classList.add('on'); next.removeAttribute('aria-hidden');
+    var h = next.querySelector('h1,h2'); if (h) { var html = h.innerHTML; h.innerHTML = ''; void h.offsetWidth; h.innerHTML = html; }
+    var sc = document.getElementById('hero-scan'); if (sc && !reduce) { sc.classList.remove('run'); void sc.offsetWidth; sc.classList.add('run'); }
+    if (i === 1) hsMoney();
+    hsNav.querySelectorAll('.hs-tab').forEach(function (b, k) { b.classList.toggle('on', k === i); b.classList.remove('run'); });
+    void hsNav.offsetWidth; var on = hsNav.querySelector('.hs-tab.on'); if (on && !reduce) on.classList.add('run');
+    hsSched();
+  }
+  function hsSched() { clearTimeout(HS.timer); if (reduce || !HS.inView) return; HS.timer = setTimeout(function () { hsGo(HS.i + 1); }, HS.dur); }
+  if (hsNav) {
+    hsNav.style.setProperty('--hs-dur', HS.dur + 'ms');
+    hsNav.addEventListener('click', function (e) { var b = e.target.closest('[data-hs-to],[data-hs-go]'); if (!b) return; hsGo(b.dataset.hsTo !== undefined ? Number(b.dataset.hsTo) : HS.i + Number(b.dataset.hsGo), true); });
+    var tx = null;
+    document.querySelector('.hero-slides').addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+    document.querySelector('.hero-slides').addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) hsGo(HS.i + (dx < 0 ? 1 : -1), true); tx = null; }, { passive: true });
+    new IntersectionObserver(function (en) { HS.inView = en[0].isIntersecting; if (HS.inView) hsSched(); else clearTimeout(HS.timer); }).observe(document.querySelector('.hero'));
+    heroSpark(); var on0 = hsNav.querySelector('.hs-tab.on'); if (on0 && !reduce) on0.classList.add('run'); hsSched();
+  }
+
   // ------------------------------------------------------------------ hero: isometric cube city with delivery lights (reacts to the cursor)
   (function city() {
     var cv = document.getElementById('city'), hero = document.querySelector('.hero'), hv = document.getElementById('hero-visual');
@@ -2697,7 +2755,7 @@
     }
     function pos(i, j) { return [cx + (i - j) * w / 2, cy + (i + j - (N - 1)) * a / 2]; }
     function mix(c1, c2, k) { return 'rgb(' + Math.round(c1[0] + (c2[0] - c1[0]) * k) + ',' + Math.round(c1[1] + (c2[1] - c1[1]) * k) + ',' + Math.round(c1[2] + (c2[2] - c1[2]) * k) + ')'; }
-    var TOP0 = [19, 40, 74], TOP1 = [30, 60, 104], LEFT = [14, 31, 58], RIGHT = [10, 24, 46], HOT = [59, 155, 255];
+    var TOP0 = [19, 40, 74], TOP1 = [30, 60, 104], LEFT = [14, 31, 58], RIGHT = [10, 24, 46], HOT = [59, 155, 255], HOT_B = [59, 155, 255], HOT_E = [16, 205, 140], themeK = 0;
     function height(i, j, tm) {
       var p = pos(i, j), dx = p[0] - mouse.x, dy = p[1] - mouse.y;
       var boost = Math.exp(-(dx * dx + dy * dy) / (2 * 110 * 110));
@@ -2710,6 +2768,7 @@
     }
     function draw(tm) {
       ctx.clearRect(0, 0, W, H);
+      themeK += ((window.LANU_CITY_THEME || 0) - themeK) * .05; HOT = mix2(HOT_B, HOT_E, themeK);
       mouse.x += (mouse.tx - mouse.x) * .08; mouse.y += (mouse.ty - mouse.y) * .08;
       if (tm - mouse.last > 3500) { // idle: a slow "virtual cursor" keeps the city alive (also on touch screens)
         mouse.tx = cx + Math.sin(tm * .00035) * w * 5; mouse.ty = cy + Math.cos(tm * .00027) * a * 4 - a * 2;
@@ -2728,7 +2787,7 @@
         ctx.beginPath(); ctx.moveTo(x, y - a / 2); ctx.lineTo(x + w / 2, y); ctx.lineTo(x, y + a / 2); ctx.lineTo(x - w / 2, y); ctx.closePath();
         ctx.fillStyle = heat > 0 ? mix(mix2(TOP0, TOP1, (h - 3) / 30), HOT, heat * .85) : mix(TOP0, TOP1, Math.max(0, Math.min(1, (h - 3) / 30)));
         ctx.fill();
-        ctx.strokeStyle = 'rgba(140,190,255,' + (.1 + heat * .5) + ')'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = themeK > .5 ? 'rgba(120,230,190,' + (.1 + heat * .5) + ')' : 'rgba(140,190,255,' + (.1 + heat * .5) + ')'; ctx.lineWidth = 1; ctx.stroke();
         if (L > 0) lit[idx] = Math.max(0, L - .012);
       }
       // delivery lights travelling along the streets
@@ -2741,7 +2800,8 @@
         var hh = hs[i0 * N + j0] * (1 - fr) + hs[i1 * N + j1] * fr;
         var pp = pos(ii, jj), gx = pp[0], gy = pp[1] - hh;
         var gr = ctx.createRadialGradient(gx, gy, 0, gx, gy, a * .9);
-        gr.addColorStop(0, 'rgba(160,225,255,.95)'); gr.addColorStop(.25, 'rgba(92,200,255,.5)'); gr.addColorStop(1, 'rgba(59,155,255,0)');
+        var c1 = mix2([160, 225, 255], [170, 255, 215], themeK), c2 = mix2([92, 200, 255], [52, 225, 160], themeK);
+        gr.addColorStop(0, 'rgba(' + c1.map(Math.round) + ',.95)'); gr.addColorStop(.25, 'rgba(' + c2.map(Math.round) + ',.5)'); gr.addColorStop(1, 'rgba(' + c2.map(Math.round) + ',0)');
         ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(gx, gy, a * .9, 0, 6.2832); ctx.fill();
         if (P.p >= 1) { var ei = P.horiz ? P.e : P.k, ej = P.horiz ? P.k : P.e; lit[ei * N + ej] = 1; parts.splice(q, 1); }
       }
