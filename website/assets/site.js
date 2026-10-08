@@ -3115,7 +3115,8 @@
   }
 
   // ------------------------------------------------------------------ Andera App: Fleet QR labels printed on the spot (app → label printer → van → pre-trip scan)
-  var qr = { s: 0, auto: !reduce, inView: false, timer: null, tm: [], DUR: [5200, 6500, 6500, 6000, 7000], scr: '' };
+  var qr = { s: 0, auto: !reduce, inView: false, timer: null, tick: null, tm: [], DUR: [5200, 6500, 6500, 6000, 7000], scr: '' };
+  var QR_T = [0, 0, 13, 26, 30]; // clock value when each step starts (step 2 and 3 last 6.5 s = 13 shown seconds); 30 = label stuck on the van
   var qrStage = document.getElementById('qr-stage'), qrWrap = document.getElementById('qr-wrap'), qrSteps = document.getElementById('qr-steps');
   var QR_VANS = (function () {
     var r = rng(4821), A = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789', vin = function (w) { var x = w; while (x.length < 17) x += A[Math.floor(r() * A.length)]; return x; };
@@ -3162,11 +3163,18 @@
     qr.tm.forEach(clearTimeout); qr.tm = []; qr.s = i;
     var $ = function (id) { return document.getElementById(id); }, at = function (ms, f) { qr.tm.push(setTimeout(f, reduce ? 0 : ms)); };
     var add = function (id, c) { var e = $(id); if (e) e.classList.add(c || 'on'); }, tap = function (id) { var e = $(id); if (!e) return; e.classList.remove('af-tp'); void e.offsetWidth; e.classList.add('af-tp'); };
-    var tt = $('q-tt'), clock = function (a, b, ms) { if (reduce) { tt.textContent = '00:' + pad(b); return; } var t0 = performance.now(); (function st(now) { var k = Math.min(1, (now - t0) / ms), v = Math.round(a + (b - a) * k); tt.textContent = '00:' + pad(v); if (k < 1 && qr.s === i) requestAnimationFrame(st); })(t0); };
+    var tt = $('q-tt'), show = function (v) { tt.textContent = '00:' + pad(Math.min(59, v)); };
+    // one steady clock (a shown second every 500 ms) from the first tap until the label is on the van
+    var clock = function (base, stopAt) {
+      clearInterval(qr.tick); show(base); if (reduce) { show(stopAt === undefined ? base : stopAt); return; }
+      var t0 = performance.now() - base * 500;
+      qr.tick = setInterval(function () { var v = Math.floor((performance.now() - t0) / 500); if (stopAt !== undefined && v >= stopAt) { v = stopAt; clearInterval(qr.tick); } show(v); }, 100);
+    };
+    clearInterval(qr.tick);
     qrStage.className = 'qr-stage s' + (i + 1);
-    if (i === 0) { qShow('list'); tt.textContent = '00:00'; at(3600, function () { tap('q-me'); }); }
+    if (i === 0) { qShow('list'); show(0); at(3600, function () { tap('q-me'); }); }
     if (i === 1) {
-      qShow('list'); tt.textContent = '00:00'; clock(0, 12, 5500);
+      qShow('list'); clock(0);
       var ty = $('q-type'), txt = '4821', k0 = 0;
       at(500, function f() { k0++; ty.textContent = txt.slice(0, k0); ty.classList.add('typed'); if (k0 < txt.length && qr.s === 1) qr.tm.push(setTimeout(f, 180)); });
       at(1500, function () { add('q-scr', 'flt'); });
@@ -3174,12 +3182,12 @@
       at(3100, function () { qShow('label'); $('q-scr').classList.remove('flt'); });
     }
     if (i === 2) {
-      qShow('label'); tt.textContent = '00:12'; clock(12, 31, 5800);
+      qShow('label'); clock(QR_T[2]);
       at(700, function () { tap('q-print'); }); at(1000, function () { add('q-print', 'busy'); $('q-ptx').textContent = qT('printing'); });
       at(3300, function () { $('q-print').classList.remove('busy'); $('q-ptx').textContent = qT('print'); add('q-ok'); });
     }
     if (i === 3) {
-      qShow('label'); tt.textContent = '00:31'; clock(31, 42, 3200);
+      qShow('label'); clock(QR_T[3], QR_T[4]);
       var sr = qrStage.getBoundingClientRect(), z = sr.width / 760, o = $('q-out').getBoundingClientRect(), sp = $('q-spot').getBoundingClientRect(), f = $('q-fly');
       var x0 = (o.left - sr.left) / z, y0 = (o.top - sr.top) / z, x1 = (sp.left - sr.left) / z, y1 = (sp.top - sr.top) / z, sc = sp.width / o.width;
       f.style.left = x0 + 'px'; f.style.top = y0 + 'px';
@@ -3188,7 +3196,7 @@
       at(2700, function () { add('q-vtag'); });
     }
     if (i === 4) {
-      qShow('scan'); tt.textContent = '00:42';
+      qShow('scan'); show(QR_T[4]);
       at(2200, function () { add('q-found'); }); at(3500, function () { add('q-today'); });
     }
     if (i >= 4) add('q-spot');
@@ -3209,7 +3217,7 @@
     qrScale(); qrGo(0, true);
     new IntersectionObserver(function (en) {
       var was = qr.inView; qr.inView = en[0].isIntersecting;
-      if (qr.inView && !was) qrGo(qr.s, true); else if (!qr.inView) { clearTimeout(qr.timer); qr.tm.forEach(clearTimeout); }
+      if (qr.inView && !was) qrGo(qr.s, true); else if (!qr.inView) { clearTimeout(qr.timer); qr.tm.forEach(clearTimeout); clearInterval(qr.tick); }
     }, { threshold: .3 }).observe(document.getElementById('fleet-qr'));
   }
   function hsGo(i, user) {
