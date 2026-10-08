@@ -1221,14 +1221,26 @@
   var page = 'ops';
   var active = 'overview', auto = !reduce, timer = null, inView = false, DUR = 7000;
   function renderSteps() {
-    stepsEl.innerHTML = pageSteps().map(function (s, i) {
+    function stepLi(s, i, n) {
       return '<li style="--i:' + i + '" class="step' + (s[0] === active ? ' on' + (auto ? ' auto' : '') : '') + '"><button type="button" data-step="' + s[0] + '" aria-current="' + (s[0] === active) + '">' +
-        '<span class="n">' + (i + 1) + '</span><span><span class="t">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + '</span></span><span class="prog" style="--dur:' + DUR + 'ms"></span></button></li>';
-    }).join('');
+        '<span class="n">' + n + '</span><span><span class="t">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + '</span></span><span class="prog" style="--dur:' + DUR + 'ms"></span></button></li>';
+    }
+    if (page === 'wr') { // Weekly Reports: one group per sub-page, numbered across all of them
+      var all = t(PAGES.wr.steps), html = '', n = 0, li = 0, names = { sc: 'wrSc', iadc: 'wrIadc', cn: 'cnTab' };
+      WR_ORDER.forEach(function (tab) {
+        var grp = all.filter(function (x) { return WR_TAB[x[0]] === tab; }), from = n + 1, open = tab === wrTab;
+        n += grp.length;
+        html += '<li class="step-grp' + (open ? ' on' : '') + '" style="--i:' + (li++) + '"><button type="button" data-wrgrp="' + tab + '" aria-expanded="' + open + '"><span class="g-t">' + t(names[tab]) + '</span><em>' + from + '–' + n + '</em><span class="g-c">' + (open ? '−' : '+') + '</span></button></li>';
+        if (open) grp.forEach(function (x, k) { html += stepLi(x, li++, from + k); });
+      });
+      stepsEl.innerHTML = html;
+    } else stepsEl.innerHTML = pageSteps().map(function (s, i) { return stepLi(s, i, i + 1); }).join('');
     var cur = pageSteps().filter(function (s) { return s[0] === active; })[0];
     nowEl.innerHTML = '<b>' + esc(cur[1]) + '</b><p>' + esc(cur[2]) + '</p>';
   }
   stepsEl.addEventListener('click', function (e) {
+    var g = e.target.closest('[data-wrgrp]');
+    if (g) { stopAuto(); if (g.dataset.wrgrp !== wrTab) focusStep(WR_FIRST[g.dataset.wrgrp]); return; }
     var b = e.target.closest('[data-step]');
     if (!b) return;
     stopAuto();

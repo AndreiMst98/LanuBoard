@@ -147,6 +147,14 @@ a.prod:hover{transform:translateY(-4px)}
 .step .prog{position:absolute;left:0;bottom:0;height:2px;width:0;background:linear-gradient(90deg,var(--blue-hi),var(--cyan))}
 .step.on.auto .prog{animation:prog var(--dur,7s) linear forwards}
 @keyframes prog{to{width:100%}}
+.step-grp button{width:100%;display:flex;align-items:center;gap:10px;margin-top:6px;padding:10px 14px;border-radius:12px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);font:700 13px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all .25s}
+.step-grp:first-child button{margin-top:0}
+.step-grp button:hover{color:var(--text);border-color:rgba(92,200,255,.4)}
+.step-grp.on button{color:var(--cyan);border-color:rgba(92,200,255,.35);background:rgba(59,155,255,.08)}
+.step-grp em{font-style:normal;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.08);font-size:11px;letter-spacing:0}
+.step-grp .g-t{flex:1;text-align:left}
+.step-grp .g-c{width:20px;text-align:center;font-size:16px;line-height:1}
+@media (max-width:980px){.step-grp{flex:none}.step-grp button{margin-top:0;height:100%;white-space:nowrap}}
 .screen-col{perspective:1600px}
 .browser{border-radius:16px;background:#0F1C33;border:1px solid var(--line-2);box-shadow:0 40px 90px rgba(0,0,0,.55),0 0 80px rgba(19,110,180,.22);overflow:hidden;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .4s var(--ease);transform-style:preserve-3d}
 .browser-bar{display:flex;align-items:center;gap:7px;height:40px;padding:0 14px;background:#101E37;border-bottom:1px solid var(--line)}
