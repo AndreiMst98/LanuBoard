@@ -43,7 +43,7 @@
     b.addEventListener('click', function () {
       lang = b.dataset.lang;
       try { localStorage.setItem('lanu-lang', lang); } catch (e) {}
-      applyCopy(); haBuild(); renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true); if (owZ) { owRender(); owSteps(); } p2Render(); p2Focus(p2.active, true, true);
+      applyCopy(); haBuild(); if (afStage) { afBuild(); afGo(af.s, true); } renderBenefits(); renderTicker(); renderSteps(); renderMock(); focusStep(active, true); moveInd(); eqBuild(); eqGo(eq.s, true); if (owZ) { owRender(); owSteps(); } p2Render(); p2Focus(p2.active, true, true);
     });
   });
 
@@ -2853,6 +2853,187 @@
     at(19300, function () { el.querySelectorAll('.ha-feed').forEach(function (f) { f.style.transform = ''; }); });
   }
   haBuild();
+
+  // ------------------------------------------------------------------ Andera App: requests & documents (driver phone ⇄ Andera Board ⇄ office phone)
+  var af = { s: 0, auto: !reduce, inView: false, timer: null, tm: [], DUR: [6000, 7000, 7000, 8000, 8000, 7500], scr: {} };
+  var afStage = document.getElementById('af-stage'), afWrap = document.getElementById('af-wrap'), afSteps = document.getElementById('af-steps');
+  function afT(k, v) { var x = t('af')[k]; if (v) Object.keys(v).forEach(function (q) { x = x.replace('{' + q + '}', v[q]); }); return x; }
+  function afHd(title) { return '<div class="af-hd"><i>' + haIc('chev') + '</i><b>' + esc(title) + '</b></div>'; }
+  function afNav(names, icons, on, badge) { return '<nav class="ha-nav">' + names.map(function (n, k) { return '<span' + (k === on ? ' class="on"' : '') + '>' + haIc(icons[k]) + (k === 1 && badge ? '<b>' + badge + '</b>' : '') + esc(n) + '</span>'; }).join('') + '</nav>'; }
+  function afToast(id, ic, title, sub, g, btn) { return '<div class="ha-toast' + (g ? ' g' : '') + '" id="' + id + '"><i>' + haIc(ic) + '</i><div><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></div>' + (btn ? '<button type="button" tabindex="-1">' + esc(btn) + '</button>' : '') + '</div>'; }
+  function afScreens() {
+    var dnav = function (on) { return afNav(ha('dnav'), ['home', 'perf', 'bell', 'user'], on); }, onav = function (on) { return afNav(ha('nav'), ['home', 'task', 'bell', 'user'], on, 1); };
+    var m = pmn(), off = HA.off.split(' ')[0], acts = ha('acts'), IC4 = ['cal', 'coin', 'slip', 'chat'], i, x = {};
+    // driver: home
+    var q = '<div class="ha-act-row ha-acts">';
+    for (i = 0; i < 4; i++) q += '<div class="ha-act" id="' + (i === 0 ? 'af-qto' : '') + '"><span class="k' + i + '">' + haIc(IC4[i]) + (i === 2 ? '<b></b>' : '') + '</span>' + esc(acts[i]) + '</div>';
+    q += '</div>';
+    x.dHome = '<div class="ha-feed">' + haTop(HA.drv) +
+      '<div class="ha-sc"><div class="ha-sc-h"><span>' + esc(ha('score', { w: weekInfo(-1).n, r: weekInfo(-1).range })) + '</span><i>' + haIc('chev') + '</i></div>' +
+      '<div class="ha-sc-m"><div><b class="ha-scn" id="af-score">84.6</b><span class="ha-of">/100</span><em class="ha-great">' + ha('great') + '</em></div>' +
+      '<div class="ha-rank"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="33" class="tr"/><circle cx="40" cy="40" r="33" class="val" id="af-ring"/></svg><span><small>' + ha('rank') + '</small><b>#12</b></span></div></div>' +
+      '<div class="ha-sc-f"><i>' + haIc('up') + '</i><span>' + esc(ha('up', { n: 9 })) + '</span><b>+9</b></div></div>' +
+      '<div class="ha-g2"><div class="ha-c"><small>' + ha('days') + '</small><b>4</b><span class="ha-dots"><i></i><i></i><i></i><i></i></span><small>' + ha('month') + '</small></div>' +
+      '<div class="ha-c"><small>' + ha('rescue') + '</small><b>2</b><img src="assets/img/app/rescue.png" alt="" class="ha-resc"><small>' + ha('month') + '</small></div></div>' +
+      '<div class="ha-c ha-veh"><img src="assets/img/app/veh.png" alt=""><div><small>' + ha('vehicle') + '</small><b>LNU 4821</b></div>' + haIc('chev') + '</div>' +
+      '<h5>' + ha('quick') + '</h5>' + q + '<h5>' + afT('annIn') + '</h5><div class="ha-c af-ann" id="af-dann"><div class="af-an n"><span>' + haIc('mega') + '</span><div><b>' + esc(afT('annTxt')) + '</b><small>' + esc(off) + ' · ' + afT('newTag') + '</small></div></div>' +
+        '<div class="af-an"><span>' + haIc('info') + '</span><div><b>' + esc(afT('annOld', { m: m })) + '</b><small>' + ha('updS') + '</small></div></div></div></div>' + dnav(0) +
+      afToast('af-dt-ann', 'mega', afT('annIn'), afT('annTxt'));
+    // driver: time off form
+    var cal = '<div class="af-cal"><div class="af-cm"><b>' + esc(new Date(2026, 9, 1).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long', year: 'numeric' })) + '</b><span>‹ ›</span></div><div class="af-cg">';
+    var wd = lang === 'de' ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+    wd.forEach(function (d) { cal += '<i class="h">' + d + '</i>'; });
+    for (i = 0; i < 3; i++) cal += '<i></i>';
+    for (i = 1; i <= 31; i++) cal += '<i class="' + (i === 8 ? 'td' : '') + (i < 8 ? ' ps' : '') + '" id="af-c' + i + '">' + i + '</i>';
+    cal += '</div></div>';
+    x.dTo = '<div class="ha-feed">' + afHd(afT('to')) + '<small class="af-lb">' + afT('type') + '</small><div class="af-chips">' + afT('types').map(function (y, k) { return '<span' + (k === 0 ? ' class="on"' : '') + '>' + esc(y) + '</span>'; }).join('') + '</div>' +
+      '<small class="af-lb">' + afT('pick') + '</small>' + cal + '<div class="af-sum" id="af-sum"><span>' + haIc('cal') + '</span><b>' + afT('vacSub') + '</b></div>' +
+      '<small class="af-lb">' + afT('note') + '</small><div class="af-in">' + afT('noteTxt') + '</div><div class="af-btn" id="af-send">' + afT('send') + '</div></div>' +
+      afToast('af-dt-sent', 'ok', afT('sent'), afT('vacSub'), true);
+    // driver: my requests
+    x.dReq = '<div class="ha-feed">' + afHd(afT('reqs')) + '<div class="ha-c ha-rows">' +
+      '<div class="ha-row" id="af-rvac"><span class="ha-ri b">' + haIc('cal') + '</span><div><b>' + afT('vac') + '<i class="ha-tag s" id="af-rtag">' + afT('sentTag') + '</i></b><small>' + afT('vacSub') + '</small></div>' + haIc('chev', 'ha-chv') + '</div>' +
+      '<div class="ha-row"><span class="ha-ri b">' + haIc('chat') + '</span><div><b>' + afT('gen') + '<i class="ha-tag ok">' + afT('okTag') + '</i></b><small>' + afT('genSub') + '</small></div>' + haIc('chev', 'ha-chv') + '</div>' +
+      '<div class="ha-row"><span class="ha-ri b">' + haIc('coin') + '</span><div><b>' + afT('adv') + '<i class="ha-tag s">' + afT('sentTag') + '</i></b><small>' + afT('advSub') + '</small></div>' + haIc('chev', 'ha-chv') + '</div></div>' +
+      '<h5>' + ha('docs') + '</h5>' + haRows(ha('dDocs').slice(0, 3), ['slip', 'doc', 'shirt'], ['v', 'v', 'g']) + '</div>' + dnav(0) +
+      afToast('af-dt-ok', 'ok', afT('okToast'), afT('okToastSub', { n: off }), true);
+    // driver: payslips
+    var months = [1, 2, 3].map(function (k) { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - k); return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long', year: 'numeric' }); });
+    x.dPay = '<div class="ha-feed">' + afHd(afT('myPay')) + '<div class="ha-c ha-rows">' +
+      months.map(function (mm, k) { return '<div class="ha-row' + (k === 0 ? ' af-new' : '') + '" id="' + (k === 0 ? 'af-p0' : '') + '"><span class="ha-ri v">' + haIc('slip') + '</span><div><b>' + esc(afT('payT', { m: mm })) + (k === 0 ? '<i class="ha-tag nw">' + afT('newTag') + '</i>' : '') + '</b><small>PDF · ' + (180 + k * 7) + ' KB</small></div>' + haIc('chev', 'ha-chv') + '</div>'; }).join('') +
+      '</div><div class="af-pdf" id="af-pdf"><div class="af-pdf-h"><b>' + esc(afT('payT', { m: months[0] })) + '</b><span>✕</span></div><div class="af-doc">' +
+        '<div class="af-doc-t"><img src="assets/img/andera-mark.png" alt=""><div><b>Andera Group</b><small>' + esc(HA.drv) + '</small></div></div>' +
+        [['hours', '176 h'], ['base', '2.464,00 €'], ['bonus', '120,00 €'], ['gross', '2.584,00 €']].map(function (r) { return '<div class="af-dl"><span>' + afT(r[0]) + '</span><b>' + r[1] + '</b></div>'; }).join('') +
+        '<div class="af-dl net"><span>' + afT('net') + '</span><b>1.842,37 €</b></div><i class="af-bl"></i><i class="af-bl s"></i></div></div></div>' + dnav(0);
+    // driver: damage report
+    x.dDmg = '<div class="ha-feed">' + afHd(afT('dmgT')) + '<small class="af-lb">' + afT('veh') + '</small><div class="ha-c ha-veh"><img src="assets/img/app/veh.png" alt=""><div><small>' + ha('vehicle') + '</small><b>LNU 4821</b></div><span class="af-ok">✓</span></div>' +
+      '<small class="af-lb">' + afT('place') + '</small><div class="af-pl">' + afT('places').map(function (y, k) { return '<span id="af-pl' + k + '">' + esc(y) + '</span>'; }).join('') + '</div>' +
+      '<small class="af-lb">' + afT('photos') + '</small><div class="af-ph3">' + [3, 0, 5].map(function (f, k) { return '<i id="af-im' + k + '" style="background-image:url(' + FL_IMG[f] + ')"></i>'; }).join('') + '<i class="add">+</i></div>' +
+      '<div class="af-btn" id="af-rep">' + afT('sendRep') + '</div></div>' + afToast('af-dt-rep', 'ok', afT('sent'), 'LNU 4821 · ' + afT('places')[1], true);
+    // office: home
+    var pend = ha('pend');
+    x.oHome = '<div class="ha-feed">' + haTop(HA.off, true) +
+      '<div class="ha-sc ha-ops"><div class="ha-sc-h"><span>' + ha('ops') + '</span><em class="ha-live"><i></i>' + ha('live') + '</em></div><div class="ha-need"><b id="af-need">2</b><span>' + ha('need') + '</span></div><div class="ha-bar"><i></i></div>' +
+      '<div class="ha-g3"><div class="k0"><span>' + haIc('chat') + '</span><b id="af-oreq">2</b><small>' + esc(ha('tiles')[0]) + '</small></div><div class="k1"><span>' + haIc('coin') + '</span><b>0</b><small>' + esc(ha('tiles')[1]) + '</small></div><div class="k2"><span>' + haIc('slip') + '</span><b>0</b><small>' + esc(ha('tiles')[2]) + '</small></div></div></div>' +
+      '<h5>' + ha('pending') + '</h5><div class="ha-pend">' + pend.map(function (y, k) { return '<div' + (k === 0 ? ' id="af-ovac"' : '') + '><b' + (k === 0 ? ' id="af-ovacn"' : '') + '>' + (k === 1 ? 2 : 0) + '</b><small>' + esc(y) + '</small>' + (k === 1 ? '<em>2</em>' : '') + '</div>'; }).join('') + '</div></div>' + onav(0) +
+      afToast('af-ot-new', 'cal', afT('newReq'), afT('newReqSub', { n: HA.drv }));
+    // office: request detail
+    x.oReq = '<div class="ha-feed">' + afHd(afT('reqT')) + '<div class="ha-c af-who">' + avatar(HA.drv, 44) + '<div><b>' + esc(HA.drv) + '</b><small>' + afT('drvRole') + '</small></div><i class="ha-tag s" id="af-otag">' + afT('sentTag') + '</i></div>' +
+      '<div class="ha-c af-kv"><div><small>' + afT('type') + '</small><b>' + afT('vac') + '</b></div><div><small>' + afT('dates') + '</small><b>' + afT('vacSub').split(' · ')[0] + '</b></div><div><small>' + afT('days') + '</small><b>2</b></div><div><small>' + afT('note') + '</small><b>' + afT('noteTxt') + '</b></div></div>' +
+      '<div class="af-2b"><div class="af-btn ghost">' + afT('decline') + '</div><div class="af-btn g" id="af-appr">' + afT('approve') + '</div></div><div class="af-done" id="af-odone"><span>✓</span>' + afT('approved') + '</div></div>';
+    // office: payslips upload
+    var miss = ['Victor Ene', 'Dragos Oprea', 'Lena Vogel', 'George Toma', HA.drv];
+    x.oPay = '<div class="ha-feed">' + afHd(afT('payT', { m: m })) + '<div class="ha-c af-pc"><div class="af-pn"><b id="af-pn">61</b><span>' + afT('ofN', { n: 75 }) + '</span><i id="af-pp">81%</i></div><div class="af-pb"><i id="af-pb"></i></div></div>' +
+      '<div class="ha-c ha-rows">' + miss.map(function (n, k) { return '<div class="ha-row af-mr" id="af-m' + k + '">' + avatar(n, 26) + '<div><b>' + esc(n) + '</b><small>PDF · ' + esc(afT('payT', { m: m })) + '</small></div><span class="af-ck">✓</span></div>'; }).join('') + '</div>' +
+      '<div class="af-btn" id="af-up">' + haIc('up') + ' ' + afT('upload') + '</div><div class="af-done" id="af-pdone"><span>✓</span>' + afT('sentTo', { n: 75 }) + '</div></div>';
+    // office: damage list
+    x.oDmg = '<div class="ha-feed">' + afHd(afT('dmgList')) + '<div class="af-dm n" id="af-dnew"><i style="background-image:url(' + FL_IMG[3] + ')"></i><div><b>LNU 4821 · ' + esc(afT('places')[1]) + '<i class="ha-tag nw">' + afT('newRep') + '</i></b><small>' + esc(afT('by', { n: HA.drv })) + '</small><span class="af-thumbs"><i style="background-image:url(' + FL_IMG[0] + ')"></i><i style="background-image:url(' + FL_IMG[5] + ')"></i><em>+1</em></span></div></div>' +
+      '<div class="af-dm"><i style="background-image:url(' + FL_IMG[6] + ')"></i><div><b>LNU 3307 · ' + esc(afT('places')[2]) + '</b><small>' + esc(afT('older')) + '</small></div></div>' +
+      '<div class="af-dm"><i style="background-image:url(' + FL_IMG[2] + ')"></i><div><b>LNU 1965 · ' + esc(afT('places')[0]) + '</b><small>Felix Braun · 12.09</small></div></div></div>' + onav(0);
+    // office: announcement composer
+    x.oAnn = '<div class="ha-feed">' + afHd(afT('annT')) + '<small class="af-lb">' + afT('to2') + '</small><div class="af-in sel"><span>' + haIc('user') + '</span>' + afT('all', { n: 75 }) + '</div>' +
+      '<small class="af-lb">' + afT('annIn') + '</small><div class="af-in area"><span id="af-type"></span><i class="af-cur"></i></div>' +
+      '<div class="af-btn" id="af-pub">' + haIc('mega') + ' ' + afT('publish') + '</div><div class="af-done" id="af-adone"><span>✓</span>' + afT('annSent', { n: 75 }) + '</div></div>';
+    return x;
+  }
+  var AF_PLAN = [['dHome', 'oHome'], ['dTo', 'oHome'], ['dReq', 'oReq'], ['dPay', 'oPay'], ['dDmg', 'oDmg'], ['dHome', 'oAnn']];
+  function afBuild() {
+    if (!afStage) return;
+    af.scr = {};
+    afStage.innerHTML = '<svg class="af-lines" viewBox="0 0 760 540"><path d="M288 270 H322"/><path d="M438 270 H472"/></svg>' +
+      '<div class="af-ph af-d"><span class="af-lbl"><i></i>' + afT('drv') + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr" id="af-ds"></div></div></div>' +
+      '<div class="af-ph af-o"><span class="af-lbl"><i></i>' + esc(afT('off')) + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr" id="af-os"></div></div></div>' +
+      '<div class="af-hub" id="af-hub"><span class="af-hc"><img src="assets/img/andera-mark.png" alt=""></span><b>' + afT('hub') + '</b><small><i></i>' + afT('sync') + '</small></div>' +
+      '<div class="af-pill" id="af-pill"></div>';
+  }
+  function afShow(phone, key, html) {
+    var el = document.getElementById(phone === 'd' ? 'af-ds' : 'af-os');
+    el.innerHTML = '<div class="af-sc' + (af.scr[phone] && af.scr[phone] !== key ? ' in' : '') + '">' + html + '</div>';
+    af.scr[phone] = key;
+  }
+  function afRenderSteps() {
+    var st = t('afSteps');
+    afSteps.innerHTML = st.map(function (x, i) {
+      return '<li class="step' + (i === af.s ? ' on' + (af.auto ? ' auto' : '') : '') + '"><button type="button" data-af-step="' + i + '" aria-current="' + (i === af.s) + '">' +
+        '<span class="n">' + (i + 1) + '</span><span><span class="t">' + esc(x[1]) + '</span><span class="d">' + esc(x[2]) + '</span></span><span class="prog" style="--dur:' + af.DUR[i] + 'ms"></span></button></li>';
+    }).join('');
+    document.getElementById('af-now').innerHTML = '<b>' + esc(st[af.s][1]) + '</b><p>' + esc(st[af.s][2]) + '</p>';
+  }
+  function afFly(from, txt, ic, green) {
+    var p = document.getElementById('af-pill'), hub = document.getElementById('af-hub'), A = [150, 250], H = [380, 252], B = [610, 250];
+    var a = from === 'd' ? A : B, b = from === 'd' ? B : A;
+    p.className = 'af-pill' + (green ? ' g' : ''); p.innerHTML = haIc(ic) + '<span>' + esc(txt) + '</span>';
+    if (!p.animate) return;
+    p.animate([{ left: a[0] + 'px', top: a[1] + 'px', opacity: 0, transform: 'translate(-50%,-50%) scale(.6)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .15 },
+      { left: H[0] + 'px', top: (H[1] - 34) + 'px', opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .5 }, { opacity: 1, offset: .85 },
+      { left: b[0] + 'px', top: b[1] + 'px', opacity: 0, transform: 'translate(-50%,-50%) scale(.7)' }], { duration: 1500, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' });
+    setTimeout(function () { hub.classList.remove('hit'); void hub.offsetWidth; hub.classList.add('hit'); }, 700);
+  }
+  function afGo(i, keep) {
+    if (!afStage) return;
+    af.tm.forEach(clearTimeout); af.tm = []; af.s = i;
+    var X = afScreens(), pl = AF_PLAN[i], $ = function (id) { return document.getElementById(id); };
+    var at = function (ms, f) { af.tm.push(setTimeout(f, reduce ? 0 : ms)); }, add = function (id, c) { var e = $(id); if (e) e.classList.add(c || 'on'); };
+    var tap = function (id) { var e = $(id); if (!e) return; e.classList.remove('af-tp'); void e.offsetWidth; e.classList.add('af-tp'); };
+    afShow('d', pl[0], X[pl[0]]); afShow('o', pl[1], X[pl[1]]);
+    afStage.className = 'af-stage st' + (i + 1);
+    var pills = afT('pills'), m = pmn();
+    if (i === 0) {
+      var ring = $('af-ring'), L = 2 * Math.PI * 33; ring.style.strokeDasharray = L; ring.style.strokeDashoffset = L; void ring.getBoundingClientRect();
+      ring.style.transition = reduce ? 'none' : 'stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1) .3s'; ring.style.strokeDashoffset = L * (1 - .82);
+      if (!reduce) { var sc = $('af-score'), t0 = performance.now(); (function st(now) { var k = Math.max(0, Math.min(1, (now - t0 - 300) / 1500)), e = 1 - Math.pow(1 - k, 3); sc.textContent = nf(84.6 * e, 1); if (k < 1 && af.s === 0) requestAnimationFrame(st); })(t0); }
+      at(2600, function () { tap('af-qto'); });
+    }
+    if (i === 1) {
+      at(900, function () { add('af-c14'); }); at(1400, function () { add('af-c15'); add('af-sum'); });
+      at(2300, function () { tap('af-send'); }); at(2700, function () { add('af-dt-sent'); afFly('d', pills[0], 'cal'); });
+      at(4100, function () { add('af-ot-new'); $('af-need').textContent = 3; tap('af-need'); $('af-oreq').textContent = 3; $('af-ovacn').textContent = 1; add('af-ovac', 'hot'); });
+    }
+    if (i === 2) {
+      at(1600, function () { tap('af-appr'); }); at(2000, function () { add('af-odone'); $('af-otag').textContent = afT('okTag'); add('af-otag', 'okk'); afFly('o', pills[1], 'ok', true); });
+      at(3400, function () { add('af-dt-ok'); $('af-rtag').textContent = afT('okTag'); add('af-rtag', 'okk'); add('af-rvac', 'hot'); });
+    }
+    if (i === 3) {
+      at(1000, function () { tap('af-up'); });
+      at(1300, function () { var n = $('af-pn'), pp = $('af-pp'), t0 = performance.now(); add('af-pb', 'go');
+        (function st(now) { var k = Math.min(1, (now - t0) / 1600), v = Math.round(61 + 14 * k); n.textContent = v; pp.textContent = Math.round(v / 75 * 100) + '%'; if (k < 1 && af.s === 3) requestAnimationFrame(st); })(t0);
+        [0, 1, 2, 3, 4].forEach(function (k) { at(1300 + k * 300, function () { add('af-m' + k, 'ok'); }); }); });
+      at(3000, function () { add('af-pdone'); afFly('o', afT('pills')[2].replace('{m}', m), 'slip'); });
+      at(4400, function () { add('af-p0', 'show'); }); at(5400, function () { tap('af-p0'); }); at(5800, function () { add('af-pdf'); });
+    }
+    if (i === 4) {
+      at(800, function () { tap('af-pl1'); add('af-pl1'); });
+      [0, 1, 2].forEach(function (k) { at(1500 + k * 550, function () { add('af-im' + k); }); });
+      at(3400, function () { tap('af-rep'); }); at(3800, function () { add('af-dt-rep'); afFly('d', pills[3], 'warn'); });
+      at(5200, function () { add('af-dnew', 'show'); });
+    }
+    if (i === 5) {
+      var full = afT('annTxt'), ty = $('af-type'), k0 = 0;
+      if (reduce) ty.textContent = full; else at(500, function step() { k0 += 2; ty.textContent = full.slice(0, k0); if (k0 < full.length && af.s === 5) af.tm.push(setTimeout(step, 45)); });
+      at(3000, function () { tap('af-pub'); }); at(3400, function () { add('af-adone'); afFly('o', pills[4], 'mega'); });
+      at(4400, function () { var sc = $('af-ds'), f = sc.querySelector('.ha-feed'), tg = $('af-dann'); f.style.transform = 'translateY(' + (-Math.max(0, Math.min(f.offsetHeight - sc.clientHeight, tg.offsetTop - 250))) + 'px)'; });
+      at(5100, function () { add('af-dt-ann'); add('af-dann', 'show'); });
+    }
+    afRenderSteps();
+    if (!keep && window.innerWidth <= 980) { var b = afSteps.querySelector('.on button'); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' }); }
+    afSchedule();
+  }
+  function afSchedule() {
+    clearTimeout(af.timer);
+    if (!af.auto || !af.inView) return;
+    af.timer = setTimeout(function () { afGo((af.s + 1) % AF_PLAN.length, true); }, af.DUR[af.s]);
+  }
+  if (afStage) {
+    afBuild();
+    afSteps.addEventListener('click', function (e) { var b = e.target.closest('[data-af-step]'); if (!b) return; af.auto = false; clearTimeout(af.timer); afGo(Number(b.dataset.afStep)); });
+    var afScale = function () { afStage.style.transform = 'scale(' + (afWrap.clientWidth / 760) + ')'; };
+    if ('ResizeObserver' in window) new ResizeObserver(afScale).observe(afWrap); else window.addEventListener('resize', afScale);
+    afScale(); afGo(0, true);
+    new IntersectionObserver(function (en) {
+      var was = af.inView; af.inView = en[0].isIntersecting;
+      if (af.inView && !was) afGo(af.s, true); else if (!af.inView) { clearTimeout(af.timer); af.tm.forEach(clearTimeout); }
+    }, { threshold: .3 }).observe(document.getElementById('app'));
+  }
   function hsGo(i, user) {
     i = (i + hsEl.length) % hsEl.length;
     if (i === HS.i && !user) return;
