@@ -109,7 +109,7 @@
       '<span class="m-livepill"><i></i>' + t('mLive') + ' <span data-clock>' + nowStr() + '</span></span>' +
       '<div class="m-topr"><span class="m-seg"><span>RO</span><span' + (lang === 'de' ? ' class="on"' : '') + '>DE</span><span' + (lang === 'en' ? ' class="on"' : '') + '>EN</span></span><span class="m-ic"><em>4</em></span><span class="m-ic"></span><span class="m-user"><i>D</i>' + t('mDispatcher') + '</span></div></div>';
   }
-  function renderMock() { if (page === 'da') renderDa(); else if (page === 'cp') renderCp(); else renderOps(); }
+  function renderMock() { if (page === 'da') renderDa(); else if (page === 'cp') renderCp(); else if (page === 'hs') renderHs(); else renderOps(); }
   function renderOps() {
     data = makeDay(dayOffset);
     if (dayOffset !== 0 || liveDelivered === undefined) liveDelivered = data.delivered;
@@ -174,10 +174,11 @@
   }
 
   mock.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr],[data-cp-act]');
+    var b = e.target.closest('[data-day],[data-week],[data-sort],[data-sortdnr],[data-cp-act],[data-hs-act]');
     if (!b || b.disabled) return;
     stopAuto();
     if (b.dataset.cpAct) { cpAction(b.dataset.cpAct, b.dataset.v, b); return; }
+    if (b.dataset.hsAct) { hsAction(b.dataset.hsAct, b.dataset.v); return; }
     if (b.dataset.day) {
       dayOffset = Math.max(-59, Math.min(0, dayOffset + Number(b.dataset.day)));
       renderMock(); focusStep('history', true);
@@ -484,11 +485,181 @@
     }
   }
 
+
+  // ------------------------------------------------------------------ Housing page (fictional accommodations and people)
+  var RATE = 400, HS_TAB = { kpis: 'housing', alert: 'housing', cards: 'housing', rent: 'rent', history: 'history' };
+  var hs, hsTab = 'housing', hsFilter = 'all', hsRentM = 0, hsNext = 0, HSN = rosterOf(160);
+  function dAt(y, m, d) { return new Date(y, m, d, 12); }
+  var TODAY = (function () { var d = new Date(); return dAt(d.getFullYear(), d.getMonth(), d.getDate()); })();
+  function mStart(off) { return dAt(TODAY.getFullYear(), TODAY.getMonth() + off, 1); }
+  function mEnd(off) { return dAt(TODAY.getFullYear(), TODAY.getMonth() + off + 1, 0); }
+  function addD(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function ddmm(d) { return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); }
+  function dif(a, b) { return Math.round((b - a) / 864e5); }
+  function eur(v) { return v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+  function eur0(v) { return Math.round(v).toLocaleString('de-DE') + ' €'; }
+  function monthName(off) { var n = mStart(off).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long', year: 'numeric' }); return n.charAt(0).toUpperCase() + n.slice(1); }
+  function stay(p, off) { // rent of one stay inside one month: days are counted per night, the arrival day included
+    var s = mStart(off), e = off === 0 ? TODAY : mEnd(off), from = p.in > s ? p.in : s, to = e;
+    if (p.out) { var last = addD(p.out, -1); if (last < to) to = last; }
+    if (to < from) return null;
+    var days = dif(from, to) + 1;
+    return { from: from, to: to, days: days, rent: days * RATE / mEnd(off).getDate() };
+  }
+  function makeHousing() {
+    var ACC = [
+      ['Lindenhof Ap. 2', 'Lindenweg 12', [2], 650], ['Parkblick Ap. 5', 'Am Stadtpark 4', [2, 1], 900],
+      ['Mühlenhof Double', 'Mühlenstraße 18', [2, 2], 1150], ['Gartenhaus', 'Rosengasse 7', [2, 2], 1100],
+      ['Nordring Ap. 3', 'Nordring 31', [2, 2], 1050], ['Mühlenhof Ap. 11', 'Mühlenstraße 18', [2, 2, 2], 1500],
+      ['Mühlenhof Ap. 4', 'Mühlenstraße 18', [2, 2, 2], 1650], ['Station House', 'Bahnhofsweg 4', [2, 2, 4], 2150]
+    ];
+    var OCC = [[2], [2, 1], [2, 2], [2, 2], [2, 0], [1, 1, 0], [2, 2, 2], [2, 2, 4]], n = 100, r = rng(4711);
+    var acc = ACC.map(function (a, i) {
+      return { name: a[0], addr: a[1], landlord: a[3], taken: i === 7 ? addD(mStart(-24), 15) : mStart(-2), rooms: a[2].map(function (beds, k) {
+        var people = [];
+        for (var j = 0; j < OCC[i][k]; j++) people.push({ name: HSN[n++].name, in: r() < .8 ? mStart(-2) : addD(mStart(-1), between(r, 2, 20)) });
+        return { beds: beds, people: people };
+      }) };
+    });
+    acc[2].rooms[1].people[0].flag = true;
+    var H = [[7, 3, 0, 0, Math.max(1, TODAY.getDate() - 2)], [3, 2, 22, -1, 0], [1, 2, 0, -1, 0], [0, 2, 0, -1, 0], [3, 1, 0, -1, 0], [7, 1, 0, -1, 0], [6, 3, 32, -1, -1], [5, 1, 0, -1, 23], [2, 2, 0, -1, 23]];
+    var hist = H.map(function (h) {
+      var out = h[4] > 0 ? dAt(TODAY.getFullYear(), TODAY.getMonth() + h[3], h[4]) : addD(mEnd(h[3]), h[4]);
+      return { name: HSN[n++].name, acc: acc[h[0]].name, room: h[1], in: addD(mStart(-2), h[2]), out: out };
+    });
+    return { acc: acc, hist: hist, flag: 'open' };
+  }
+  function hsResidents() {
+    var list = [];
+    hs.acc.forEach(function (a) { a.rooms.forEach(function (rm, k) { rm.people.forEach(function (p) { list.push({ p: p, acc: a.name, room: k + 1 }); }); }); });
+    return list;
+  }
+  function hsMonthRows(off) {
+    var rows = [];
+    hsResidents().forEach(function (x) { var st = stay(x.p, off); if (st) rows.push({ name: x.p.name, acc: x.acc, room: x.room, st: st }); });
+    hs.hist.forEach(function (x) { var st = stay(x, off); if (st) rows.push({ name: x.name, acc: x.acc, room: x.room, st: st }); });
+    return rows.sort(function (a, b) { return a.acc.localeCompare(b.acc) || a.room - b.room || a.name.localeCompare(b.name); });
+  }
+  function sum(rows) { return rows.reduce(function (t, x) { return { days: t.days + x.st.days, rent: t.rent + x.st.rent }; }, { days: 0, rent: 0 }); }
+  var HI = {
+    house: '<svg class="ic" width="18" height="18" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>',
+    pin: '<svg class="ic" width="12" height="12" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+    cal: '<svg class="ic" width="12" height="12" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+    ppl: '<svg class="ic" width="12" height="12" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>',
+    warn: '<svg class="ic" width="18" height="18" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>',
+    check: '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    out: '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg>'
+  };
+  function hsCard(a, ai, cur) {
+    var occ = 0, beds = 0;
+    a.rooms.forEach(function (rm) { occ += rm.people.length; beds += rm.beds; });
+    var full = occ === beds, drv = cur.filter(function (x) { return x.acc === a.name; }), dr = sum(drv).rent;
+    var rooms = a.rooms.map(function (rm, k) {
+      var ppl = rm.people.map(function (p) {
+        return '<span class="hs-p' + (p.flag ? ' warn' : '') + (p.isNew ? ' add-in' : '') + '">' + avatar(p.name, 24) + esc(p.name) + (p.flag ? ' <i class="hs-w">' + HI.warn + '</i>' : '') + '</span>';
+      }).join('');
+      for (var f = rm.people.length; f < rm.beds; f++) ppl += '<button type="button" class="hs-slot" data-hs-act="checkin" data-v="' + ai + ',' + k + '">+ ' + t('hsCheckIn') + '</button>';
+      return '<div class="hs-room' + (rm.isNew ? ' add-in' : '') + '"><div class="hs-rh"><b>' + t('hsRoom', { n: k + 1 }) + '</b><span class="hs-cnt' + (rm.people.length === rm.beds ? ' o' : '') + '">' + rm.people.length + '/' + rm.beds + '</span><span class="cp-ib sm">' + IC.edit + '</span></div><div class="hs-ppl">' + ppl + '</div></div>';
+    }).join('');
+    return '<div class="m-panel hs-card" data-p="cards"><div class="hs-ch"><span class="hs-ico">' + HI.house + '</span><div><b>' + esc(a.name) + '</b><span class="hs-addr">' + HI.pin + esc(a.addr) + '</span></div><span class="cp-ib">' + IC.edit + '</span></div>' +
+      '<div class="hs-chips"><span class="hs-chip">' + HI.cal + t('hsTaken', { d: ddmm(a.taken) }) + '</span><span class="hs-chip">€ ' + t('hsLandlordChip', { n: eur0(a.landlord) }) + '</span><span class="hs-chip g">' + HI.ppl + t('hsDriversChip', { n: eur(dr) }) + '</span></div>' +
+      '<div class="hs-occ"><span class="hs-bar' + (full ? ' full' : '') + '"><i style="width:' + (occ / beds * 100) + '%"></i></span><b>' + occ + '/' + beds + '</b><span>' + t('hsFree', { n: beds - occ }) + '</span></div>' +
+      rooms + '<button type="button" class="cp-btn hs-addroom" data-hs-act="addroom" data-v="' + ai + '">' + IC.plus + t('hsAddRoom') + '</button></div>';
+  }
+  function hsSubnav() {
+    return '<div class="hs-nav"><span class="dim">' + t('hsHousing') + '</span>' + [['housing', 'hsHousing'], ['rent', 'hsRent'], ['history', 'hsHistory']].map(function (x) {
+      return '<button type="button" data-hs-act="tab" data-v="' + x[0] + '"' + (hsTab === x[0] ? ' class="on"' : '') + '>' + t(x[1]) + '</button>';
+    }).join('') + '</div>';
+  }
+  function renderHs() {
+    if (!hs) hs = makeHousing();
+    var html = topBar(t('pageHs')) + hsSubnav() + '<div class="m-body">';
+    if (hsTab === 'housing') {
+      var cur = hsMonthRows(0), tot = sum(cur), res = hsResidents(), beds = 0, rooms = 0, land = 0;
+      hs.acc.forEach(function (a) { land += a.landlord; a.rooms.forEach(function (rm) { beds += rm.beds; rooms++; }); });
+      var bal = res.length * RATE - land, pctB = res.length / beds * 100;
+      html += '<div class="m-panel m-dk hs-k" data-p="kpis">' +
+        '<div class="dk"><span class="dk-h">' + t('hsActive') + '</span><b class="dk-big" data-count="' + hs.acc.length + '">' + hs.acc.length + '</b><span>' + t('hsRooms', { n: rooms }) + '</span></div>' +
+        '<div class="dk"><span class="dk-h">' + t('hsBeds') + '</span><span class="cp-big"><b class="dk-big" data-count="' + res.length + '">' + res.length + '</b><span>' + t('mOf', { n: beds }) + '</span></span>' +
+        '<div class="m-prog"><span class="tr"><i style="width:' + pctB + '%"></i></span><b>' + Math.round(pctB) + '%</b></div><span>' + t('hsFree', { n: beds - res.length }) + '</span></div>' +
+        '<div class="dk hs-money"><span class="dk-h">' + t('hsRentKpi') + '</span><b class="dk-big">' + eur(tot.rent) + '</b><span>' + t('hsRentNote', { n: cur.length, m: eur0(RATE), d: eur(RATE / mEnd(0).getDate()).replace(/0 €$/, ' €') }) + '</span><span>' + t('hsLandlords', { n: eur0(land) }) + '</span>' +
+        '<span class="hs-bal ' + (bal >= 0 ? 'pos' : 'neg') + '">' + t('hsBalance', { n: (bal >= 0 ? '+' : '−') + eur0(Math.abs(bal)) }) + '</span></div></div>';
+      var F = [['all', 'hsAll'], ['free', 'hsFreeF'], ['full', 'hsFullF'], ['archived', 'hsArchived']];
+      html += '<div class="hs-tools" data-p="cards"><span class="m-search">' + t('hsSearch') + '</span>' + F.map(function (f) { return '<button type="button" class="hs-f' + (hsFilter === f[0] ? ' on' : '') + '" data-hs-act="filter" data-v="' + f[0] + '">' + t(f[1]) + '</button>'; }).join('') +
+        '<span class="hs-new">' + IC.plus + t('hsNew') + '</span></div>';
+      var fp, fa, fr;
+      hs.acc.forEach(function (a) { a.rooms.forEach(function (rm, k) { rm.people.forEach(function (p) { if (p.flag) { fp = p; fa = a; fr = k + 1; } }); }); });
+      html += '<div class="m-panel hs-alert' + (hs.flag !== 'open' ? ' ok' : '') + '" data-p="alert">' + (hs.flag === 'open' && fp
+        ? '<div class="hs-at"><span class="hs-ai">' + HI.warn + '</span><div><b>' + t('hsCheckTitle') + '</b><span>' + t('hsCheckNote') + '</span></div></div>' +
+          '<div class="hs-arow">' + avatar(fp.name, 34) + '<div class="hs-an"><b>' + esc(fp.name) + '</b><span><em>' + t('hsInactive') + '</em>' + esc(fa.name) + ' · ' + t('hsRoom', { n: fr }) + ' · ' + t('hsSince', { d: ddmm(fp.in) }) + '</span></div>' +
+          '<button type="button" class="hs-yes" data-hs-act="keep">' + HI.check + t('hsYes') + '</button><button type="button" class="hs-no" data-hs-act="checkout">' + HI.out + t('hsNo') + '</button></div>'
+        : '<div class="hs-at"><span class="hs-ai ok">' + HI.check + '</span><div><b>' + t('hsOkTitle') + '</b><span>' + t('hsOkNote') + '</span></div></div>') + '</div>';
+      var list = hs.acc.map(function (a, i) { return [a, i]; }).filter(function (x) {
+        var occ = 0, b = 0; x[0].rooms.forEach(function (rm) { occ += rm.people.length; b += rm.beds; });
+        return hsFilter === 'free' ? occ < b : hsFilter === 'full' ? occ === b : hsFilter !== 'archived';
+      });
+      var cols = [[], [], [], []];
+      list.forEach(function (x, i) { cols[i % 4].push(hsCard(x[0], x[1], cur)); });
+      html += list.length ? '<div class="hs-grid">' + cols.map(function (c) { return '<div class="hs-colm">' + c.join('') + '</div>'; }).join('') + '</div>'
+        : '<div class="m-panel hs-empty" data-p="cards">' + t('hsNoArchived') + '</div>';
+    } else if (hsTab === 'rent') {
+      var months = [0, -1].map(function (o) { var rows = hsMonthRows(o); return { o: o, rows: rows, s: sum(rows) }; });
+      var all = { days: months[0].s.days + months[1].s.days, rent: months[0].s.rent + months[1].s.rent };
+      var sel = months[hsRentM === 0 ? 0 : 1];
+      html += '<div class="m-panel" data-p="rent"><div class="m-ph"><h4>' + t('hsByMonth') + '</h4><span class="hs-note">' + t('hsClickMonth') + '</span></div><table class="m-t"><thead><tr><th>' + t('hsMonth') + '</th><th class="r">' + t('hsPeople') + '</th><th class="r">' + t('hsDays') + '</th><th class="r">' + t('hsTotalRent') + '</th></tr></thead><tbody>' +
+        months.map(function (m) { return '<tr class="hs-mrow' + (m.o === hsRentM ? ' sel' : '') + '" data-hs-act="month" data-v="' + m.o + '"><td><b>' + monthName(m.o) + '</b>' + (m.o === 0 ? ' <small>' + t('hsOngoing') + '</small>' : '') + '</td><td class="r">' + m.rows.length + '</td><td class="r">' + m.s.days + '</td><td class="r"><b>' + eur(m.s.rent) + '</b></td></tr>'; }).join('') +
+        '<tr class="hs-tot"><td><b>' + t('hsTotal') + '</b></td><td></td><td class="r"><b>' + all.days + '</b></td><td class="r"><b>' + eur(all.rent) + '</b></td></tr></tbody></table></div>' +
+        '<div class="hs-mnav" data-p="rent"><span class="m-dnav"><button type="button" data-hs-act="month" data-v="-1"' + (hsRentM === -1 ? ' disabled' : '') + '>‹</button><span class="dv">' + monthName(hsRentM) + ' <span>▾</span></span><button type="button" data-hs-act="month" data-v="0"' + (hsRentM === 0 ? ' disabled' : '') + '>›</button></span>' +
+        '<span class="hs-sumtxt">' + t('hsPeopleTotal', { n: sel.rows.length, t: '<b>' + eur(sel.s.rent) + '</b>' }) + '</span><span class="hs-rate">' + eur0(RATE) + '/' + (lang === 'de' ? 'Monat' : 'month') + ' · ' + eur(RATE / mEnd(hsRentM).getDate()).replace(/0 €$/, ' €') + '/' + (lang === 'de' ? 'Tag' : 'day') + '</span></div>' +
+        '<div class="m-panel" data-p="rent"><table class="m-t dense"><thead><tr><th>' + t('hsPerson') + '</th><th>' + t('hsAcc') + '</th><th>' + t('hsRoomCol') + '</th><th>' + t('hsPeriod') + '</th><th class="r">' + t('hsDays') + '</th><th class="r">' + t('hsRentCol') + '</th></tr></thead><tbody>' +
+        sel.rows.slice(0, 14).map(function (x, i) { return '<tr class="row-in" style="--i:' + i + '"><td><span class="da">' + avatar(x.name, 26) + '<b>' + esc(x.name) + '</b></span></td><td>' + esc(x.acc) + '</td><td>' + t('hsRoom', { n: x.room }) + '</td><td>' + ddmm(x.st.from) + ' – ' + ddmm(x.st.to) + '</td><td class="r">' + x.st.days + '</td><td class="r"><b>' + eur(x.st.rent) + '</b></td></tr>'; }).join('') +
+        '</tbody></table></div>';
+    } else {
+      var rows = hs.hist.slice().sort(function (a, b) { return b.out - a.out; });
+      html += '<div class="hs-mnav" data-p="history"><span class="m-search">' + t('hsSearchHist') + '</span><span class="m-dnav"><button type="button" disabled>‹</button><span class="dv">' + t('hsAllMonths') + ' <span>▾</span></span><button type="button" disabled>›</button></span><span class="hs-sumtxt"><b>' + t('hsEnded', { n: rows.length }) + '</b></span></div>' +
+        '<div class="m-panel" data-p="history"><table class="m-t hs-hist"><thead><tr><th>' + t('hsPerson') + '</th><th>' + t('hsAcc') + '</th><th>' + t('hsRoomCol') + '</th><th>' + t('hsIn') + '</th><th>' + t('hsOut') + '</th><th class="r">' + t('hsNights') + '</th><th class="r">' + t('hsRentPerMonth') + '</th></tr></thead><tbody>' +
+        rows.map(function (x, i) {
+          var parts = [-1, 0].map(function (o) { var st = stay(x, o); return st ? { o: o, st: st } : null; }).filter(Boolean), total = parts.reduce(function (s0, q) { return s0 + q.st.rent; }, 0);
+          var rent = parts.map(function (q) { return '<span class="hs-pm">' + monthName(q.o) + ' <small>' + t('hsDaysSmall', { n: q.st.days }) + '</small> <b>' + eur(q.st.rent) + '</b></span>'; }).join('') + (parts.length > 1 ? '<span class="hs-pm tot">' + t('hsTotalSmall') + ' <b>' + eur(total) + '</b></span>' : '');
+          return '<tr class="' + (x.isNew ? 'add-in' : '') + '"><td><span class="da">' + avatar(x.name, 26) + '<b>' + esc(x.name) + '</b></span></td><td>' + esc(x.acc) + '</td><td>' + t('hsRoom', { n: x.room }) + '</td><td>' + ddmm(x.in) + '</td><td>' + ddmm(x.out) + '</td><td class="r">' + dif(x.in, x.out) + '</td><td class="r">' + rent + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    mock.innerHTML = html + '</div>';
+    layoutMock();
+  }
+  function hsAction(act, v) {
+    if (act === 'tab') { hsTab = v; renderMock(); focusStep(v === 'housing' ? 'kpis' : v, true); return; }
+    if (act === 'month') { hsRentM = Number(v); renderMock(); focusStep('rent', true, true); return; }
+    if (act === 'filter') { hsFilter = v; renderMock(); focusStep('cards', true, true); return; }
+    if (act === 'checkin') {
+      var ix = v.split(','), rm = hs.acc[ix[0]].rooms[ix[1]];
+      hs.acc.forEach(function (a) { a.rooms.forEach(function (r0) { r0.isNew = false; r0.people.forEach(function (p) { p.isNew = false; }); }); });
+      rm.people.push({ name: HSN[140 + (hsNext++ % 20)].name, in: TODAY, isNew: true });
+      renderMock(); focusStep('cards', true, true); return;
+    }
+    if (act === 'addroom') {
+      hs.acc.forEach(function (a) { a.rooms.forEach(function (r0) { r0.isNew = false; }); });
+      hs.acc[v].rooms.push({ beds: 2, people: [], isNew: true }); renderMock(); focusStep('cards', true, true); return;
+    }
+    if (act === 'keep' || act === 'checkout') {
+      hs.acc.forEach(function (a) { a.rooms.forEach(function (r0, k) {
+        r0.people = r0.people.filter(function (p) {
+          if (!p.flag) return true;
+          p.flag = false;
+          if (act === 'keep') return true;
+          hs.hist.push({ name: p.name, acc: a.name, room: k + 1, in: p.in, out: TODAY, isNew: true });
+          return false;
+        });
+      }); });
+      hs.flag = act; renderMock(); focusStep('alert', true, true);
+    }
+  }
+
   // ------------------------------------------------------------------ page menu with a futuristic switch transition
   var tabs = document.querySelectorAll('[data-page]'), ind = document.querySelector('.pages-ind'), switching = false, urlTimer;
   function moveInd() {
     var b = document.querySelector('[data-page][aria-selected="true"]');
-    if (b && ind) { ind.style.left = b.offsetLeft + 'px'; ind.style.width = b.offsetWidth + 'px'; }
+    if (b && ind) { ind.style.left = b.offsetLeft + 'px'; ind.style.width = b.offsetWidth + 'px'; ind.style.top = b.offsetTop + 'px'; ind.style.height = b.offsetHeight + 'px'; }
   }
   function typeUrl(u) {
     var el = document.getElementById('url'), i = 0; clearInterval(urlTimer);
@@ -537,9 +708,10 @@
   var PAGES = {
     ops: { name: 'pageOps', steps: 'steps', first: 'overview', url: 'board.lanu.app/operations' },
     da: { name: 'pageDa', steps: 'stepsDa', first: 'kpis', url: 'board.lanu.app/associates' },
-    cp: { name: 'pageCp', steps: 'stepsCp', first: 'kpis', url: 'board.lanu.app/phones' }
+    cp: { name: 'pageCp', steps: 'stepsCp', first: 'kpis', url: 'board.lanu.app/phones' },
+    hs: { name: 'pageHs', steps: 'stepsHs', first: 'kpis', url: 'board.lanu.app/housing' }
   };
-  var ORDER = ['ops', 'da', 'cp'];
+  var ORDER = ['ops', 'da', 'cp', 'hs'];
   var page = 'ops';
   var active = 'overview', auto = !reduce, timer = null, inView = false, DUR = 7000;
   function renderSteps() {
@@ -564,6 +736,7 @@
     mock.style.transform = 'translate(' + (-cam.x) + 'px,' + (-cam.y) + 'px) scale(' + cam.z + ')';
   }
   function focusStep(id, keep, quiet) {
+    if (page === 'hs' && HS_TAB[id] && hsTab !== HS_TAB[id]) { hsTab = HS_TAB[id]; renderMock(); }
     active = id;
     renderSteps();
     var panels = mock.querySelectorAll('[data-p]');
