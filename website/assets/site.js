@@ -2696,7 +2696,9 @@
     var mn = Math.min.apply(null, SPK), mx = Math.max.apply(null, SPK) || 1, pts = SPK.map(function (q, i) { return (i / (SPK.length - 1) * 200).toFixed(1) + ',' + (36 - (q - mn) / Math.max(1, mx - mn) * 30).toFixed(1); });
     pl.setAttribute('points', pts.join(' ')); ar.setAttribute('d', 'M0,40 L' + pts.join(' L') + ' L200,40 Z');
   }
-  var HS = { i: 0, timer: null, dur: 9000, durs: [9000, 9000, 21500], inView: true, busy: false }, hsEl = document.querySelectorAll('.hero-slide'), hsNav = document.getElementById('hs-nav');
+  var HS = { i: 0, timer: null, dur: 9000, durs: { money: 9000, app: 21500, day: 9000 }, theme: { day: 0, money: 1, app: 2 }, inView: true, busy: false }, hsEl = document.querySelectorAll('.hero-slide'), hsNav = document.getElementById('hs-nav');
+  function hsKey(i) { return hsEl[i === undefined ? HS.i : i].dataset.key; }
+  window.LANU_CITY_THEME = HS.theme[hsKey(0)];
   function hsMoney() {
     var arc = document.getElementById('hv2-arc'), left = document.getElementById('hv2-left'), pct = document.getElementById('hv2-pct'), bars = document.getElementById('hv2-bars'), eurEl = document.getElementById('hv2-eur');
     if (!arc) return;
@@ -2800,7 +2802,7 @@
       '<div class="ha-ph ha-d"><span class="ha-lbl"><i></i>' + ha('drv') + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr">' + d + '</div></div></div>' +
       '<div class="ha-ph ha-o"><span class="ha-lbl"><i></i>' + esc(ha('off')) + '</span><div class="ha-fr"><i class="ha-notch"></i><div class="ha-scr">' + o + '</div></div></div>' +
       '<div class="ha-fly" id="ha-fly">' + haIc('cal') + '<span>' + esc(ha('sent')) + '</span></div>';
-    if (HS.i === 2) haPlay();
+    if (hsKey() === 'app') haPlay();
   }
   function pmn() { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long' }); }
   function haStop() { HA.tm.forEach(clearTimeout); HA.tm = []; }
@@ -2819,7 +2821,7 @@
     ring.style.transition = reduce ? 'none' : 'stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1) .3s'; ring.style.strokeDashoffset = L * (1 - .82);
     var sc = $('ha-score'), t0 = performance.now();
     if (reduce) sc.textContent = nf(84.6, 1);
-    else (function st(now) { var k = Math.max(0, Math.min(1, (now - t0 - 300) / 1500)), e = 1 - Math.pow(1 - k, 3); sc.textContent = nf(84.6 * e, 1); if (k < 1 && HS.i === 2) requestAnimationFrame(st); })(t0);
+    else (function st(now) { var k = Math.max(0, Math.min(1, (now - t0 - 300) / 1500)), e = 1 - Math.pow(1 - k, 3); sc.textContent = nf(84.6 * e, 1); if (k < 1 && hsKey() === 'app') requestAnimationFrame(st); })(t0);
     if (reduce) return;
     at(1700, function () { el.classList.add('s-tap'); });
     var fly = $('ha-fly'), pt = function (q, fx, fy) { var r = el.getBoundingClientRect(), b = q.getBoundingClientRect(); return [b.left - r.left + b.width * fx, b.top - r.top + b.height * fy]; };
@@ -2856,28 +2858,29 @@
     if (i === HS.i && !user) return;
     var prev = hsEl[HS.i], next = hsEl[i];
     HS.i = i;
-    window.LANU_CITY_THEME = i;
-    document.querySelector('.hero').classList.toggle('money', i === 1);
-    document.querySelector('.hero').classList.toggle('app', i === 2);
+    var key = hsKey(i); window.LANU_CITY_THEME = HS.theme[key];
+    document.querySelector('.hero').classList.toggle('money', key === 'money');
+    document.querySelector('.hero').classList.toggle('app', key === 'app');
     if (prev !== next) { prev.classList.remove('on'); prev.classList.add('leave'); prev.setAttribute('aria-hidden', 'true'); setTimeout(function () { prev.classList.remove('leave'); }, 700); }
     next.classList.add('on'); next.removeAttribute('aria-hidden');
     var h = next.querySelector('h1,h2'); if (h) { var html = h.innerHTML; h.innerHTML = ''; void h.offsetWidth; h.innerHTML = html; }
     var sc = document.getElementById('hero-scan'); if (sc && !reduce) { sc.classList.remove('run'); void sc.offsetWidth; sc.classList.add('run'); }
-    if (i === 1) hsMoney();
-    if (i === 2) haPlay(); else haStop();
+    if (key === 'money') hsMoney();
+    if (key === 'app') haPlay(); else haStop();
     hsNav.querySelectorAll('.hs-tab').forEach(function (b, k) { b.classList.toggle('on', k === i); b.classList.remove('run'); });
-    hsNav.style.setProperty('--hs-dur', HS.durs[i] + 'ms'); void hsNav.offsetWidth; var on = hsNav.querySelector('.hs-tab.on'); if (on && !reduce) on.classList.add('run');
+    hsNav.style.setProperty('--hs-dur', HS.durs[key] + 'ms'); void hsNav.offsetWidth; var on = hsNav.querySelector('.hs-tab.on'); if (on && !reduce) on.classList.add('run');
     hsSched();
   }
-  function hsSched() { clearTimeout(HS.timer); if (reduce || !HS.inView) return; HS.timer = setTimeout(function () { hsGo(HS.i + 1); }, HS.durs[HS.i] || HS.dur); }
+  function hsSched() { clearTimeout(HS.timer); if (reduce || !HS.inView) return; HS.timer = setTimeout(function () { hsGo(HS.i + 1); }, HS.durs[hsKey()] || HS.dur); }
   if (hsNav) {
-    hsNav.style.setProperty('--hs-dur', HS.dur + 'ms');
+    hsNav.style.setProperty('--hs-dur', HS.durs[hsKey()] + 'ms');
     hsNav.addEventListener('click', function (e) { var b = e.target.closest('[data-hs-to],[data-hs-go]'); if (!b) return; hsGo(b.dataset.hsTo !== undefined ? Number(b.dataset.hsTo) : HS.i + Number(b.dataset.hsGo), true); });
     var tx = null;
     document.querySelector('.hero-slides').addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
     document.querySelector('.hero-slides').addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) hsGo(HS.i + (dx < 0 ? 1 : -1), true); tx = null; }, { passive: true });
     new IntersectionObserver(function (en) { HS.inView = en[0].isIntersecting; if (HS.inView) hsSched(); else clearTimeout(HS.timer); }).observe(document.querySelector('.hero'));
-    heroSpark(); var on0 = hsNav.querySelector('.hs-tab.on'); if (on0 && !reduce) on0.classList.add('run'); hsSched();
+    heroSpark(); if (hsKey() === 'money') hsMoney(); else if (hsKey() === 'app') haPlay();
+    var on0 = hsNav.querySelector('.hs-tab.on'); if (on0 && !reduce) on0.classList.add('run'); hsSched();
   }
 
   // ------------------------------------------------------------------ hero: isometric cube city with delivery lights (reacts to the cursor)
@@ -2902,7 +2905,7 @@
     }
     function pos(i, j) { return [cx + (i - j) * w / 2, cy + (i + j - (N - 1)) * a / 2]; }
     function mix(c1, c2, k) { return 'rgb(' + Math.round(c1[0] + (c2[0] - c1[0]) * k) + ',' + Math.round(c1[1] + (c2[1] - c1[1]) * k) + ',' + Math.round(c1[2] + (c2[2] - c1[2]) * k) + ')'; }
-    var TOP0 = [19, 40, 74], TOP1 = [30, 60, 104], LEFT = [14, 31, 58], RIGHT = [10, 24, 46], HOT = [59, 155, 255], HOT_B = [59, 155, 255], HOT_E = [16, 205, 140], HOT_V = [150, 110, 255], themeK = 0, themeV = 0;
+    var TOP0 = [19, 40, 74], TOP1 = [30, 60, 104], LEFT = [14, 31, 58], RIGHT = [10, 24, 46], HOT = [59, 155, 255], HOT_B = [59, 155, 255], HOT_E = [16, 205, 140], HOT_V = [150, 110, 255], themeK = window.LANU_CITY_THEME === 1 ? 1 : 0, themeV = window.LANU_CITY_THEME === 2 ? 1 : 0;
     function height(i, j, tm) {
       var p = pos(i, j), dx = p[0] - mouse.x, dy = p[1] - mouse.y;
       var boost = Math.exp(-(dx * dx + dy * dy) / (2 * 110 * 110));
