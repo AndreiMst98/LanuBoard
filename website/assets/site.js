@@ -1335,9 +1335,17 @@
 
 
   // ------------------------------------------------------------------ Planning: second, mirrored tour (screen left, steps right)
-  var P2 = { tabs: ['cap', 'wp', 'at'], first: { cap: 'capweeks', wp: 'wpauto', at: 'atpaste' }, url: { cap: 'capacity', wp: 'work-plan', at: 'atlas-parcels' },
-    of: { capweeks: 'cap', capkpis: 'cap', capdays: 'cap', wpauto: 'wp', wpplan: 'wp', wpsd: 'wp', atpaste: 'at', atlist: 'at' } };
-  var p2 = { tab: 'cap', active: 'capweeks', auto: !reduce, inView: false, timer: null, cam: { z: 1, x: 0, y: 0 }, colors: [0, 1, 2], sb: [], at: 'empty', copied: false, saved: null, edits: {}, hi: null, tok: 0 };
+  var P2P = {
+    pl: { name: 'pageP', steps: 'plSteps', tabNames: 'plTabs', base: 'planning', tabs: ['cap', 'wp', 'at'], first: { cap: 'capweeks', wp: 'wpauto', at: 'atpaste' }, url: { cap: 'capacity', wp: 'work-plan', at: 'atlas-parcels' },
+      of: { capweeks: 'cap', capkpis: 'cap', capdays: 'cap', wpauto: 'wp', wpplan: 'wp', wpsd: 'wp', atpaste: 'at', atlist: 'at' } },
+    ts: { name: 'pageTs', steps: 'tsSteps', tabNames: 'tsTabs', base: 'timesheets', tabs: ['wd', 'rs', 'dp', 'ws', 'ap', 'af', 'ks'],
+      first: { wd: 'tswd', rs: 'tsrs', dp: 'tsdp', ws: 'tsws', ap: 'tsap', af: 'tsaf', ks: 'tsks' },
+      url: { wd: 'working-days', rs: 'rescue', dp: 'daily-protocol', ws: 'work-summary', ap: 'accommodation-problems', af: 'average-food', ks: 'kenjo-sync' },
+      of: { tswd: 'wd', tsrs: 'rs', tsdp: 'dp', tsdpd: 'dp', tsws: 'ws', tswsd: 'ws', tsap: 'ap', tsaf: 'af', tsks: 'ks', tsksx: 'ks' } }
+  };
+  var P2ORDER = ['pl', 'ts'], P2ALIAS = { tsdpd: 'tsdp', tsksx: 'tsks' };
+  function P2() { return P2P[p2.page]; }
+  var p2 = { page: 'pl', ts: { rsSort: false, dpOpen: null, wsTab: 0, wsTopic: -1, ap: {}, apHi: null, ksF: 'all', ks: 'done', ksN: 0 }, tab: 'cap', active: 'capweeks', auto: !reduce, inView: false, timer: null, cam: { z: 1, x: 0, y: 0 }, colors: [0, 1, 2], sb: [], at: 'empty', copied: false, saved: null, edits: {}, hi: null, tok: 0 };
   var mock2 = document.getElementById('mock2'), screen2 = document.getElementById('screen2'), steps2 = document.getElementById('steps2'), now2 = document.getElementById('step-now2');
   var WP_PAL = ['#FFF56B', '#64B5F6', '#FFB74D', '#81C784', '#F48FB1', '#B39DDB', '#4DD0E1'], WP_T = ['10:00', '10:50', '11:15'], SD_T = ['06:55', '14:15', '17:55'];
   function lday(d, o) { return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', o || { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }); }
@@ -1385,9 +1393,196 @@
     var lines = rows.map(function (x) { return x.tr + ' - ' + x.route + ' - A' + Math.floor(r() * 1e12).toString(36).toUpperCase().slice(0, 12); });
     return (atC = { rows: rows, lines: lines, drivers: pick.length });
   }
+  // ---------- Timesheets (fictional drivers and hours)
+  function hmin(m) { return Math.floor(m / 60) + 'h' + pad(m % 60) + 'm'; }
+  function hh(v) { return nf(v, 1) + ' h'; }
+  var tsC;
+  function tsData() {
+    if (tsC) return tsC;
+    var r = rng(2626), dim = mEnd(0).getDate(), td = TODAY.getDate(), y = TODAY.getFullYear(), mo = TODAY.getMonth(), c = { dim: dim, td: td };
+    var names = shuffle(CPR.map(function (d) { return d.name; }), r).slice(0, 68).sort();
+    c.days = []; for (var d = 1; d <= dim; d++) { var dt = dAt(y, mo, d); c.days.push({ d: d, dt: dt, sun: dt.getDay() === 0, dow: dt.getDay() }); }
+    c.wd = names.map(function (nm) {
+      var start = r() < .15 ? between(r, 1, 6) : 1;
+      var cells = c.days.map(function (x) { return x.d >= start && x.d <= td && !x.sun && r() < (x.d === td ? .7 : .86); });
+      return { name: nm, cells: cells };
+    });
+    c.rs = names.filter(function () { return r() < .5; }).slice(0, 34).map(function (nm) {
+      var cells = c.days.map(function (x) { return x.d < td && !x.sun && r() < .07 ? between(r, 5, 28) : 0; });
+      return { name: nm, cells: cells, days: cells.filter(Boolean).length, stops: cells.reduce(function (a, b) { return a + b; }, 0) };
+    });
+    c.dp = []; c.ws = [];
+    for (var k = td; k >= 1; k--) {
+      var x = c.days[k - 1], today = k === td, sat = x.dow === 6, off = x.sun || (sat && r() < .5);
+      var std = off ? 0 : between(r, 43, 50), h = off ? 0 : 8 + between(r, 0, 12) / 10, a = off || r() < .3 ? 0 : between(r, 5, 7), b = off || r() < .2 ? 0 : between(r, 7, 14), cc = off || r() < .3 ? 0 : between(r, 3, 8);
+      var paid = std * h + a * 6 + b * 3.2 + cc * 4, diff = off ? 0 : (between(r, -45, 70) / 10), flag = !off && !today && r() < .45;
+      var row = { x: x, today: today, off: off, std: std, h: h, a: a, b: b, c: cc, routes: std + a + b + cc, paid: paid, worked: today ? 40.6 : paid + diff, diff: diff, rec: today ? 7 : std + a + b + cc - between(r, 0, 4), flag: flag,
+        who: names[between(r, 0, names.length - 1)], why: between(r, 0, 2), dh: between(r, 3, 9) / 10 * (r() < .3 ? -1 : 1) };
+      c.dp.push(row);
+      c.ws.push({ x: x, today: today, off: off, fin: !today && !off, blocks: off || today ? 0 : row.routes, row: row, cx: off || today ? 0 : between(r, 0, 11), chk: paid + between(r, 2, 14), drv: row.routes + between(r, -2, 2),
+        km: off || today ? 0 : between(r, 9800, 12700), pk: off || today ? 0 : between(r, 7600, 10300), iss: off || today ? 0 : (r() < .4 ? 1 : 0) });
+    }
+    var fin = c.ws.filter(function (w) { return w.fin; });
+    c.wsK = { paid: fin.reduce(function (a, w) { return a + w.row.paid; }, 0), worked: fin.reduce(function (a, w) { return a + w.row.worked; }, 0), km: fin.reduce(function (a, w) { return a + w.km; }, 0), pk: fin.reduce(function (a, w) { return a + w.pk; }, 0), cx: fin.reduce(function (a, w) { return a + w.cx; }, 0), blocks: fin.reduce(function (a, w) { return a + w.blocks; }, 0), n: fin.length };
+    c.ra = [0, 1, 2, 3].map(function (i) { return { d: addD(TODAY, -between(r, 1, Math.max(1, td - 1))), n: names[60 + i], m: names[i * 5], h: hh(9) }; });
+    c.cx = fin.slice(0, 6).map(function (w) { return { d: w.x.dt, route: 'RT_A' + between(r, 200, 260), type: r() < .7 ? 'Standard' : 'Sameday B', at: hm(between(r, 360, 540)), pay: hh(w.row.h) }; });
+    c.ap = names.slice(0, 13).map(function (nm, i) {
+      var acc = i % 3 === 0 ? 'own' : (i % 3 === 1 ? 400 : 200);
+      return { name: nm, days: between(r, 2, 25), acc: acc, adv: i % 4 === 1 ? '200' : '', tr: i === 5 || i === 10 ? [ddmm(addD(mStart(-1), 14)).slice(0, 5), ddmm(addD(mStart(-1), 15)).slice(0, 5) + ', ' + ddmm(addD(mStart(-1), 17)).slice(0, 5)] : null,
+        vac: i === 0 ? [ddmm(addD(mStart(-1), -1)), ddmm(addD(mStart(-1), 4)), 5] : null, by: CPR[78 + (i % 3)].name, on: ddmm(addD(TODAY, -between(r, 1, 7))) };
+    });
+    c.afW = [-3, -2, -1, 0].map(function (o) { var st = wkStart(o - 1); return { n: weekInfo(o - 1).n, range: ddmm(st).slice(0, 5) + ' – ' + ddmm(addD(st, 6)).slice(0, 5) }; });
+    c.af = names.slice(0, 14).map(function (nm) {
+      var wk = c.afW.map(function () { var u = r(); return u < .07 ? null : u < .8 ? 'Fantastic Plus' : u < .9 ? 'Fantastic' : u < .97 ? 'Great' : 'Fair'; });
+      if (wk.every(function (q) { return q === null; })) wk[3] = 'Fantastic Plus';
+      var b = wk.map(function (s0) { return s0 === null ? null : { 'Fantastic Plus': 14, Fantastic: 10, Great: 5, Fair: 0 }[s0]; }), got = b.filter(function (v) { return v !== null; });
+      return { name: nm, wk: wk, b: b, n: got.length, tot: got.reduce(function (a, v) { return a + v; }, 0) };
+    }).sort(function (a, b) { return b.tot / b.n - a.tot / a.n || b.n - a.n; });
+    c.ksDay = addD(TODAY, -1);
+    c.ks = names.slice(0, 18).map(function (nm, i) {
+      var s0 = between(r, 380, 860), span = between(r, 160, 640), br = span > 570 ? 45 : span > 360 ? 30 : 0, why = br === 45 ? 3 : br === 30 ? (r() < .5 ? 0 : 1) : 2;
+      var x = { name: nm, st: 0, before: hm(s0 + between(r, -20, 20)) + ' – ' + hm(s0 + span + between(r, -15, 15)), after: hm(s0) + ' – ' + hm(s0 + span), span: hmin(span), worked: hmin(span - br), br: br + ' min', month: hmin(between(r, 1500, 2700)), why: why };
+      if (i === 3) { x.st = 1; x.after = x.span = x.worked = x.br = '—'; x.why = 4; }
+      if (i === 8 || i === 14) { x.st = 2; x.after = '—'; x.why = i === 8 ? 5 : 6; }
+      return x;
+    });
+    return (tsC = c);
+  }
+  function tsHead(title, sub, extra, btn) {
+    return '<div class="m-panel m-date m-week"><span class="ci">' + ICAL + '</span><div><b>' + title + '</b><span>' + sub + '</span></div>' + (extra || '') +
+      '<span class="ts-mon"><button type="button" disabled>‹</button><span class="dv">' + monthName(0) + ' <span>▾</span></span><button type="button" disabled>›</button></span>' +
+      '<span class="cp-btn' + (btn ? ' ts-blue' : '') + '">' + (btn || t('tsXls')) + '</span></div>';
+  }
+  function tsGridHead(extra) {
+    var c = tsData(), D = t('tsDow');
+    return '<thead><tr><th class="nm">' + t('tsName') + '</th>' + c.days.map(function (x) { return '<th class="' + (x.sun ? 'sun' : '') + (x.d === c.td ? ' td' : '') + '">' + x.d + '<small>' + D[x.dow] + '</small></th>'; }).join('') + extra + '</tr></thead>';
+  }
+  function tsCellCls(x, c) { return (x.sun ? 'sun' : '') + (x.d === c.td ? ' td' : ''); }
+  function renderWd() {
+    var c = tsData();
+    return tsHead(t('tsTabs')[0], t('tsWdSub') + ' — ' + monthName(0)) +
+      '<div class="m-panel" data-p="tswd"><div class="m-ph"><h4>' + t('tsDrivers', { n: c.wd.length }) + '</h4><span class="ts-sm">' + t('tsDaysIn', { n: c.dim }) + '</span><span class="m-livepill sm"><i></i>' + t('tsLive') + '</span></div><div class="m-search">' + t('tsSearch') + '</div>' +
+      '<table class="ts-g">' + tsGridHead('<th class="tot">' + t('tsTotal') + '</th>') + '<tbody>' + c.wd.slice(0, 16).map(function (w, i) {
+        return '<tr><td class="nm">' + esc(w.name) + '</td>' + c.days.map(function (x, k) { return '<td class="' + tsCellCls(x, c) + '">' + (w.cells[k] ? '<i class="ts-dot' + (x.d === c.td ? ' live' : '') + '" style="--i:' + (k + i) + '"></i>' : '') + '</td>'; }).join('') +
+          '<td class="tot">' + w.cells.filter(Boolean).length + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  function renderRs() {
+    var c = tsData(), rows = c.rs.slice();
+    if (p2.ts.rsSort) rows.sort(function (a, b) { return b.stops - a.stops; });
+    return tsHead(t('tsTabs')[1], t('tsRsSub') + ' — ' + monthName(0), '', '↓ ' + t('tsExport')) +
+      '<div class="m-panel" data-p="tsrs"><div class="m-ph"><h4>' + t('tsRsN', { n: c.rs.length }) + '</h4><span class="ts-sm">' + t('tsRsNote') + '</span></div><div class="m-search">' + t('tsSearch') + '</div>' +
+      '<table class="ts-g rs">' + tsGridHead('<th class="tot">' + t('tsDaysCol') + '</th><th class="tot"><button type="button" class="ts-sort' + (p2.ts.rsSort ? ' on' : '') + '" data-p2-act="rssort">' + t('tsStops') + (p2.ts.rsSort ? ' ↓' : '') + '</button></th>') + '<tbody>' +
+      rows.slice(0, 16).map(function (w, i) {
+        return '<tr class="row-in" style="--i:' + i + '"><td class="nm">' + esc(w.name) + '</td>' + c.days.map(function (x, k) { return '<td class="' + tsCellCls(x, c) + '">' + (w.cells[k] ? '<span class="ts-n">' + w.cells[k] + '</span>' : '') + '</td>'; }).join('') +
+          '<td class="tot">' + w.days + '</td><td class="tot">' + w.stops + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  function renderDp() {
+    var c = tsData(), C = t('tsDpCols'), W = t('tsDetailWhy');
+    var cell = function (n, h) { return n ? '<td class="r"><b>' + n + '</b> <small>× ' + nf(h, 1) + ' h</small><small class="blk">' + nf(n * h, 1) + ' h</small></td>' : '<td class="r mut">0</td>'; };
+    var tot = c.dp.reduce(function (a, d) { return { std: a.std + d.std, a: a.a + d.a, b: a.b + d.b, c: a.c + d.c, paid: a.paid + d.paid }; }, { std: 0, a: 0, b: 0, c: 0, paid: 0 });
+    return tsHead(t('tsTabs')[2], t('tsDpSub'), '', '↓ ' + t('tsExport')) +
+      '<div class="m-panel" data-p="tsdp"><p class="wr-note ts-rule">' + t('tsDpRule') + '</p><table class="m-t ts-dp"><thead><tr>' + C.map(function (x, i) { return '<th' + (i && i < 9 ? ' class="r"' : '') + '>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      c.dp.map(function (d, i) {
+        var chk = d.off ? '<span class="m-pill">' + t('tsNoCap') + '</span>' : d.flag ? '<button type="button" class="ts-flag" data-p2-act="dpopen" data-v="' + i + '">' + t('tsOther', { n: 1 }) + ' ›</button>' : '<span class="m-pill g">' + t('tsAllOk', { n: d.std }) + '</span>';
+        var row = '<tr class="' + (d.x.sun ? 'sunr' : '') + (p2.ts.dpOpen === i ? ' sel' : '') + '"><td><b>' + lday(d.x.dt, { weekday: 'long' }) + '</b><small class="blk">' + ddmm(d.x.dt) + '</small></td>' + cell(d.std, d.h) + cell(d.a, 6) + cell(d.b, 3.2) + cell(d.c, 4) +
+          '<td class="r">' + d.routes + '</td><td class="r"><b>' + hh(d.paid) + '</b></td><td class="r">' + (d.off ? '—' : '<b>' + hh(d.worked) + '</b><small class="blk">' + t('tsRecords', { n: d.rec }) + (d.today ? ' · ' + t('tsOngoing') : '') + '</small>') + '</td>' +
+          '<td class="r ' + (d.off || d.today ? 'mut' : d.diff >= 0 ? 'neg' : 'pos') + '">' + (d.off || d.today ? '—' : (d.diff >= 0 ? '+' : '−') + hh(Math.abs(d.diff))) + '</td><td>' + chk + '</td></tr>';
+        if (p2.ts.dpOpen === i) row += '<tr class="ts-det"><td colspan="10"><span class="da">' + avatar(d.who, 28) + '<b>' + esc(d.who) + '</b></span><span>' + t('tsDetail', { a: hh(d.h), b: hh(d.h + d.dh) }) + '</span><span class="cn-fl amb">' + (d.dh >= 0 ? '+' : '−') + hh(Math.abs(d.dh)) + '</span><span class="ts-why">' + W[d.why] + '</span></td></tr>';
+        return row;
+      }).join('') + '</tbody></table><div class="m-foot"><b>' + t('tsDpFoot', { n: c.dp.length }) + '</b> · ' + monthName(0) + ' · Standard ' + tot.std + ' · SD A ' + tot.a + ' · SD B ' + tot.b + ' · SD C ' + tot.c + ' · ' + hh(tot.paid) + '</div></div>';
+  }
+  function wsTabInner() {
+    var c = tsData(), tab = p2.ts.wsTab;
+    if (tab === 0) {
+      var C = t('tsWsCols');
+      return '<table class="m-t ts-ws"><thead><tr>' + C.map(function (x, i) { return '<th' + (i > 1 ? ' class="r"' : '') + '>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + c.ws.map(function (w, i) {
+        var d = w.row;
+        return '<tr class="row-in' + (w.x.sun ? ' sunr' : '') + '" style="--i:' + i + '"><td><b>' + lday(w.x.dt, { weekday: 'long' }) + '</b><small class="blk">' + ddmm(w.x.dt) + '</small></td><td><span class="m-pill ' + (w.fin ? 'g' : 'o') + '">' + t(w.fin ? 'tsFinal' : 'tsProv') + '</span></td>' +
+          '<td class="r">' + w.blocks + '</td><td class="r">' + w.blocks + '<small class="blk">STD ' + d.std + ' · A ' + d.a + ' · B ' + d.b + ' · C ' + d.c + '</small></td><td class="r">' + (w.cx ? '<span class="ts-cx">' + w.cx + '</span>' : '0') + '</td>' +
+          '<td class="r"><b>' + (w.fin ? hh(d.paid) : '0 h') + '</b></td><td class="r">' + (d.off ? '—' : '<b>' + hh(d.worked) + '</b>') + '</td><td class="r ' + (w.fin ? (d.diff >= 0 ? 'neg' : 'pos') : 'mut') + '">' + (w.fin ? (d.diff >= 0 ? '+' : '−') + hh(Math.abs(d.diff)) : '—') + '</td>' +
+          '<td class="r">' + (w.fin ? hh(w.chk) + '<small class="blk">' + t('tsDrvN', { n: w.drv }) + '</small>' : '0 h') + '</td><td class="r">' + nf(w.km) + '</td><td class="r">' + (w.pk ? nf(w.pk) : '—') + '</td><td class="r">' + (w.iss ? '<span class="ts-cx">1</span>' : '0') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    }
+    if (tab === 1) return '<table class="m-t"><thead><tr>' + t('tsRaCols').map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + c.ra.map(function (x, i) { return '<tr class="row-in" style="--i:' + i + '"><td>' + ddmm(x.d) + '</td><td><span class="da">' + avatar(x.n, 24) + '<b>' + esc(x.n) + '</b></span></td><td><span class="da">' + avatar(x.m, 24) + esc(x.m) + '</span></td><td>' + x.h + '</td></tr>'; }).join('') + '</tbody></table>';
+    if (tab === 2) return '<table class="m-t"><thead><tr>' + t('tsCxCols').map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + c.cx.map(function (x, i) { return '<tr class="row-in" style="--i:' + i + '"><td>' + ddmm(x.d) + '</td><td class="mono">' + x.route + '</td><td>' + x.type + '</td><td>' + x.at + '</td><td><span class="m-pill g">' + x.pay + '</span></td></tr>'; }).join('') + '</tbody></table>';
+    if (tab === 3) return '<p class="cp-empty at-wait">' + t('tsTrEmpty') + '</p>';
+    return '<table class="m-t"><thead><tr>' + t('tsKmCols').map(function (x, i) { return '<th' + (i ? ' class="r"' : '') + '>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + c.ws.filter(function (w) { return w.fin; }).map(function (w, i) { var pl = w.km - 1100 - i * 37; return '<tr class="row-in" style="--i:' + i + '"><td><b>' + ddmm(w.x.dt) + '</b></td><td class="r">' + nf(pl) + '</td><td class="r">' + nf(w.km) + '</td><td class="r pos">+' + nf(w.km - pl) + '</td></tr>'; }).join('') + '</tbody></table>';
+  }
+  function renderWs() {
+    var c = tsData(), K = t('tsWsK'), KS = t('tsWsKs'), T = t('tsTopics'), k = c.wsK, d = k.worked - k.paid;
+    var counts = [null, c.ra.length, c.wsK.cx, 0, '+' + nf(Math.round(k.km * .08))];
+    return tsHead(t('tsTabs')[3], t('tsWsSub'), '', '↓ ' + t('tsExport')) +
+      '<div class="m-panel" data-p="tsws"><div class="m-ph"><h4>' + t('tsHow') + '</h4><span class="m-cnt">' + t('tsClickTopic') + '</span></div><div class="ts-topics">' +
+      T.map(function (x, i) { return '<button type="button" class="hs-f' + (p2.ts.wsTopic === i ? ' on' : '') + '" data-p2-act="topic" data-v="' + i + '">› ' + x[0] + '</button>'; }).join('') + '</div>' +
+      (p2.ts.wsTopic >= 0 ? '<p class="rc-hint ts-topic">' + T[p2.ts.wsTopic][1] + '</p>' : '') + '</div>' +
+      '<div class="m-panel wr-k wr-k3" data-p="tsws">' + kpi3([[K[0], hh(k.paid), '', '', undefined, 0, KS[0].replace('{n}', k.n).replace('{b}', k.blocks)], [K[1], hh(k.worked), '', '', undefined, 0, KS[1].replace('{n}', k.n)],
+        [K[2], (d >= 0 ? '+' : '−') + hh(Math.abs(d)), '', d >= 0 ? 'neg' : 'pos', undefined, 0, KS[2]], [K[3], nf(k.km), '', '', k.km, 0, KS[3]], [K[4], nf(k.pk), '', '', k.pk, 0, KS[4]], [K[5], k.cx, '', 'amb', k.cx, 0, KS[5]]]) + '</div>' +
+      '<div class="ts-wtabs" data-p="tswsd">' + t('tsWsTabs').map(function (x, i) { return '<button type="button" class="ts-wt' + (p2.ts.wsTab === i ? ' on' : '') + '" data-p2-act="wstab" data-v="' + i + '">' + x + (counts[i] !== null ? ' <em>' + counts[i] + '</em>' : '') + '</button>'; }).join('') + '</div>' +
+      '<div class="m-panel" data-p="tswsd" data-ts="ws">' + wsTabInner() + '</div>';
+  }
+  function renderAp() {
+    var c = tsData(), C = t('tsApCols');
+    return tsHead(t('tsTabs')[4], t('tsApSub'), '', '↓ ' + t('tsExport')) +
+      '<div class="m-panel" data-p="tsap"><div class="m-ph"><span class="m-search ts-s0">' + t('tsSearch') + '</span><span class="ts-sm">' + t('tsDrivers', { n: c.ap.length * 6 + 4 }) + '</span></div><p class="wr-note">' + t('tsApNote') + '</p>' +
+      '<table class="m-t ts-ap"><thead><tr>' + C.map(function (x, i) { return '<th' + (i === 1 ? ' class="r"' : '') + '>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + c.ap.map(function (x, i) {
+        function ed(col, val, auto) {
+          var key = i + ',' + col, v = p2.ts.ap[key] !== undefined ? p2.ts.ap[key] : val, hi = p2.ts.apHi === key;
+          if (!v && !auto && !hi) return '<td><button type="button" class="ts-cell" data-p2-act="apedit" data-v="' + key + '" aria-label="Edit"></button></td>';
+          return '<td><span class="ts-fill' + (hi ? ' typing-cell' : '') + '" data-ap="' + key + '">' + esc(v) + '</span>' + (auto ? '<small class="blk">' + auto + '</small>' : '') + (hi ? '<small class="ts-saved">' + t('tsSaved') + '</small>' : '') + '</td>';
+        }
+        var acc = x.acc === 'own' ? t('tsOwn') : String(x.acc);
+        return '<tr><td><b>' + esc(x.name) + '</b><small class="blk">' + esc(x.by) + ' · ' + x.on + '</small></td><td class="r">' + x.days + '</td>' + ed(2, acc, x.acc === 'own' ? '' : t('tsAuto', { n: eurc(x.acc) })) + ed(3, x.adv) + ed(4, '') + ed(5, '') + ed(6, '') +
+          (x.vac ? '<td><span class="ts-fill">' + t('tsVac', { a: x.vac[0], b: x.vac[1], n: x.vac[2] }) + '</span></td>' : ed(7, '')) + ed(8, '') +
+          (x.tr ? '<td class="ts-tr">' + t('tsTrRa', { a: x.tr[0], b: x.tr[1] }) + '<small class="blk">' + t('tsWrite') + '</small></td>' : ed(9, '')) + ed(10, '') + '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  function renderAf() {
+    var c = tsData(), W = c.afW, cls = { 'Fantastic Plus': 'fp', Fantastic: 'fa', Great: 'gr', Fair: 'fr' };
+    return tsHead(t('tsTabs')[5], t('tsAfSub', { a: W[0].n, b: W[3].n }), '', '↓ ' + t('tsExport')) +
+      '<div class="m-panel" data-p="tsaf"><div class="m-ph"><span class="m-search ts-s0">' + t('tsSearch') + '</span><span class="ts-sm">' + t('tsDrivers', { n: 76 }) + '</span></div><p class="wr-note">' + t('tsAfNote') + '</p>' +
+      '<table class="m-t ts-af"><thead><tr><th>' + t('tsApCols')[0] + '</th>' + W.map(function (w) { return '<th class="r">' + t('tsWkL', { n: w.n }) + '<small class="blk">' + w.range + '</small></th>'; }).join('') + '<th class="r">' + t('tsAvg') + '</th></tr></thead><tbody>' +
+      c.af.map(function (x, i) {
+        return '<tr class="row-in" style="--i:' + i + '"><td><b>' + esc(x.name) + '</b></td>' + x.wk.map(function (st, k) { return '<td class="r">' + (st ? '<b>' + x.b[k] + ' €</b><span class="wr-s ' + cls[st] + ' blk">' + st + '</span>' : '') + '</td>'; }).join('') +
+          '<td class="r ts-avg"><b>' + nf(x.tot / x.n, x.tot % x.n ? 2 : 0) + ' €</b><small class="blk">' + (x.n === 4 ? t('tsAfTot', { n: x.tot + ' €' }) : t('tsAfOver', { n: x.n, t: x.tot + ' €' })) + '</small></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  function ksRows() {
+    var c = tsData(), C = t('tsKsCols'), S = t('tsKsSt'), Y = t('tsKsWhy'), syncing = p2.ts.ks === 'run';
+    var rows = c.ks.filter(function (x) { return p2.ts.ksF === 'all' || (p2.ts.ksF === 'skipped' ? x.st === 2 : x.st === 0); });
+    return '<table class="m-t ts-ks"><thead><tr>' + C.map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (x) {
+      var done = !syncing || c.ks.indexOf(x) < p2.ts.ksN, cl = ['g', 'b', 'o'][x.st];
+      return '<tr class="' + (x.st === 2 ? 'skp' : '') + (done ? '' : ' pend') + '"><td><b>' + esc(x.name) + '</b></td><td>' + (done ? '<span class="m-pill ' + cl + '">' + S[x.st] + '</span>' : '<span class="wr-spin sm"></span>') + '</td><td>' + x.before + '</td><td>' + (done ? x.after : '…') + '</td>' +
+        '<td>' + (done ? x.span : '') + '</td><td>' + (done ? x.worked : '') + '</td><td>' + (done ? x.br : '') + '</td><td>' + x.month + '</td><td class="ts-why">' + (done ? Y[x.why].replace('{s}', x.span.replace(/m$/, '')) + ' <i class="ts-i">i</i>' : '') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  function ksKpis() {
+    var c = tsData(), K = t('tsKsK'), run = p2.ts.ks === 'run', n = run ? p2.ts.ksN : c.ks.length, done = c.ks.slice(0, n);
+    var up = done.filter(function (x) { return x.st === 0; }).length, sk = done.filter(function (x) { return x.st === 2; }).length, extra = Math.round(55 * n / c.ks.length);
+    var v = [74, up + extra, sk, 0], f = ['all', 'updated', 'skipped', 'all'];
+    return K.map(function (k, i) { return '<button type="button" class="ts-kk' + (i < 3 && p2.ts.ksF === f[i] ? ' on' : '') + '" data-p2-act="ksf" data-v="' + f[i] + '"><small>' + k + '</small><b class="' + ['', 'pos', 'amb', 'neg'][i] + '">' + v[i] + '</b></button>'; }).join('');
+  }
+  function renderKs() {
+    var c = tsData(), run = p2.ts.ks === 'run', day = lday(c.ksDay, { day: 'numeric', month: 'long', year: 'numeric' });
+    return '<div class="m-panel m-date m-week"><span class="ci">' + ICAL + '</span><div><b>' + t('tsKsT') + '</b><span>' + t('tsKsSub', { d: day }) + '</span></div>' +
+      '<span class="ts-mon"><button type="button" disabled>‹</button><span class="dv">' + day + ' <span>▾</span></span><button type="button" disabled>›</button></span>' +
+      '<button type="button" class="wr-upbtn ts-sync" data-p2-act="sync"' + (run ? ' disabled' : '') + '>' + (run ? '<span class="wr-spin sm w"></span>' + t('tsSyncing', { a: p2.ts.ksN, b: c.ks.length }) : t('tsSyncNow')) + '</button></div>' +
+      '<div class="ts-kks" data-p="tsks" data-ts="kk">' + ksKpis() + '</div>' +
+      '<div class="m-panel" data-p="tsks"><div class="m-ph"><h4>' + t('tsKsRes', { d: day }) + '</h4><span class="ts-sm">' + t('tsKsUpd', { d: ddmm(TODAY).slice(0, 5) }) + '</span></div><div class="m-search">' + t('tsSearch') + '</div><div data-ts="ks">' + ksRows() + '</div></div>';
+  }
+  function p2Prep(id) { // state a step needs before the camera moves; true when the screen must be redrawn
+    var T = p2.ts;
+    if (id === 'tsdpd' && T.dpOpen === null) { T.dpOpen = tsData().dp.map(function (d) { return d.flag; }).indexOf(true); return true; }
+    if (id === 'tsdp' && T.dpOpen !== null && p2.active !== 'tsdpd') { T.dpOpen = null; return true; }
+    if (id === 'tsksx' && T.ksF !== 'skipped') { T.ksF = 'skipped'; return true; }
+    if (id === 'tsks' && T.ksF === 'skipped' && p2.active === 'tsksx') { T.ksF = 'all'; return true; }
+    return false;
+  }
+  function tsSet(name, html) { var el = mock2.querySelector('[data-ts="' + name + '"]'); if (el) el.innerHTML = html; }
   function p2Nav() {
-    return '<div class="hs-nav"><span class="dim">' + t('pageP') + '</span>' + P2.tabs.map(function (tb, i) {
-      return '<button type="button" data-p2-act="tab" data-v="' + tb + '"' + (p2.tab === tb ? ' class="on"' : '') + '>' + t('plTabs')[i] + '</button>';
+    return '<div class="hs-nav"><span class="dim">' + t(P2().name) + '</span>' + P2().tabs.map(function (tb, i) {
+      return '<button type="button" data-p2-act="tab" data-v="' + tb + '"' + (p2.tab === tb ? ' class="on"' : '') + '>' + t(P2().tabNames)[i] + '</button>';
     }).join('') + '</div>';
   }
   function renderCap() {
@@ -1472,18 +1667,19 @@
   }
   function p2Render() {
     if (!mock2) return;
-    mock2.innerHTML = topBar(t('pageP')) + p2Nav() + '<div class="m-body">' + (p2.tab === 'cap' ? renderCap() : p2.tab === 'wp' ? renderWp() : renderAt()) + '</div>';
+    var R = { cap: renderCap, wp: renderWp, at: renderAt, wd: renderWd, rs: renderRs, dp: renderDp, ws: renderWs, ap: renderAp, af: renderAf, ks: renderKs };
+    mock2.innerHTML = topBar(t(P2().name)) + p2Nav() + '<div class="m-body">' + R[p2.tab]() + '</div>';
     p2.hi = null;
-    document.getElementById('url2').textContent = 'board.lanu.app/planning/' + P2.url[p2.tab];
+    document.getElementById('url2').textContent = 'board.lanu.app/' + P2().base + '/' + P2().url[p2.tab];
     p2Layout();
   }
   function p2Layout() { mock2.style.transform = 'translate(' + (-p2.cam.x) + 'px,' + (-p2.cam.y) + 'px) scale(' + p2.cam.z + ')'; }
   function p2RenderSteps() {
-    var all = t('plSteps'), html = '', n = 0, li = 0;
-    P2.tabs.forEach(function (tb, gi) {
-      var grp = all.filter(function (x) { return P2.of[x[0]] === tb; }), from = n + 1, open = tb === p2.tab;
+    var all = t(P2().steps), html = '', n = 0, li = 0;
+    P2().tabs.forEach(function (tb, gi) {
+      var grp = all.filter(function (x) { return P2().of[x[0]] === tb; }), from = n + 1, open = tb === p2.tab;
       n += grp.length;
-      html += '<li class="step-grp' + (open ? ' on' : '') + '" style="--i:' + (li++) + '"><button type="button" data-p2grp="' + tb + '" aria-expanded="' + open + '"><span class="g-t">' + t('plTabs')[gi] + '</span><em>' + from + '–' + n + '</em><span class="g-c">' + (open ? '−' : '+') + '</span></button></li>';
+      html += '<li class="step-grp' + (open ? ' on' : '') + '" style="--i:' + (li++) + '"><button type="button" data-p2grp="' + tb + '" aria-expanded="' + open + '"><span class="g-t">' + t(P2().tabNames)[gi] + '</span><em>' + from + '–' + n + '</em><span class="g-c">' + (open ? '−' : '+') + '</span></button></li>';
       if (open) grp.forEach(function (x, k) {
         html += '<li style="--i:' + (li++) + '" class="step' + (x[0] === p2.active ? ' on' + (p2.auto ? ' auto' : '') : '') + '"><button type="button" data-p2step="' + x[0] + '" aria-current="' + (x[0] === p2.active) + '">' +
           '<span class="n">' + (from + k) + '</span><span><span class="t">' + esc(x[1]) + '</span><span class="d">' + esc(x[2]) + '</span></span><span class="prog" style="--dur:' + DUR + 'ms"></span></button></li>';
@@ -1495,18 +1691,26 @@
   }
   function p2Focus(id, keep, quiet) {
     if (!mock2) return;
-    var tab = P2.of[id];
+    var pg = P2P[p2.page].of[id] ? p2.page : P2ORDER.filter(function (k) { return P2P[k].of[id]; })[0], pageCh = pg !== p2.page;
+    if (pageCh) {
+      p2.page = pg; p2.tab = null;
+      document.querySelectorAll('[data-page2]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.page2 === pg)); });
+      p2Ind();
+    }
+    var tab = P2().of[id];
+    if (p2Prep(id) && tab === p2.tab) p2Render();
     if (tab !== p2.tab) {
       p2.tab = tab;
-      if (!reduce) { document.getElementById('fx2-t').textContent = t('plTabs')[P2.tabs.indexOf(tab)]; screen2.classList.remove('warp'); void screen2.offsetWidth; screen2.classList.add('warp'); setTimeout(function () { screen2.classList.remove('warp'); }, 1400); }
+      if (!reduce) { document.getElementById('fx2-t').textContent = pageCh ? t(P2().name) : t(P2().tabNames)[P2().tabs.indexOf(tab)]; screen2.classList.remove('warp'); void screen2.offsetWidth; screen2.classList.add('warp'); setTimeout(function () { screen2.classList.remove('warp'); }, 1400); }
       p2Render();
     }
     if (id === 'atlist' && p2.at !== 'done') { p2.at = 'done'; p2Render(); }
     p2.active = id;
     p2RenderSteps();
-    mock2.querySelectorAll('[data-p]').forEach(function (el) { el.classList.toggle('on', el.dataset.p === id); });
+    var tid = P2ALIAS[id] || id;
+    mock2.querySelectorAll('[data-p]').forEach(function (el) { el.classList.toggle('on', el.dataset.p === tid); });
     mock2.classList.add('focus');
-    var targets = mock2.querySelectorAll('[data-p="' + id + '"]'), mr = mock2.getBoundingClientRect(), z0 = p2.cam.z, l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
+    var targets = mock2.querySelectorAll('[data-p="' + tid + '"]'), mr = mock2.getBoundingClientRect(), z0 = p2.cam.z, l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
     targets.forEach(function (el) {
       var q = el.getBoundingClientRect();
       l = Math.min(l, (q.left - mr.left) / z0); tp = Math.min(tp, (q.top - mr.top) / z0); r = Math.max(r, (q.right - mr.left) / z0); b = Math.max(b, (q.bottom - mr.top) / z0);
@@ -1522,6 +1726,8 @@
         el.querySelectorAll('[data-count]').forEach(function (c) { countUp(c, Number(c.dataset.count), c.dataset.f === 'pct' ? function (v) { return pctf(v / 100, 2); } : fmt, 1100); });
       });
     }
+    if (id === 'tsap' && p2.auto && !quiet) setTimeout(function () { if (p2.active === 'tsap' && p2.auto) p2Action('apedit', '3,4'); }, 1800);
+    if (id === 'tsks' && p2.auto && !quiet) setTimeout(function () { if (p2.active === 'tsks' && p2.auto) p2Action('sync'); }, 1500);
     if (id === 'atpaste' && p2.auto && p2.at === 'empty' && !quiet) setTimeout(function () { if (p2.active === 'atpaste' && p2.at === 'empty' && p2.auto) p2Process(); }, 1600);
     if (!keep && window.innerWidth <= 980) { var bt = steps2.querySelector('.step.on button'); if (bt) bt.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' }); }
     p2Schedule();
@@ -1530,7 +1736,7 @@
     clearTimeout(p2.timer);
     if (!p2.auto || !p2.inView) return;
     p2.timer = setTimeout(function () {
-      var ids = t('plSteps').map(function (x) { return x[0]; });
+      var ids = []; P2ORDER.forEach(function (k) { t(P2P[k].steps).forEach(function (x) { ids.push(x[0]); }); });
       p2Focus(ids[(ids.indexOf(p2.active) + 1) % ids.length], true);
     }, DUR);
   }
@@ -1550,7 +1756,38 @@
     }, 110);
   }
   function p2Action(act, v) {
-    if (act === 'tab') { p2Focus(P2.first[v], true); return; }
+    if (act === 'tab') { p2Focus(P2().first[v], true); return; }
+    if (act === 'rssort') { p2.ts.rsSort = !p2.ts.rsSort; p2Render(); p2Focus('tsrs', true, true); return; }
+    if (act === 'dpopen') { p2.ts.dpOpen = p2.ts.dpOpen === Number(v) ? null : Number(v); p2Render(); p2.active = 'tsdpd'; p2Focus(p2.ts.dpOpen === null ? 'tsdp' : 'tsdpd', true, true); return; }
+    if (act === 'topic') { p2.ts.wsTopic = p2.ts.wsTopic === Number(v) ? -1 : Number(v); p2Render(); p2Focus('tsws', true, true); return; }
+    if (act === 'wstab') { p2.ts.wsTab = Number(v); tsSet('ws', wsTabInner()); mock2.querySelectorAll('.ts-wt').forEach(function (b, i) { b.classList.toggle('on', i === p2.ts.wsTab); }); p2Focus('tswsd', true, true); return; }
+    if (act === 'apedit') {
+      var col = Number(v.split(',')[1]), demo = t('tsDemo')[col] || '200', tok = ++p2.tok;
+      p2.ts.ap[v] = ''; p2.ts.apHi = v; p2Render(); p2Focus('tsap', true, true);
+      var el = mock2.querySelector('[data-ap="' + v + '"]'), j = 0;
+      if (!el) return;
+      var sv0 = el.parentNode.querySelector('.ts-saved'); if (sv0) sv0.style.opacity = 0;
+      var iv = setInterval(function () {
+        if (tok !== p2.tok) { clearInterval(iv); return; }
+        el.textContent = demo.slice(0, ++j); p2.ts.ap[v] = el.textContent;
+        if (j >= demo.length) { clearInterval(iv); var sv = el.parentNode.querySelector('.ts-saved'); if (sv) sv.style.opacity = 1; el.classList.remove('typing-cell'); }
+      }, reduce ? 1 : 70);
+      return;
+    }
+    if (act === 'ksf') { p2.ts.ksF = v === 'skipped' ? 'skipped' : v === 'updated' ? 'updated' : 'all'; tsSet('kk', ksKpis()); tsSet('ks', ksRows()); p2.active = p2.ts.ksF === 'skipped' ? 'tsksx' : 'tsks'; p2Focus(p2.active, true, true); return; }
+    if (act === 'sync') {
+      if (p2.ts.ks === 'run') return;
+      var n = tsData().ks.length, tk = ++p2.tok; p2.ts.ks = 'run'; p2.ts.ksN = 0; p2.ts.ksF = 'all'; p2Render(); p2Focus('tsks', true, true);
+      var iv2 = setInterval(function () {
+        if (tk !== p2.tok) { clearInterval(iv2); p2.ts.ks = 'done'; return; }
+        p2.ts.ksN++;
+        if (p2.ts.ksN >= n) { clearInterval(iv2); p2.ts.ks = 'done'; if (p2.tab === 'ks') { p2Render(); p2Focus(p2.active, true, true); } return; }
+        if (p2.tab !== 'ks') return;
+        tsSet('kk', ksKpis()); tsSet('ks', ksRows()); var sb = mock2.querySelector('.ts-sync'); if (sb) sb.innerHTML = '<span class="wr-spin sm w"></span>' + t('tsSyncing', { a: p2.ts.ksN, b: n });
+      }, reduce ? 1 : 180);
+      return;
+    }
+
     if (act === 'color') { var k = Number(v), used = p2.colors, nx = (used[k] + 1) % WP_PAL.length; while (used.indexOf(nx) >= 0) nx = (nx + 1) % WP_PAL.length; used[k] = nx; p2Render(); p2Focus('wpauto', true, true); return; }
     if (act === 'save') { p2.saved = 'plan-' + ddmm(TODAY).slice(0, 5).replace('.', '-') + '.' + v; p2Render(); p2Focus('wpplan', true, true); return; }
     if (act === 'sb') { var w = wpData(), nm = w.spare[p2.sb.length % w.spare.length]; p2.sb.push({ name: nm, time: '10:30' }); p2.hi = nm; p2Render(); p2.hi = null; p2Focus('wpsd', true, true); return; }
@@ -1570,10 +1807,10 @@
       var g = e.target.closest('[data-p2grp]'), b = e.target.closest('[data-p2step]');
       if (!g && !b) return;
       p2Stop();
-      if (g) { if (g.dataset.p2grp !== p2.tab) p2Focus(P2.first[g.dataset.p2grp]); return; }
+      if (g) { if (g.dataset.p2grp !== p2.tab) p2Focus(P2().first[g.dataset.p2grp]); return; }
       p2Focus(b.dataset.p2step);
     });
-    document.querySelectorAll('[data-page2]').forEach(function (b) { b.addEventListener('click', function () { p2Stop(); p2Focus(P2.first.cap); }); });
+    document.querySelectorAll('[data-page2]').forEach(function (b) { b.addEventListener('click', function () { var pg = P2P[b.dataset.page2]; p2Stop(); p2Focus(pg.first[pg.tabs[0]], true); }); });
     new IntersectionObserver(function (en) { p2.inView = en[0].isIntersecting; if (p2.inView) { p2RenderSteps(); p2Schedule(); } else clearTimeout(p2.timer); }, { threshold: .35 }).observe(document.getElementById('planning'));
     window.addEventListener('resize', function () { p2Ind(); p2Focus(p2.active, true, true); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(p2Ind);
